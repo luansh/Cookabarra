@@ -135,7 +135,7 @@ module ex(
     assign pc_add_imm =  pc_i + imm_i;
 
     wire[`RegBus] rs1_add_imm;
-    assign rs1_add_imm =  rs1_data_i + imm_i;
+    assign rs1_add_imm = rs1_data_i + imm_i;
 
     wire[`RegBus] rs1_or_imm;
     assign  rs1_or_imm = rs1_data_i | imm_i;
@@ -189,7 +189,7 @@ module ex(
     assign sri_shift = rs1_data_i >> imm_i;
     assign sri_shift_mask = 32'hffffffff >> imm_i;
 
-
+//对于存储操作，执行单元ex，产生读写的内存地址以及写入数据
     // handle the load and store instruction
     // (1) calcuate the memory address to acccess
     // (2) if it is a store instruction, the data to write was required as well
@@ -206,6 +206,7 @@ module ex(
                     // lh rd,offset(rs1)  :  x[rd] = sext(M[x[rs1] + sext(offset)][15:0])
                     // lhu rs2,offset(rs1)  :  x[rd] = M[x[rs1] + sext(offset)][15:0]
                     // lw rd,offset(rs1)  :  x[rd] = sext(M[x[rs1] + sext(offset)][31:0])
+//rs1+imm 作为所要加载数据的内存地址，输出到 LSU进行访存操作
                     mem_addr_o = rs1_add_imm;
                 end
 
@@ -215,6 +216,7 @@ module ex(
                     // sh rs2,offset(rs1)  :   M[x[rs1] + sext(offset)] = x[rs2][15:0]
                     // sw rs2,offset(rs1)  :   M[x[rs1] + sext(offset)] = x[rs2][31:0]
                     mem_addr_o = rs1_add_imm;
+//rs2 中保存要存储到内存的数据值
                     mem_wdata_o = rs2_data_i;
                 end
 
@@ -793,7 +795,7 @@ module ex(
         end // else begin
     end  //always
 
-
+//选择对应类型的运算结果
     /* selector the alu result to write to the rd*/
     always @ (*) begin
         rd_addr_o = rd_addr_i;

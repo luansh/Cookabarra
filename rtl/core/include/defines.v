@@ -89,7 +89,7 @@
 `define DivStart                1'b1
 `define DivStop                 1'b0
 
-
+//https://zhuanlan.zhihu.com/p/261705919
 /*--------------------------------- instruction type ----------------------------*/
 `define INST_OPCODE_LUI         7'b0110111   // {imm[31:12],                     rd,          opcode=0110111}
 `define INST_OPCODE_AUIPC       7'b0010111   // {imm[31:12],                     rd,          opcode=0010111}
@@ -190,8 +190,8 @@
 `define EXE_TYPE_LOAD_STORE     4'b0111
 `define EXE_TYPE_CSR            4'b1000
 
-
-/*---------------------------------uop_code-------------------------------*/
+//https://zhuanlan.zhihu.com/p/349758402
+//Micro Opcode(uop)
 `define UOP_CODE_NOP            16'D0
 `define UOP_CODE_LUI            16'D1
 `define UOP_CODE_AUIPC          16'D2

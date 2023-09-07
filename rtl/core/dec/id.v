@@ -225,7 +225,7 @@ module id(
                     // imm:[31:12], rd:[11:7], opcode[6:0] = 0110111
                     // LUI places the U-immediate value in the top 20 bits of the destination register rd,
                     // and fill in the lowest 12 bits with zeros.
-                    // format: lui rd,imm  :  x[rd] = sext(immediate[31:12] << 12)
+                    // format: lui rd, imm  :  x[rd] = sext(immediate[31:12] << 12)
                     // decode the imm and extend to 32 bit logically
                     imm = {inst_i[31:12], 12'b0};
                     // no rs required
