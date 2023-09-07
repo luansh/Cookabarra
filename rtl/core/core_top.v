@@ -107,7 +107,7 @@
       wire ex_branch_slot_end_i;
 
     wire[`AluSelBus] ex_alusel_i;
-    wire[`AluOpBus] ex_uopcode_i;
+    wire[`AluOpBus] ex_uop_i;
 
     wire[`RegBus] ex_rs1_data_i;
     wire[`RegBus] ex_rs2_data_i;
@@ -172,7 +172,7 @@
     wire[`RegAddrBus] mem_rd_addr_i;
     wire[`RegBus] mem_rd_wdata_i;
 
-    wire[`AluOpBus] mem_uopcode_i;
+    wire[`AluOpBus] mem_uop_i;
     wire[`RegBus] mem_mem_addr_i;
     wire[`RegBus] mem_mem_wdata_i;
 
@@ -349,7 +349,7 @@
 
         //bypass from the ex
       .branch_redirect_i(ex_branch_redirect_o),
-          .ex_uopcode_i(ex_uopcode_o),
+          .ex_uop_i(ex_uopcode_o),
       .ex_rd_we_i(ex_rd_we_o),
       .ex_rd_waddr_i(ex_rd_addr_o),
       .ex_rd_wdata_i(ex_rd_wdata_o),
@@ -404,7 +404,7 @@
       .branch_slot_end_i(id_branch_slot_end_o),
 
       .alusel_i(id_alusel_o),
-      .uopcode_i(id_uopcode_o),
+      .uop_i(id_uopcode_o),
 
       .rs1_data_i(id_rs1_data_o),
       .rs2_data_i(id_rs2_data_o),
@@ -426,7 +426,7 @@
           .branch_slot_end_o(ex_branch_slot_end_i),
 
       .alusel_o(ex_alusel_i),
-      .uop_o(ex_uopcode_i),
+      .uop_o(ex_uop_i),
 
       .rs1_data_o(ex_rs1_data_i),
       .rs2_data_o(ex_rs2_data_i),
@@ -453,7 +453,7 @@
           .branch_slot_end_i(ex_branch_slot_end_i),
 
       .alusel_i(ex_alusel_i),
-      .uopcode_i(ex_uopcode_i),
+      .uop_i(ex_uop_i),
 
       .rs1_data_i(ex_rs1_data_i),
       .rs2_data_i(ex_rs2_data_i),
@@ -557,7 +557,7 @@
       .rd_wa_i(ex_rd_addr_o),
       .rd_wd_i(ex_rd_wdata_o),
 
-        .uopcode_i(ex_uopcode_o),
+        .uop_i(ex_uopcode_o),
       .mem_addr_i(ex_mem_addr_o),
       .mem_wdata_i(ex_mem_wdata_o),
 
@@ -573,7 +573,7 @@
       .rd_wdata_o(mem_rd_wdata_i),
 
       // load or store
-        .uop_o(mem_uopcode_i),
+        .uop_o(mem_uop_i),
 
       // store to the memory
       .mem_addr_o(mem_mem_addr_i),
@@ -601,7 +601,7 @@
       .rd_wa_i(mem_rd_addr_i),
       .rd_wd_i(mem_rd_wdata_i),
 
-          .uopcode_i(mem_uopcode_i),
+          .uop_i(mem_uop_i),
       .mem_addr_i(mem_mem_addr_i),
       .mem_wdata_i(mem_mem_wdata_i),
 

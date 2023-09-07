@@ -19,7 +19,7 @@
     input wire[`RegAddrBus] rd_wa_i,
     input wire[`RegBus] rd_wd_i,
 
-    input wire[`AluOpBus] uopcode_i,
+    input wire[`AluOpBus] uop_i,
     input wire[`RegBus] mem_addr_i,
     input wire[`RegBus] mem_wdata_i,
 
@@ -117,7 +117,7 @@
             rd_we_o <= rd_we_i;
             rd_wdata_o <= rd_wd_i;
 
-            uop_o <= uopcode_i;
+            uop_o <= uop_i;
             mem_addr_o <= mem_addr_i;
             mem_wdata_o <= mem_wdata_i;
 

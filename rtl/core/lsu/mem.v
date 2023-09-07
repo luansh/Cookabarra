@@ -8,19 +8,6 @@
 //              (2) process the exception
 --------------------------------------------------------------------------*/
 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//-----------------------------------------------------------------
-
 `include "defines.v"
 
 module mem(
@@ -36,7 +23,7 @@ module mem(
     input wire[`RegAddrBus] rd_wa_i,
     input wire[`RegBus] rd_wd_i,
 
-    input wire[`AluOpBus] uopcode_i,         //uop_code, to determine it is a load or a store
+    input wire[`AluOpBus] uop_i,         //uop_code, to determine it is a load or a store
     input wire[`RegBus] mem_addr_i,
     input wire[`RegBus] mem_wdata_i,
 
@@ -86,15 +73,15 @@ module mem(
     reg load_addr_align_exception;
     reg store_addr_align_exception;
 
-    assign load_operation = ( (uopcode_i == `UOP_CODE_LH) || (uopcode_i == `UOP_CODE_LHU) ||(uopcode_i == `UOP_CODE_LW) ) ? 1'b1 : 1'b0;
+    assign load_operation = ( (uop_i == `UOP_CODE_LH) || (uop_i == `UOP_CODE_LHU) ||(uop_i == `UOP_CODE_LW) ) ? 1'b1 : 1'b0;
 
-    assign store_operation = ( (uopcode_i == `UOP_CODE_SH) ||(uopcode_i == `UOP_CODE_SW) ) ? 1'b1 : 1'b0;
+    assign store_operation = ( (uop_i == `UOP_CODE_SH) ||(uop_i == `UOP_CODE_SW) ) ? 1'b1 : 1'b0;
 
 
-    assign addr_align_halfword =(   ( (uopcode_i == `UOP_CODE_SH) || (uopcode_i == `UOP_CODE_LH) || (uopcode_i == `UOP_CODE_LHU) )
+    assign addr_align_halfword =(   ( (uop_i == `UOP_CODE_SH) || (uop_i == `UOP_CODE_LH) || (uop_i == `UOP_CODE_LHU) )
                                  && (mem_addr_i[0] == 1'b0) ) ? 1'b1 : 1'b0;
 
-    assign addr_align_word =(   ( (uopcode_i == `UOP_CODE_SW) || (uopcode_i == `UOP_CODE_LW) )
+    assign addr_align_word =(   ( (uop_i == `UOP_CODE_SW) || (uop_i == `UOP_CODE_LW) )
                              && (mem_addr_i[1:0] == 2'b00 ) ) ? 1'b1 : 1'b0;
 
     assign load_addr_align_exception = (~ (addr_align_halfword || addr_align_word)) & load_operation;
@@ -116,12 +103,12 @@ module mem(
     assign rd_addr_o = rd_wa_i;
     assign rd_wdata_o = rd_wd_i;
 
-    assign mem_we = ( (uopcode_i == `UOP_CODE_SB) || (uopcode_i == `UOP_CODE_SH)
-                    ||(uopcode_i == `UOP_CODE_SW) ) ? 1'b1 : 1'b0;
+    assign mem_we = ( (uop_i == `UOP_CODE_SB) || (uop_i == `UOP_CODE_SH)
+                    ||(uop_i == `UOP_CODE_SW) ) ? 1'b1 : 1'b0;
 
-    assign mem_re = ( (uopcode_i == `UOP_CODE_LB) || (uopcode_i == `UOP_CODE_LBU)
-	                ||(uopcode_i == `UOP_CODE_LH) || (uopcode_i == `UOP_CODE_LHU)
-			   	    ||(uopcode_i == `UOP_CODE_LW) ) ? 1'b1 : 1'b0;
+    assign mem_re = ( (uop_i == `UOP_CODE_LB) || (uop_i == `UOP_CODE_LBU)
+	                ||(uop_i == `UOP_CODE_LH) || (uop_i == `UOP_CODE_LHU)
+			   	    ||(uop_i == `UOP_CODE_LW) ) ? 1'b1 : 1'b0;
 
     assign mem_we_o = mem_we & (~(|exception_o));  // if exeception happened, give up the store operation on the ram
     assign mem_ce_o = mem_we_o | mem_re;
@@ -153,7 +140,7 @@ module mem(
             inst_o = `NOP_INST;
         end else begin
             mem_sel_o = 4'b1111;
-            case (uopcode_i)
+            case (uop_i)
                 `UOP_CODE_LB:     begin
                     case (mem_addr_i[1:0])
                         2'b00:  begin

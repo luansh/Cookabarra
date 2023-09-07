@@ -13,7 +13,7 @@ module ex(
     input wire branch_slot_end_i,
 
     input wire[`AluSelBus] alusel_i,
-    input wire[`AluOpBus] uopcode_i,
+    input wire[`AluOpBus] uop_i,
 
     input wire[`RegBus] rs1_data_i,
     input wire[`RegBus] rs2_data_i,
@@ -103,7 +103,7 @@ module ex(
     assign rd_we_o = rd_we_i;
     assign rd_addr_o = rd_wa_i;
 
-    assign uop_o = uopcode_i;
+    assign uop_o = uop_i;
 
     assign exception_o = exception_i;
 
@@ -177,7 +177,7 @@ module ex(
             mem_addr_o = `ZeroWord;
             mem_wdata_o = `ZeroWord;
         end else begin
-            case (uopcode_i)
+            case (uop_i)
                 /* ---------------------L-type instruction --------------*/
                 `UOP_CODE_LB, `UOP_CODE_LBU, `UOP_CODE_LH, `UOP_CODE_LHU, `UOP_CODE_LW:  begin
                     // lb rd,offset(rs1)  :  x[rd] = sext(M[x[rs1] + sext(offset)][7:0])
@@ -217,8 +217,8 @@ module ex(
 
     // handle csr instruction
     wire read_csr_enable;
-    assign read_csr_enable = (uopcode_i == `UOP_CODE_CSRRW) || (uopcode_i == `UOP_CODE_CSRRWI) || (uopcode_i == `UOP_CODE_CSRRS)
-                            || (uopcode_i == `UOP_CODE_CSRRSI) || (uopcode_i == `UOP_CODE_CSRRC) || (uopcode_i == `UOP_CODE_CSRRCI);
+    assign read_csr_enable = (uop_i == `UOP_CODE_CSRRW) || (uop_i == `UOP_CODE_CSRRWI) || (uop_i == `UOP_CODE_CSRRS)
+                            || (uop_i == `UOP_CODE_CSRRSI) || (uop_i == `UOP_CODE_CSRRC) || (uop_i == `UOP_CODE_CSRRCI);
 
     // get the lastest csr value to update the rd
     always @ (*) begin
@@ -247,7 +247,7 @@ module ex(
             csr_wdata_o = `ZeroWord;
         end else begin
             csr_wdata_o = `ZeroWord;
-            case (uopcode_i)
+            case (uop_i)
                 `UOP_CODE_CSRRW: begin
                     // csrrw rd,offset,rs1  :   t = CSRs[csr]; CSRs[csr] = x[rs1]; x[rd] = t
                     csr_wdata_o = rs1_data_i;
@@ -314,7 +314,7 @@ module ex(
             branch_redirect_o = 1'b0;
             branch_redirect_pc_o = `ZeroWord;;
             branch_tag_o = 1'b0;
-            case (uopcode_i)
+            case (uop_i)
                 `UOP_CODE_JAL: begin
                     // jal rd,offset  :  x[rd] = pc+4; pc += sext(offset)
                     jump_result = pc_plus_4;  //save to rd
@@ -403,10 +403,10 @@ module ex(
 
                 default: begin
                 end
-            endcase // case (uopcode_i)
+            endcase // case (uop_i)
 
-            if( (uopcode_i == `UOP_CODE_JAL) || (uopcode_i == `UOP_CODE_JALR) || (uopcode_i == `UOP_CODE_BEQ) || (uopcode_i == `UOP_CODE_BNE) ||
-                (uopcode_i == `UOP_CODE_BGE) || (uopcode_i == `UOP_CODE_BGEU) || (uopcode_i == `UOP_CODE_BLT) || (uopcode_i == `UOP_CODE_BLTU) ) begin
+            if( (uop_i == `UOP_CODE_JAL) || (uop_i == `UOP_CODE_JALR) || (uop_i == `UOP_CODE_BEQ) || (uop_i == `UOP_CODE_BNE) ||
+                (uop_i == `UOP_CODE_BGE) || (uop_i == `UOP_CODE_BGEU) || (uop_i == `UOP_CODE_BLT) || (uop_i == `UOP_CODE_BLTU) ) begin
 
                 branch_request_o = 1'b1;
 
@@ -426,7 +426,7 @@ module ex(
                         $display("miss predicted, pc=%h, branch_taken=%d, next_take=%d, next_pc=%h", pc_i, branch_is_taken_o, next_taken_i, next_pc_i);
                     end
                 end  // if(branch_is_taken_o == 1'b1) begin
-            end  //  if( (uopcode_i == `UOP_CODE_JAL) || (uopcode_i == `UOP_CODE_JALR) ||
+            end  //  if( (uop_i == `UOP_CODE_JAL) || (uop_i == `UOP_CODE_JALR) ||
         end  // if(n_rst_i == `RstEnable) begin
     end //always
 
@@ -438,7 +438,7 @@ module ex(
             logic_result = `ZeroWord;
         end else begin
             logic_result = `ZeroWord;
-            case (uopcode_i)
+            case (uop_i)
                `UOP_CODE_LUI:  begin
                     // lui rd,imm  :  x[rd] = sext(immediate[31:12] << 12)
                     logic_result = imm_i;
@@ -502,7 +502,7 @@ module ex(
                 default: begin
 
                 end
-            endcase // case (uopcode_i)
+            endcase // case (uop_i)
         end  // end else begin
     end //always
 
@@ -513,7 +513,7 @@ module ex(
             shift_result = `ZeroWord;
         end else begin
             shift_result = `ZeroWord;
-            case (uopcode_i)
+            case (uop_i)
                 `UOP_CODE_SLLI: begin
                     // slli rd,rs1,shamt  :   x[rd] = x[rs1] << shamt
                     shift_result = rs1_data_i << imm_i;
@@ -547,7 +547,7 @@ module ex(
                 default: begin
 
                 end
-            endcase // case (uopcode_i)
+            endcase // case (uop_i)
         end  // end else begin
     end //always
 
@@ -559,7 +559,7 @@ module ex(
             arithmetic_result = `ZeroWord;
         end else begin
             arithmetic_result = `ZeroWord;
-            case (uopcode_i)
+            case (uop_i)
                 `UOP_CODE_ADDI: begin
                     // addi rd,rs1,imm :  x[rd] = x[rs1] + sext(immediate)
                     arithmetic_result = rs1_add_imm;
@@ -578,7 +578,7 @@ module ex(
                 default: begin
 
                 end
-            endcase // case (uopcode_i)
+            endcase // case (uop_i)
         end  // end else begin
     end //always
 
@@ -601,7 +601,7 @@ module ex(
     assign rs2_data_invert = ~rs2_data_i + 1;
 
     always @ (*) begin
-        case (uopcode_i)
+        case (uop_i)
             `UOP_CODE_MULT, `UOP_CODE_MULHU: begin
                 mul_op1 = rs1_data_i;
                 mul_op2 = rs2_data_i;
@@ -630,7 +630,7 @@ module ex(
             mul_result = `ZeroWord;
         end else begin
             mul_result = `ZeroWord;
-            case (uopcode_i)
+            case (uop_i)
                 `UOP_CODE_MULT: begin
                     // mul rd,rs1,rs2  :    x[rd] = x[rs1] × x[rs2]
                     mul_result = mul_temp[31:0];
@@ -695,7 +695,7 @@ module ex(
             divisor_o = `ZeroWord;
             div_start_o = `DivStop;
             div_signed_o = 1'b0;
-            case (uopcode_i)
+            case (uop_i)
                 `UOP_CODE_DIV:        begin
                     // div rd,rs1,rs2  :   x[rd] = x[rs1] /s x[rs2]
                     if(div_ready_i == `DivResultNotReady) begin

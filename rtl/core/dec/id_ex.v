@@ -38,7 +38,7 @@ module id_ex(
     input wire branch_slot_end_i,
 
     input wire[`AluSelBus] alusel_i,
-    input wire[`AluOpBus] uopcode_i,
+    input wire[`AluOpBus] uop_i,
 
     input wire[`RegBus] rs1_data_i,
     input wire[`RegBus] rs2_data_i,
@@ -140,7 +140,7 @@ module id_ex(
             next_taken_o <= next_taken_i;
             branch_slot_end_o <= branch_slot_end_i;
 
-            uop_o <= uopcode_i;
+            uop_o <= uop_i;
             alusel_o <= alusel_i;
 
             rs1_data_o <= rs1_data_i;

@@ -35,7 +35,7 @@ module id(
     // some neccessary signals forwarded from exe unit, to detect data dependance.
     // if the exe unis is executing load instruction, and the rd is one of the rs,
     // notify the ctrl unit to stall pipeline
-    input wire[`AluOpBus] ex_uopcode_i,
+    input wire[`AluOpBus] ex_uop_i,
 
     // the rd info fowarded from ex to determine the data dependance
     input wire ex_rd_we_i,      // update the rd or not at exe stage
@@ -101,9 +101,9 @@ module id(
     assign stall_req_o = rs1_load_depend | rs2_load_depend;
 
     // check the instruction in the exu is a load type instruciotn or not
-    assign pre_inst_is_load = ( (ex_uopcode_i == `UOP_CODE_LB) || (ex_uopcode_i == `UOP_CODE_LBU)
-                              ||(ex_uopcode_i == `UOP_CODE_LH) || (ex_uopcode_i == `UOP_CODE_LHU)
-                              ||(ex_uopcode_i == `UOP_CODE_LW) ) ? 1'b1 : 1'b0;
+    assign pre_inst_is_load = ( (ex_uop_i == `UOP_CODE_LB) || (ex_uop_i == `UOP_CODE_LBU)
+                              ||(ex_uop_i == `UOP_CODE_LH) || (ex_uop_i == `UOP_CODE_LHU)
+                              ||(ex_uop_i == `UOP_CODE_LW) ) ? 1'b1 : 1'b0;
 
     assign pc_o = pc_i;
     assign imm_o = imm;
