@@ -23,108 +23,108 @@
 
 module ex(
 
-    input wire                    n_rst_i,
+    input wire n_rst_i,
 
     /* ------- signals from the decoder unit --------*/
-    input wire[`RegBus]           pc_i,
-    input wire[`RegBus]           inst_i,
+    input wire[`RegBus] pc_i,
+    input wire[`RegBus] inst_i,
 
-    input wire[`RegBus]           next_pc_i,
-	input wire                    next_taken_i,
-    input wire                    branch_slot_end_i,
+    input wire[`RegBus] next_pc_i,
+	input wire next_taken_i,
+    input wire branch_slot_end_i,
 
-    input wire[`AluSelBus]        alusel_i,
-    input wire[`AluOpBus]         uopcode_i,
+    input wire[`AluSelBus] alusel_i,
+    input wire[`AluOpBus] uopcode_i,
 
-    input wire[`RegBus]           rs1_data_i,
-    input wire[`RegBus]           rs2_data_i,
-    input wire[`RegBus]           imm_i,
+    input wire[`RegBus] rs1_data_i,
+    input wire[`RegBus] rs2_data_i,
+    input wire[`RegBus] imm_i,
 
-    input wire                    rd_we_i,
-    input wire[`RegAddrBus]       rd_addr_i,
+    input wire rd_we_i,
+    input wire[`RegAddrBus] rd_wa_i,
 
-    input wire                    csr_we_i,       // write csr or not
-    input wire[`RegBus]           csr_addr_i,     // the csr address, could be read or write
+    input wire csr_we_i,       // write csr or not
+    input wire[`RegBus] csr_addr_i,     // the csr address, could be read or write
 
-    input wire[31:0]              exception_i,    // the execeptions detected in the decode stage, ecall, mret, invalid instructions
+    input wire[31:0] exception_i,    // the execeptions detected in the decode stage, ecall, mret, invalid instructions
 
     /* ------- signals with division unit --------*/
-    output reg[`RegBus]           dividend_o,
-    output reg[`RegBus]           divisor_o,
-    output reg                    div_start_o,
-    // output reg                 div_annul_o,   // not used at the moment
-    output reg                    div_signed_o,
+    output reg[`RegBus] dividend_o,
+    output reg[`RegBus] divisor_o,
+    output reg div_start_o,
+    // output reg div_annul_o,   // not used at the moment
+    output reg div_signed_o,
 
-    input wire[`DoubleRegBus]     div_result_i,   // the result of the division,the low 32 bits are the quotient, the higher 32 bits are the remainder
-    input wire                    div_ready_i,    //the divison result is ready
+    input wire[`DoubleRegBus] div_result_i,   // the result of the division,the low 32 bits are the quotient, the higher 32 bits are the remainder
+    input wire div_ready_i,    //the divison result is ready
 
     /* ------- signals to the ctrl unit --------*/
-    output reg                    stall_req_o,     // need to stall the pipeline on the division operation, it needs 32 cycles
+    output reg stall_req_o,     // need to stall the pipeline on the division operation, it needs 32 cycles
 
     /* ------- signals with csr unit --------*/
-    output reg[`RegBus]           csr_raddr_o,
-    input wire[`RegBus]           csr_rdata_i,
+    output reg[`RegBus] csr_raddr_o,
+    input wire[`RegBus] csr_rdata_i,
 
     /* ------- bypass signals from lsu, for csr dependance detection --------*/
-    input wire                    mem_csr_we_i,
-    input wire[`RegBus]           mem_csr_waddr_i,
-    input wire[`RegBus]           mem_csr_wdata_i,
+    input wire mem_csr_we_i,
+    input wire[`RegBus] mem_csr_waddr_i,
+    input wire[`RegBus] mem_csr_wdata_i,
 
     /* ------- bypass signals from write back, for csr dependance detection --------*/
-    input wire                    wb_csr_we_i,
-    input wire[`RegBus]           wb_csr_waddr_i,
-    input wire[`RegBus]           wb_csr_wdata_i,
+    input wire wb_csr_we_i,
+    input wire[`RegBus] wb_csr_waddr_i,
+    input wire[`RegBus] wb_csr_wdata_i,
 
 
     /* ------- passed to next pipeline --------*/
-    output reg[`RegBus]           pc_o,
-    output reg[`RegBus]           inst_o,
+    output reg[`RegBus] pc_o,
+    output reg[`RegBus] inst_o,
 
     //branch related
-    output reg                    branch_request_o,  // is this instruction a branch/jump ?
-    output reg                    branch_is_taken_o,
-    output reg                    branch_is_call_o,
-    output reg                    branch_is_ret_o,
-    output reg                    branch_is_jmp_o,
-    output reg[`RegBus]           branch_target_o,
+    output reg branch_request_o,  // is this instruction a branch/jump ?
+    output reg branch_is_taken_o,
+    output reg branch_is_call_o,
+    output reg branch_is_ret_o,
+    output reg branch_is_jmp_o,
+    output reg[`RegBus] branch_target_o,
 
-    output reg                    branch_redirect_o,  // if this is a branch instruction and branch miss predicted
-    output reg[`RegBus]           branch_redirect_pc_o,
+    output reg branch_redirect_o,  // if this is a branch instruction and branch miss predicted
+    output reg[`RegBus] branch_redirect_pc_o,
 
-    output reg                    branch_tag_o,
-    output reg                    branch_slot_end_o,
+    output reg branch_tag_o,
+    output reg branch_slot_end_o,
 
-    output reg                    csr_we_o,
-    output reg[`RegBus]           csr_waddr_o,
-    output reg[`RegBus]           csr_wdata_o,
+    output reg csr_we_o,
+    output reg[`RegBus] csr_waddr_o,
+    output reg[`RegBus] csr_wdata_o,
 
-    output reg                    rd_we_o,
-    output reg[`RegAddrBus]       rd_addr_o,
-    output reg[`RegBus]           rd_wdata_o,
+    output reg rd_we_o,
+    output reg[`RegAddrBus] rd_addr_o,
+    output reg[`RegBus] rd_wdata_o,
 
-    output reg[`AluOpBus]         uopcode_o,    // used in the lsu, for determine it is a load or store
-    output reg[`RegBus]           mem_addr_o,   // the memory address to access
-    output reg[`RegBus]           mem_wdata_o,  // the data to write to the memory for the store instruction
+    output reg[`AluOpBus] uop_o,    // used in the lsu, for determine it is a load or store
+    output reg[`RegBus] mem_addr_o,   // the memory address to access
+    output reg[`RegBus] mem_wdata_o,  // the data to write to the memory for the store instruction
 
 	// the accumulated exception if there are some
-    output reg[31:0]             exception_o
+    output reg[31:0] exception_o
 );
-    reg    stallreq_for_div;
+    reg stallreq_for_div;
 
     assign pc_o = pc_i;
     assign inst_o = inst_i;
     assign branch_slot_end_o = branch_slot_end_i;
 
     // to identify call or ret
-    wire[4:0]  rs1 = inst_i[19:15];
+    wire[4:0] rs1 = inst_i[19:15];
 
-    assign csr_we_o =  csr_we_i;
+    assign csr_we_o = csr_we_i;
     assign csr_waddr_o = csr_addr_i;
 
     assign rd_we_o = rd_we_i;
-    assign rd_addr_o = rd_addr_i;
+    assign rd_addr_o = rd_wa_i;
 
-    assign uopcode_o = uopcode_i;
+    assign uop_o = uopcode_i;
 
     assign exception_o = exception_i;
 
@@ -132,7 +132,7 @@ module ex(
     assign pc_plus_4 = pc_i + 4;    //for jar or jalr, the rd should be updated to pc + 4
 
     wire[`RegBus] pc_add_imm;
-    assign pc_add_imm =  pc_i + imm_i;
+    assign pc_add_imm = pc_i + imm_i;
 
     wire[`RegBus] rs1_add_imm;
     assign rs1_add_imm = rs1_data_i + imm_i;
@@ -147,10 +147,10 @@ module ex(
     assign  rs1_xor_imm = rs1_data_i ^ imm_i;
 
     wire[`RegBus] rs1_add_rs2;
-    assign rs1_add_rs2 =  rs1_data_i + rs2_data_i;
+    assign rs1_add_rs2 = rs1_data_i + rs2_data_i;
 
     wire[`RegBus] rs1_sub_rs2;
-    assign rs1_sub_rs2 =  rs1_data_i - rs2_data_i;
+    assign rs1_sub_rs2 = rs1_data_i - rs2_data_i;
 
     wire[`RegBus] rs1_and_rs2;
     assign  rs1_and_rs2 = rs1_data_i & rs2_data_i;
@@ -343,7 +343,7 @@ module ex(
                     branch_is_taken_o = 1'b1;
 
                     /* A JAL instruction should push the return address onto a return-address stack (RAS) only when rd=x1/x5.*/
-                    if( (rd_addr_i == 5'b00001) || (rd_addr_i == 5'b00101) ) begin
+                    if( (rd_wa_i == 5'b00001) || (rd_wa_i == 5'b00101) ) begin
                         branch_is_call_o = 1'b1;
                     end else begin
                         branch_is_jmp_o = 1'b1;
@@ -365,9 +365,9 @@ module ex(
                    (4) link  |   link   | 0       |   push and pop
                    (5) link  |   link   | 1       |   push
                     ------------------------------------------------ */
-                    if(rd_addr_i == 5'b00001 || rd_addr_i == 5'b00101) begin  //rd is linker reg
+                    if(rd_wa_i == 5'b00001 || rd_wa_i == 5'b00101) begin  //rd is linker reg
                         if(rs1 == 5'b00001 || rs1 == 5'b00101) begin  //rs1 is linker reg as well
-                            if(rd_addr_i == rs1) begin     //(5)
+                            if(rd_wa_i == rs1) begin     //(5)
                                 branch_is_call_o = 1'b1;
                             end else begin
                                 branch_is_call_o = 1'b1;   //(4)
@@ -382,7 +382,7 @@ module ex(
                         end else begin  //rs1 is not linker reg
                             branch_is_jmp_o = 1'b1; // (1)
                         end
-                    end //if(rd_addr_i == 5'b00001 || rd_addr_i == 5'b00101) begin
+                    end //if(rd_wa_i == 5'b00001 || rd_wa_i == 5'b00101) begin
                end
 
                 /* ---------------------B-Type instruction --------------*/
@@ -419,7 +419,7 @@ module ex(
                 `UOP_CODE_BLTU: begin
                     // bltu rs1,rs2,offset  :   if (rs1 >u rs2) pc += sext(offset)
                     branch_target_o = pc_add_imm;
-                    branch_is_taken_o =  (~rs1_ge_rs2_unsigned);
+                    branch_is_taken_o = (~rs1_ge_rs2_unsigned);
                 end
 
                 default: begin
@@ -497,17 +497,17 @@ module ex(
 
                `UOP_CODE_AND: begin
                     // and rd,rs1,rs2  :  x[rd] = x[rs1] & x[rs2]
-                    logic_result =  rs1_and_rs2;
+                    logic_result = rs1_and_rs2;
                 end
 
                 `UOP_CODE_OR: begin
                     // or rd,rs1,rs2  :  x[rd] = x[rs1] | x[rs2]
-                    logic_result =  rs1_or_rs2;
+                    logic_result = rs1_or_rs2;
                 end
 
                 `UOP_CODE_XOR: begin
                     // xor rd,rs1,rs2  :  x[rd] = x[rs1] ^ x[rs2]
-                    logic_result =  rs1_xor_rs2;
+                    logic_result = rs1_xor_rs2;
                 end
 
                 `UOP_CODE_SLT: begin
@@ -552,17 +552,17 @@ module ex(
 
                `UOP_CODE_SLL: begin
                     // sll rd,rs1,rs2  :   x[rd] = x[rs1] << x[rs2]
-                    shift_result =  rs1_data_i << rs2_data_i[4:0];
+                    shift_result = rs1_data_i << rs2_data_i[4:0];
                 end
 
                 `UOP_CODE_SRL: begin
                     // srl rd,rs1,rs2  :   x[rd] = x[rs1] >>u x[rs2]
-                    shift_result =  rs1_data_i >> rs2_data_i[4:0];
+                    shift_result = rs1_data_i >> rs2_data_i[4:0];
                 end
 
                 `UOP_CODE_SRA: begin
                     // sra rd,rs1,rs2  :   x[rd] = x[rs1] >>s x[rs2]
-                    shift_result =  (sr_shift & sr_shift_mask) | ({32{rs1_data_i[31]}} & (~sr_shift_mask));
+                    shift_result = (sr_shift & sr_shift_mask) | ({32{rs1_data_i[31]}} & (~sr_shift_mask));
                 end
 
                 default: begin
@@ -798,7 +798,7 @@ module ex(
 //选择对应类型的运算结果
     /* selector the alu result to write to the rd*/
     always @ (*) begin
-        rd_addr_o = rd_addr_i;
+        rd_addr_o = rd_wa_i;
         case ( alusel_i )
             `EXE_TYPE_BRANCH:  begin
                 rd_wdata_o = jump_result;

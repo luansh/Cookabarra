@@ -23,32 +23,32 @@
 
 module if_id(
 
-    input wire                    clk_i,
-    input wire                    n_rst_i,
+    input wire clk_i,
+    input wire n_rst_i,
 
     /* ------- signals from the ctrl unit --------*/
-    input wire[5:0]               stall_i,
-    input wire                    flush_i,
+    input wire[5:0] stall_i,
+    input wire flush_i,
 
     /* ------- signals from the ifu  -------------*/
-    input wire[`InstAddrBus]      pc_i,
-    input wire[`InstAddrBus]      next_pc_i,
-    input wire                    next_taken_i,
-	input wire                    branch_slot_end_i,
+    input wire[`InstAddrBus] pc_i,
+    input wire[`InstAddrBus] next_pc_i,
+    input wire next_taken_i,
+	input wire branch_slot_end_i,
 
     /* ------- signals from the inst_rom  --------*/
-    input wire[`InstBus]          inst_i, //the instruction
+    input wire[`InstBus] inst_i, //the instruction
 
     /* ---------signals from exu -----------------*/
-    input wire                    branch_redirect_i,
+    input wire branch_redirect_i,
 
 	/* ------- signals to the decode -------------*/
-    output reg[`InstAddrBus]      pc_o,
-    output reg[`InstBus]          inst_o,
-    output reg[`InstAddrBus]      next_pc_o,
-    output reg                    next_taken_o,
+    output reg[`InstAddrBus] pc_o,
+    output reg[`InstBus] inst_o,
+    output reg[`InstAddrBus] next_pc_o,
+    output reg next_taken_o,
 
-	output reg                    branch_slot_end_o
+	output reg branch_slot_end_o
 );
 
     always @ (posedge clk_i) begin

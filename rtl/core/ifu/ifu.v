@@ -22,35 +22,35 @@
 `include "defines.v"
 
 module ifu(
-    input   wire                  clk_i,
-    input   wire                  n_rst_i,
+    input   wire clk_i,
+    input   wire n_rst_i,
 
     /* ------- signals from the ctrl unit --------*/
-    input wire[5:0]               stall_i,
-    input wire                    flush_i,
-    input wire[`InstAddrBus]      new_pc_i,
+    input wire[5:0] stall_i,
+    input wire flush_i,
+    input wire[`InstAddrBus] new_pc_i,
 
     /* --------signals from bp --------------------*/
-    input reg[`InstAddrBus]       next_pc_i,     // next pc predicted by bp
-    input reg                     next_taken_i,  // next pc is a branch take or not? forward to execute via fetch module
+    input reg[`InstAddrBus] next_pc_i,     // next pc predicted by bp
+    input reg next_taken_i,  // next pc is a branch take or not? forward to execute via fetch module
 
     //bypass from exu
-    input wire                    branch_redirect_i,     //miss predicted, need to redirect the pc
-    input wire[`InstAddrBus]      branch_redirect_pc_i,  //the redirect pc
+    input wire branch_redirect_i,     //miss predicted, need to redirect the pc
+    input wire[`InstAddrBus] branch_redirect_pc_i,  //the redirect pc
 
 	/* ------- signals to inst_rom and decode unit --------*/
-    output reg[`InstAddrBus]      pc_o, // the pc, to the inst_rom and decode module
-    output reg                    ce_o,  // to inst_rom
+    output reg[`InstAddrBus] pc_o, // the pc, to the inst_rom and decode module
+    output reg ce_o,  // to inst_rom
 
     /* ---stall the pipeline, waiting for the rom to response with instruction ----*/
-    output wire                   stall_req_o,
+    output wire stall_req_o,
 
     /*-----the prediction info to exe unit---------------*/
-    output reg[`InstAddrBus]      next_pc_o,     // next pc predicted by bp
-    output reg                    next_taken_o,
+    output reg[`InstAddrBus] next_pc_o,     // next pc predicted by bp
+    output reg next_taken_o,
 
     /*-----if miss predicted, redirected pc to branch target started from here*/
-    output reg                    branch_slot_end_o
+    output reg branch_slot_end_o
 );
 
     // if the rom can not response in the same cycle, need to set the stall_req_o

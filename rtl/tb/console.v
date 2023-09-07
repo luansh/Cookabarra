@@ -22,16 +22,16 @@ module console #(
   // simulation is running).
   parameter bit    FlushOnChar = 1
 ) (
-  input wire              clk_i,
-  input wire              rst_ni,
+  input wire clk_i,
+  input wire rst_ni,
 
-  input  wire             req_i,
-  input  wire             we_i,
-  input  wire[3:0]        be_i,
-  input  wire[31:0]       addr_i,
-  input  wire[31:0]       wdata_i,
-  output reg              rvalid_o,
-  output reg[31:0]        rdata_o
+  input  wire req_i,
+  input  wire we_i,
+  input  wire[3:0] be_i,
+  input  wire[31:0] addr_i,
+  input  wire[31:0] wdata_i,
+  output reg rvalid_o,
+  output reg[31:0] rdata_o
 );
 
   localparam reg[7:0] CHAR_OUT_ADDR = 8'h0;

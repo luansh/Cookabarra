@@ -25,27 +25,27 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
                             parameter NUM_BTB_ENTRIES  = 64,
                             parameter NUM_BHT_ENTRIES  = 64)
 (
-    input wire                 clk_i,
-    input wire                 n_rst_i,
+    input wire clk_i,
+    input wire n_rst_i,
     // input signals from execution unit
-    input wire[`InstAddrBus]   branch_source_i,   // the pc caused the branch
-    input wire                 branch_request_i,
-    input wire                 branch_is_taken_i,
-    input wire                 branch_is_call_i,
-    input wire                 branch_is_ret_i,
-    input wire                 branch_is_jmp_i,
-    input wire[`InstAddrBus]   branch_target_i,   // the branch target pc
-    input wire                 branch_mispredict_i,
+    input wire[`InstAddrBus] branch_source_i,   // the pc caused the branch
+    input wire branch_request_i,
+    input wire branch_is_taken_i,
+    input wire branch_is_call_i,
+    input wire branch_is_ret_i,
+    input wire branch_is_jmp_i,
+    input wire[`InstAddrBus] branch_target_i,   // the branch target pc
+    input wire branch_mispredict_i,
 
     //input signals from fetch unit
-    input wire[`InstAddrBus]   pc_i,    // the current PC from fetch unit
+    input wire[`InstAddrBus] pc_i,    // the current PC from fetch unit
 
     //input signals from ctrl
-    input wire                 stall_i, // to avoid one ret/call instruction to cause multiple ras push or pop operation
+    input wire stall_i, // to avoid one ret/call instruction to cause multiple ras push or pop operation
 
     // output signals to fetch unit
-    output reg[`InstAddrBus]   next_pc_o,    // next pc predicted by this module
-    output reg                 next_taken_o  // next pc is a branch take or not, forward to execute via fetch module
+    output reg[`InstAddrBus] next_pc_o,    // next pc predicted by this module
+    output reg next_taken_o  // next pc is a branch take or not, forward to execute via fetch module
 );
 
     localparam BHT_ENTRIES_WIDTH = $clog2(NUM_BHT_ENTRIES);
@@ -94,19 +94,19 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
     //  (2) if the entry is a "ret",  select the RAS as the next_pc
     //  (3) otherwise, resort to the BHT(BIM) to select target_pc or pc_i+4 as the next_pc
     //-----------------------------------------------------------------
-    reg                 btb_is_valid_list[NUM_BTB_ENTRIES-1:0];
-    reg [`InstAddrBus]  btb_source_pc_list[NUM_BTB_ENTRIES-1:0];
-    reg                 btb_is_call_list[NUM_BTB_ENTRIES-1:0];
-    reg                 btb_is_ret_list[NUM_BTB_ENTRIES-1:0];
-    reg                 btb_is_jmp_list[NUM_BTB_ENTRIES-1:0];
-    reg [`InstAddrBus]  btb_target_pc_list[NUM_BTB_ENTRIES-1:0];
+    reg btb_is_valid_list[NUM_BTB_ENTRIES-1:0];
+    reg [`InstAddrBus] btb_source_pc_list[NUM_BTB_ENTRIES-1:0];
+    reg btb_is_call_list[NUM_BTB_ENTRIES-1:0];
+    reg btb_is_ret_list[NUM_BTB_ENTRIES-1:0];
+    reg btb_is_jmp_list[NUM_BTB_ENTRIES-1:0];
+    reg [`InstAddrBus] btb_target_pc_list[NUM_BTB_ENTRIES-1:0];
 
     // ------------ process of looking up the btb based on pc ----------------
-    reg                 btb_is_matched;
-    reg                 btb_is_call;
-    reg                 btb_is_ret;
-    reg                 btb_is_jmp;
-    reg [`InstAddrBus]  btb_target_pc;
+    reg btb_is_matched;
+    reg btb_is_call;
+    reg btb_is_ret;
+    reg btb_is_jmp;
+    reg [`InstAddrBus] btb_target_pc;
 
     reg[BTB_ENTRIES_WIDTH-1:0] btb_rd_entry;
     integer i0;
@@ -139,15 +139,15 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
     end // always @ ( * ) begin
 
     // further check ras matched or not, if yes, get the next pc from the RAS
-    wire  ras_call_matched =  (btb_is_matched & btb_is_call);
-    wire  ras_ret_matched  =  (btb_is_matched & btb_is_ret);
+    wire ras_call_matched = (btb_is_matched & btb_is_call);
+    wire ras_ret_matched  = (btb_is_matched & btb_is_ret);
 
     // --------------------  process of updating the btb ----------------------------
-    reg[BTB_ENTRIES_WIDTH-1:0]  btb_write_entry;  // the btb entry to be updated
+    reg[BTB_ENTRIES_WIDTH-1:0] btb_write_entry;  // the btb entry to be updated
     wire[BTB_ENTRIES_WIDTH-1:0] btb_alloc_entry;  // allocate a new entry to store the branch target
 
-    reg  btb_hit;
-    reg  btb_alloc_req;
+    reg btb_hit;
+    reg btb_alloc_req;
     integer  i1;
 
     always @ ( * ) begin

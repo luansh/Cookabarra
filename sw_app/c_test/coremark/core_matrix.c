@@ -185,7 +185,7 @@ ee_u32 core_init_matrix(ee_u32 blksize, void *memblk, ee_s32 seed, mat_params *p
 			val = (seed + order);
 			val=matrix_clip(val,0);
 			B[i*N+j] = val;
-			val =  (val + order);
+			val = (val + order);
 			val=matrix_clip(val,1);
 			A[i*N+j] = val;
 			order++;

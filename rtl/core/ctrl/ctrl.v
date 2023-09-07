@@ -24,50 +24,50 @@
 `include "defines.v"
 
 module ctrl(
-    input wire                   clk_i,
-    input wire                   n_rst_i,
+    input wire clk_i,
+    input wire n_rst_i,
 
-    input wire[`RegBus]          exception_i,
-    input wire[`RegBus]          pc_i,
-    input wire[`RegBus]          inst_i,
+    input wire[`RegBus] exception_i,
+    input wire[`RegBus] pc_i,
+    input wire[`RegBus] inst_i,
 
     /* ----- stall request from other modules --------*/
-    input wire                   stallreq_from_if_i,
-    input wire                   stallreq_from_id_i,
-    input wire                   stallreq_from_ex_i,
-    input wire                   stallreq_from_mem_i,
+    input wire stallreq_from_if_i,
+    input wire stallreq_from_id_i,
+    input wire stallreq_from_ex_i,
+    input wire stallreq_from_mem_i,
 
     /* ------------  signals from CSR  ---------------*/
-    input wire                   mstatus_ie_i,    // global interrupt enabled or not
-    input wire                   mie_external_i,  // external interrupt enbled or not
-    input wire                   mie_timer_i,     // timer interrupt enabled or not
-    input wire                   mie_sw_i,        // sw interrupt enabled or not
+    input wire mstatus_ie_i,    // global interrupt enabled or not
+    input wire mie_external_i,  // external interrupt enbled or not
+    input wire mie_timer_i,     // timer interrupt enabled or not
+    input wire mie_sw_i,        // sw interrupt enabled or not
 
-    input wire                   mip_external_i,   // external interrupt pending
-    input wire                   mip_timer_i,      // timer interrupt pending
-    input wire                   mip_sw_i,         // sw interrupt pending
+    input wire mip_external_i,   // external interrupt pending
+    input wire mip_timer_i,      // timer interrupt pending
+    input wire mip_sw_i,         // sw interrupt pending
 
-    input wire[`RegBus]          mtvec_i,          // the trap vector
-    input wire[`RegBus]          epc_i,            // get the epc for the mret instruction
+    input wire[`RegBus] mtvec_i,          // the trap vector
+    input wire[`RegBus] epc_i,            // get the epc for the mret instruction
 
     /* ------------  signals from CSR  ---------------*/
-    output reg                   ie_type_o,
-    output reg                   set_cause_o,
-    output reg[3:0]              trap_casue_o,
+    output reg ie_type_o,
+    output reg set_cause_o,
+    output reg[3:0] trap_casue_o,
 
-    output reg                   set_epc_o,
-    output reg[`RegBus]          epc_o,
+    output reg set_epc_o,
+    output reg[`RegBus] epc_o,
 
-    output reg                   set_mtval_o,
-    output reg[`RegBus]          mtval_o,
+    output reg set_mtval_o,
+    output reg[`RegBus] mtval_o,
 
-    output reg                   mstatus_ie_clear_o,
-    output reg                   mstatus_ie_set_o,
+    output reg mstatus_ie_clear_o,
+    output reg mstatus_ie_set_o,
 
     /* ---signals to other stages of the pipeline  ----*/
-    output reg[5:0]              stall_o,   // stall request to PC,IF_ID, ID_EX, EX_MEM, MEM_WB， one bit for one stage respectively
-    output reg                   flush_o,   // flush the whole pipleline, exception or interrupt happens
-    output reg[`RegBus]          new_pc_o   // notify the ifu to fetch the instruction from the new PC
+    output reg[5:0] stall_o,   // stall request to PC,IF_ID, ID_EX, EX_MEM, MEM_WB， one bit for one stage respectively
+    output reg flush_o,   // flush the whole pipleline, exception or interrupt happens
+    output reg[`RegBus] new_pc_o   // notify the ifu to fetch the instruction from the new PC
 );
 
     /* --------------------- handle the stall request -------------------*/
@@ -104,21 +104,21 @@ module ctrl(
     parameter STATE_TRAP_RETURN   = 4'b1000;
 
     //exception_i ={25'b0 ,misaligned_load, misaligned_store, illegal_inst, misaligned_inst, ebreak, ecall, mret}
-    wire   mret;
-    wire   ecall;
-    wire   ebreak;
-    wire   misaligned_inst;
-    wire   illegal_inst;
-    wire   misaligned_store;
-    wire   misaligned_load;
+    wire mret;
+    wire ecall;
+    wire ebreak;
+    wire misaligned_inst;
+    wire illegal_inst;
+    wire misaligned_store;
+    wire misaligned_load;
 
     assign {misaligned_load, misaligned_store, illegal_inst, misaligned_inst, ebreak, ecall, mret} = exception_i[6:0];
 
     /* check there is a interrupt on pending*/
-    wire   eip;
-    wire   tip;
-    wire   sip;
-    wire   ip;
+    wire eip;
+    wire tip;
+    wire sip;
+    wire ip;
 
     assign eip = mie_external_i & mip_external_i;
     assign tip = mie_timer_i &  mip_timer_i;
@@ -126,7 +126,7 @@ module ctrl(
     assign ip = eip | tip | sip;
 
     /* an interrupt or an exception, need to be processed */
-    wire   trap_happened;
+    wire trap_happened;
     assign trap_happened = (mstatus_ie_i & ip) | ecall | misaligned_inst | illegal_inst | misaligned_store | misaligned_load;
 
     always @ (*)   begin
@@ -167,8 +167,8 @@ module ctrl(
 
     assign epc_o = pc_i;
 
-    reg [1:0]          mtvec_mode; // machine trap mode
-    reg [29:0]         mtvec_base; // machine trap base address
+    reg [1:0] mtvec_mode; // machine trap mode
+    reg [29:0] mtvec_base; // machine trap base address
 
     assign mtvec_base = mtvec_i[31:2];
     assign mtvec_mode = mtvec_i[1:0];
@@ -219,7 +219,7 @@ module ctrl(
 
             STATE_TRAP_RETURN: begin
                 flush_o = 1'b1;
-                new_pc_o =  epc_i;
+                new_pc_o = epc_i;
                 set_epc_o = 1'b0;
                 set_cause_o = 1'b0;
                 mstatus_ie_clear_o = 1'b0;

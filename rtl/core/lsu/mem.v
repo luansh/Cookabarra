@@ -25,66 +25,66 @@
 
 module mem(
 
-    input wire                    n_rst_i,
+    input wire n_rst_i,
 
     /*-- signals from exu-----*/
-    input wire[`RegBus]           exception_i,       // exception type
-    input wire[`RegBus]           pc_i,       // the pc when exception happened
-    input wire[`RegBus]           inst_i,            // the instruction caused the exception
+    input wire[`RegBus] exception_i,       // exception type
+    input wire[`RegBus] pc_i,       // the pc when exception happened
+    input wire[`RegBus] inst_i,            // the instruction caused the exception
 
-    input wire                    rd_we_i,
-    input wire[`RegAddrBus]       rd_addr_i,
-    input wire[`RegBus]           rd_wdata_i,
+    input wire rd_we_i,
+    input wire[`RegAddrBus] rd_wa_i,
+    input wire[`RegBus] rd_wd_i,
 
-    input wire[`AluOpBus]         uopcode_i,         //uop_code, to determine it is a load or a store
-    input wire[`RegBus]           mem_addr_i,
-    input wire[`RegBus]           mem_wdata_i,
+    input wire[`AluOpBus] uopcode_i,         //uop_code, to determine it is a load or a store
+    input wire[`RegBus] mem_addr_i,
+    input wire[`RegBus] mem_wdata_i,
 
     /*-- signals to access the external memory -----*/
-    output reg[`RegBus]           mem_addr_o,
-    output wire                   mem_we_o,
-    output reg[3:0]               mem_sel_o,          //the selector for bytes operation
-    output reg[`RegBus]           mem_data_o,
-    output reg                    mem_ce_o,
-    input wire[`RegBus]           mem_data_i,        //the read result from memroy
+    output reg[`RegBus] mem_addr_o,
+    output wire mem_we_o,
+    output reg[3:0] mem_sel_o,          //the selector for bytes operation
+    output reg[`RegBus] mem_data_o,
+    output reg mem_ce_o,
+    input wire[`RegBus] mem_data_i,        //the read result from memroy
 
-    input wire                    csr_we_i,
-    input wire[`RegBus]           csr_waddr_i,
-    input wire[`RegBus]           csr_wdata_i,
+    input wire csr_we_i,
+    input wire[`RegBus] csr_waddr_i,
+    input wire[`RegBus] csr_wdata_i,
 
     /*-- signals from write back for data dependance detection -----*/
-    input wire                    wb_csr_we_i,
-    input wire[`RegBus]           wb_csr_waddr_i,
-    input wire[`RegBus]           wb_csr_wdata_i,
+    input wire wb_csr_we_i,
+    input wire[`RegBus] wb_csr_waddr_i,
+    input wire[`RegBus] wb_csr_wdata_i,
 
     /*-- pass down to mem_wb stage -----*/
-    output reg                    rd_we_o,
-    output reg[`RegAddrBus]       rd_addr_o,
-    output reg[`RegBus]           rd_wdata_o,
+    output reg rd_we_o,
+    output reg[`RegAddrBus] rd_addr_o,
+    output reg[`RegBus] rd_wdata_o,
 
-    output reg                    csr_we_o,
-    output reg[`RegBus]           csr_waddr_o,
-    output reg[`RegBus]           csr_wdata_o,
+    output reg csr_we_o,
+    output reg[`RegBus] csr_waddr_o,
+    output reg[`RegBus] csr_wdata_o,
 
     /*------- signals to control ----------*/
-    output wire                   stall_req_o,
-    output reg[`RegBus]           exception_o,
-    output reg[`RegBus]           pc_o,
-    output reg[`RegBus]           inst_o
+    output wire stall_req_o,
+    output reg[`RegBus] exception_o,
+    output reg[`RegBus] pc_o,
+    output reg[`RegBus] inst_o
 
 );
 
-    reg  mem_we;
-    reg  mem_re;
+    reg mem_we;
+    reg mem_re;
 
-    reg  addr_align_halfword;
-    reg  addr_align_word;
+    reg addr_align_halfword;
+    reg addr_align_word;
 
-    reg  load_operation;
-    reg  store_operation;
+    reg load_operation;
+    reg store_operation;
 
-    reg  load_addr_align_exception;
-    reg  store_addr_align_exception;
+    reg load_addr_align_exception;
+    reg store_addr_align_exception;
 
     assign load_operation = ( (uopcode_i == `UOP_CODE_LH) || (uopcode_i == `UOP_CODE_LHU) ||(uopcode_i == `UOP_CODE_LW) ) ? 1'b1 : 1'b0;
 
@@ -113,8 +113,8 @@ module mem(
     assign csr_wdata_o = csr_wdata_i;
 
     assign rd_we_o = rd_we_i;
-    assign rd_addr_o = rd_addr_i;
-    assign rd_wdata_o = rd_wdata_i;
+    assign rd_addr_o = rd_wa_i;
+    assign rd_wdata_o = rd_wd_i;
 
     assign mem_we = ( (uopcode_i == `UOP_CODE_SB) || (uopcode_i == `UOP_CODE_SH)
                     ||(uopcode_i == `UOP_CODE_SW) ) ? 1'b1 : 1'b0;
@@ -150,7 +150,7 @@ module mem(
 
             exception_o = `ZeroWord;
             pc_o = `ZeroWord;
-            inst_o =  `NOP_INST;
+            inst_o = `NOP_INST;
         end else begin
             mem_sel_o = 4'b1111;
             case (uopcode_i)

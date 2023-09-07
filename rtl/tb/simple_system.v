@@ -24,13 +24,13 @@
 
 module simple_system(
 
-    input  wire          clk_i,
-    input  wire          n_rst_i,
+    input  wire clk_i,
+    input  wire n_rst_i,
 
-    input  wire          jtag_TCK,     // JTAG TCK
-    input  wire          jtag_TMS,     // JTAG TMS
-    input  wire          jtag_TDI,     // JTAG TDI
-    output wire          jtag_TDO      // JTAG TDO    
+    input  wire jtag_TCK,     // JTAG TCK
+    input  wire jtag_TMS,     // JTAG TMS
+    input  wire jtag_TDI,     // JTAG TDI
+    output wire jtag_TDO      // JTAG TDO    
 );
 
    localparam int NrDevices = 3;
@@ -42,33 +42,33 @@ module simple_system(
    `define     DEV_TIMER          2
 
     //wires connected cpu fetch address and rom
-    wire               rom_ce;
+    wire rom_ce;
     wire[`InstAddrBus] inst_addr;
-    wire[`InstBus]     inst;
+    wire[`InstBus] inst;
 
     // wire connected timer and cpu irq_timer 
     wire timer_irq_O;
 
     // host and device signals
-    wire           host_req    [NrHosts];
-    wire           host_gnt    [NrHosts];
-    wire [31:0]    host_addr   [NrHosts];
-    wire           host_we     [NrHosts];
-    wire [3:0]     host_be     [NrHosts];
-    wire [31:0]    host_wdata  [NrHosts];
-    wire           host_rvalid [NrHosts];
-    wire [31:0]    host_rdata  [NrHosts];
-    wire           host_err    [NrHosts];
+    wire host_req    [NrHosts];
+    wire host_gnt    [NrHosts];
+    wire [31:0] host_addr   [NrHosts];
+    wire host_we     [NrHosts];
+    wire [3:0] host_be     [NrHosts];
+    wire [31:0] host_wdata  [NrHosts];
+    wire host_rvalid [NrHosts];
+    wire [31:0] host_rdata  [NrHosts];
+    wire host_err    [NrHosts];
 
     // devices (slaves)
-    wire           device_req    [NrDevices];
-    wire [31:0]    device_addr   [NrDevices];
-    wire           device_we     [NrDevices];
-    wire [ 3:0]    device_be     [NrDevices];
-    wire [31:0]    device_wdata  [NrDevices];
-    wire           device_rvalid [NrDevices];
-    wire [31:0]    device_rdata  [NrDevices];
-    wire           device_err    [NrDevices];
+    wire device_req    [NrDevices];
+    wire [31:0] device_addr   [NrDevices];
+    wire device_we     [NrDevices];
+    wire [ 3:0] device_be     [NrDevices];
+    wire [31:0] device_wdata  [NrDevices];
+    wire device_rvalid [NrDevices];
+    wire [31:0] device_rdata  [NrDevices];
+    wire device_err    [NrDevices];
 
     // Device address mapping
     wire [31:0] cfg_device_addr_base [NrDevices];

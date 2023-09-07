@@ -30,18 +30,18 @@ module ram(
 	input wire					  we_i,	
 	input wire[3:0]				  sel_i,
 	input wire[`DataBus]		  data_i,
-	output wire                   rvalid_o,
+	output wire rvalid_o,
 	output reg[`DataBus]		  data_o,
 	
 	// instrution port
-    input  wire                    inst_ce_i,
-    input  wire[`InstAddrBus]      pc_i,
-    output reg[`InstBus]           inst_o	
+    input  wire inst_ce_i,
+    input  wire[`InstAddrBus] pc_i,
+    output reg[`InstBus] inst_o	
 );
     localparam reg[31:0] CHAR_OUT_ADDR = 32'h00020000;
     localparam reg[31:0] SIM_CTRL_ADDR = 32'h00020002;
 
-    reg[`InstBus]  mem[0:`InstMemNum-1];
+    reg[`InstBus] mem[0:`InstMemNum-1];
 
     assign rvalid_o = ce_i & (~we_i);
 
@@ -70,7 +70,7 @@ module ram(
 		if (ce_i == `ChipDisable) begin
 			data_o = `ZeroWord;
 	    end else if(we_i == `WriteDisable) begin
-		    data_o =  mem[addr_i[`DataMemNumLog2+1:2]];
+		    data_o = mem[addr_i[`DataMemNumLog2+1:2]];
 		end else begin
 			data_o = `ZeroWord;
 		end

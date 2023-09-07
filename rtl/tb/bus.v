@@ -20,35 +20,35 @@ module bus #(
   parameter int DataWidth    = 32,
   parameter int AddressWidth = 32
 ) (
-  input wire                      clk_i,
-  input wire                      rst_ni,
+  input wire clk_i,
+  input wire rst_ni,
 
   // Hosts (masters)
-  input  wire                     host_req_i    [NrHosts],
-  output reg                      host_gnt_o    [NrHosts],
+  input  wire host_req_i    [NrHosts],
+  output reg host_gnt_o    [NrHosts],
 
-  input  wire[AddressWidth-1:0]   host_addr_i   [NrHosts],
-  input  wire                     host_we_i     [NrHosts],
-  input  wire[DataWidth/8-1:0]    host_be_i     [NrHosts],
-  input  wire[DataWidth-1:0]      host_wdata_i  [NrHosts],
-  output reg                      host_rvalid_o [NrHosts],
-  output reg[DataWidth-1:0]       host_rdata_o  [NrHosts],
-  output reg                      host_err_o    [NrHosts],
+  input  wire[AddressWidth-1:0] host_addr_i   [NrHosts],
+  input  wire host_we_i     [NrHosts],
+  input  wire[DataWidth/8-1:0] host_be_i     [NrHosts],
+  input  wire[DataWidth-1:0] host_wdata_i  [NrHosts],
+  output reg host_rvalid_o [NrHosts],
+  output reg[DataWidth-1:0] host_rdata_o  [NrHosts],
+  output reg host_err_o    [NrHosts],
 
   // Devices (slaves)
-  output reg                     device_req_o    [NrDevices],
+  output reg device_req_o    [NrDevices],
 
-  output reg[AddressWidth-1:0]   device_addr_o   [NrDevices],
-  output reg                     device_we_o     [NrDevices],
-  output reg[DataWidth/8-1:0]    device_be_o     [NrDevices],
-  output reg[DataWidth-1:0]      device_wdata_o  [NrDevices],
-  input  wire                    device_rvalid_i [NrDevices],
-  input  wire[DataWidth-1:0]     device_rdata_i  [NrDevices],
-  input  wire                    device_err_i    [NrDevices],
+  output reg[AddressWidth-1:0] device_addr_o   [NrDevices],
+  output reg device_we_o     [NrDevices],
+  output reg[DataWidth/8-1:0] device_be_o     [NrDevices],
+  output reg[DataWidth-1:0] device_wdata_o  [NrDevices],
+  input  wire device_rvalid_i [NrDevices],
+  input  wire[DataWidth-1:0] device_rdata_i  [NrDevices],
+  input  wire device_err_i    [NrDevices],
 
   // Device address map
-  input wire[AddressWidth-1:0]    cfg_device_addr_base [NrDevices],
-  input wire[AddressWidth-1:0]    cfg_device_addr_mask [NrDevices]
+  input wire[AddressWidth-1:0] cfg_device_addr_base [NrDevices],
+  input wire[AddressWidth-1:0] cfg_device_addr_mask [NrDevices]
 );
 
   localparam int unsigned NumBitsHostSel = NrHosts > 1 ? $clog2(NrHosts) : 1;
@@ -91,17 +91,17 @@ module bus #(
   always @ ( * ) begin
     for (integer device = 0; device < NrDevices; device = device + 1) begin
       if (NumBitsDeviceSel'(device) == device_sel_req) begin
-        device_req_o[device]   = host_req_i[host_sel_req];
-        device_we_o[device]    = host_we_i[host_sel_req];
-        device_addr_o[device]  = host_addr_i[host_sel_req];
+        device_req_o[device] = host_req_i[host_sel_req];
+        device_we_o[device] = host_we_i[host_sel_req];
+        device_addr_o[device] = host_addr_i[host_sel_req];
         device_wdata_o[device] = host_wdata_i[host_sel_req];
-        device_be_o[device]    = host_be_i[host_sel_req];
+        device_be_o[device] = host_be_i[host_sel_req];
       end else begin
-        device_req_o[device]   = 1'b0;
-        device_we_o[device]    = 1'b0;
-        device_addr_o[device]  = 'b0;
+        device_req_o[device] = 1'b0;
+        device_we_o[device] = 1'b0;
+        device_addr_o[device] = 'b0;
         device_wdata_o[device] = 'b0;
-        device_be_o[device]    = 'b0;
+        device_be_o[device] = 'b0;
       end
     end
   end
@@ -111,12 +111,12 @@ module bus #(
       host_gnt_o[host] = 1'b0;
       if (NumBitsHostSel'(host) == host_sel_resp) begin
         host_rvalid_o[host] = device_rvalid_i[device_sel_resp];
-        host_err_o[host]    = device_err_i[device_sel_resp];
-        host_rdata_o[host]  = device_rdata_i[device_sel_resp];
+        host_err_o[host] = device_err_i[device_sel_resp];
+        host_rdata_o[host] = device_rdata_i[device_sel_resp];
       end else begin
         host_rvalid_o[host] = 1'b0;
-        host_err_o[host]    = 1'b0;
-        host_rdata_o[host]  = 'b0;
+        host_err_o[host] = 1'b0;
+        host_rdata_o[host] = 'b0;
       end
     end
     host_gnt_o[host_sel_req] = host_req_i[host_sel_req];

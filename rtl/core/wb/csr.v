@@ -23,51 +23,51 @@
 
 module csr_file(
 
-    input wire               clk_i,
-    input wire               n_rst_i,
+    input wire clk_i,
+    input wire n_rst_i,
 
     /* --- interrupt signals from clint or plic--------*/
-    input  wire              irq_software_i,
-    input  wire              irq_timer_i,
-    input  wire              irq_external_i,
+    input  wire irq_software_i,
+    input  wire irq_timer_i,
+    input  wire irq_external_i,
 
     /* --- exu read csr -------------------*/
-    input wire[`RegBus]      raddr_i,           // the register to read
-    output reg[`RegBus]      rdata_o,           // ouput the register
+    input wire[`RegBus] raddr_i,           // the register to read
+    output reg[`RegBus] rdata_o,           // ouput the register
 
 
     /*------ wb module update the csr  --------*/
-    input wire               we_i,            // write enable
-    input wire[`RegBus]      waddr_i,         // the register to write
-    input wire[`RegBus]      wdata_i,         // the data to write
+    input wire we_i,            // write enable
+    input wire[`RegBus] waddr_i,         // the register to write
+    input wire[`RegBus] wdata_i,         // the data to write
 
-    input wire               instret_incr_i,   // 0 or 1 indicate increase the counter of instret
+    input wire instret_incr_i,   // 0 or 1 indicate increase the counter of instret
 
     /* ---- ctrl update epc, mcause, mtval, global ie ----*/
-    input wire               ie_type_i,          // interrupt or exception
-    input wire               set_cause_i,
-    input wire [3:0]         trap_casue_i,
+    input wire ie_type_i,          // interrupt or exception
+    input wire set_cause_i,
+    input wire [3:0] trap_casue_i,
 
-    input wire               set_epc_i,
-    input wire[`RegBus]      epc_i,
+    input wire set_epc_i,
+    input wire[`RegBus] epc_i,
 
-    output reg               set_mtval_i,
-    output reg[`RegBus]      mtval_i,
+    output reg set_mtval_i,
+    output reg[`RegBus] mtval_i,
 
-    input wire               mstatus_ie_clear_i,
-    input wire               mstatus_ie_set_i,
+    input wire mstatus_ie_clear_i,
+    input wire mstatus_ie_set_i,
 
     /*-- to control , interrupt enablers, mtvec, epc etc-----*/
-    output reg               mstatus_ie_o,
-    output wire              mie_external_o,
-    output wire              mie_timer_o,
-    output wire              mie_sw_o,
+    output reg mstatus_ie_o,
+    output wire mie_external_o,
+    output wire mie_timer_o,
+    output wire mie_sw_o,
 
-    output wire              mip_external_o,
-    output wire              mip_timer_o,
-    output wire              mip_sw_o,
-    output wire[`RegBus]     mtvec_o,
-    output wire[`RegBus]     epc_o
+    output wire mip_external_o,
+    output wire mip_timer_o,
+    output wire mip_sw_o,
+    output wire[`RegBus] mtvec_o,
+    output wire[`RegBus] epc_o
 );
 
     // mvendorid
@@ -102,7 +102,7 @@ module csr_file(
     // The misa CSR is a WARL read-write register reporting the ISA supported by the hart. This
     // register must be readable in any implementation, but a value of zero can be returned to indicate
     // the misa register has not been implemented
-    wire [1:0]  mxl; // machine XLEN
+    wire [1:0] mxl; // machine XLEN
     wire [25:0] mextensions; // ISA extensions
     wire [`RegBus] misa; // machine ISA register
     assign mxl = 2'b01;
@@ -137,9 +137,9 @@ module csr_file(
     //  FS(2), MPP(2), WPRI(2), SPP(1), MPIE(1), WPRI(1), SPIE(1), UPIE(1),MIE(1), WPRI(1), SIE(1), UIE(1)}
     // Global interrupt-enable bits, MIE, SIE, and UIE, are provided for each privilege mode.
     // xPIE holds the value of the interrupt-enable bit active prior to the trap, and xPP holds the previous privilege mode.
-    reg[`RegBus]       mstatus;
-    reg                mstatus_pie; // prior interrupt enable
-    reg                mstatus_ie;
+    reg[`RegBus] mstatus;
+    reg mstatus_pie; // prior interrupt enable
+    reg mstatus_ie;
     assign             mstatus_ie_o = mstatus_ie;
     assign mstatus = {19'b0, 2'b11, 3'b0, mstatus_pie, 3'b0 , mstatus_ie, 3'b0};
 
@@ -165,10 +165,10 @@ module csr_file(
     // MTIE, STIE, and UTIE for M-mode, S-mode, and U-mode timer interrupts respectively.
     // MSIE, SSIE, and USIE fields enable software interrupts in M-mode, S-mode software, and U-mode, respectively.
     // MEIE, SEIE, and UEIE fields enable external interrupts in M-mode, S-mode software, and U-mode, respectively.
-    reg[`RegBus]  mie;
-    reg           mie_external; // external interrupt enable
-    reg           mie_timer;    // timer interrupt enable
-    reg           mie_sw;       // software interrupt enable
+    reg[`RegBus] mie;
+    reg mie_external; // external interrupt enable
+    reg mie_timer;    // timer interrupt enable
+    reg mie_sw;       // software interrupt enable
 
     assign mie_external_o = mie_external;
     assign mie_timer_o = mie_timer;
@@ -199,7 +199,7 @@ module csr_file(
     // when mode =2'b01, Vectored mode, all synchronous exceptions into machine mode cause the pc to be set to the address in the BASE
     // field, whereas interrupts cause the pc to be set to the address in the BASE field plus four times the interrupt cause number.
 
-    reg[`RegBus]     mtvec;
+    reg[`RegBus] mtvec;
     assign mtvec_o = mtvec;
 
     always @(posedge clk_i) begin
@@ -214,7 +214,7 @@ module csr_file(
     /*--------------------------------------------- mscratch ----------------------------------------*/
     // mscratch : Typically, it is used to hold a pointer to a machine-mode hart-local context space and swapped
     // with a user register upon entry to an M-mode trap handler.
-    reg[`RegBus]       mscratch;
+    reg[`RegBus] mscratch;
 
     always @(posedge clk_i) begin
         if(n_rst_i == `RstEnable)
@@ -228,7 +228,7 @@ module csr_file(
     // that was interrupted or that encountered the exception.
     // The low bit of mepc (mepc[0]) is always zero.
     // On implementations that support only IALIGN=32, the two low bits (mepc[1:0]) are always zero.
-    reg[`RegBus]       mepc;
+    reg[`RegBus] mepc;
 
     assign epc_o = mepc;
     always @(posedge clk_i) begin
@@ -248,10 +248,10 @@ module csr_file(
     // The Interrupt bit in the mcause register is set if the trap was caused by an interrupt. The Exception
     // Code field contains a code identifying the last exception.
 
-    reg[`RegBus]       mcause;
-    reg [3:0]          cause; // interrupt cause
-    reg [26:0]         cause_rem; // remaining bits of mcause register
-    reg                int_or_exc; // interrupt or exception signal
+    reg[`RegBus] mcause;
+    reg [3:0] cause; // interrupt cause
+    reg [26:0] cause_rem; // remaining bits of mcause register
+    reg int_or_exc; // interrupt or exception signal
 
     assign mcause = {int_or_exc, cause_rem, cause};
     always @(posedge clk_i) begin
@@ -273,10 +273,10 @@ module csr_file(
     /*--------------------------------------------- mip ----------------------------------------*/
     // mip: {WPRI[31:12], MEIP(1), WPRI(1), SEIP(1), UEIP(1), MTIP(1), WPRI(1), STIP(1), UTIP(1), MSIP(1), WPRI(1), SSIP(1), USIP(1)}
     // The MTIP, STIP, UTIP bits correspond to timer interrupt-pending bits for machine, supervisor, and user timer interrupts, respectively.
-    reg[`RegBus]       mip;
-    reg                mip_external; // external interrupt pending
-    reg                mip_timer; // timer interrupt pending
-    reg                mip_sw; // software interrupt pending
+    reg[`RegBus] mip;
+    reg mip_external; // external interrupt pending
+    reg mip_timer; // timer interrupt pending
+    reg mip_sw; // software interrupt pending
 
     assign mip = {20'b0, mip_external, 3'b0, mip_timer, 3'b0, mip_sw, 3'b0};
 
@@ -303,8 +303,8 @@ module csr_file(
     // When a hardware breakpoint is triggered, or an instruction-fetch, load, or store address-misaligned,
     // access, or page-fault exception occurs, mtval is written with the faulting virtual address.
     // On an illegal instruction trap, mtval may be written with the first XLEN or ILEN bits of the faulting instruction
-    reg[`RegBus]       mtval;
-    wire               MISALIGNED_EXCEPTION;  //todo
+    reg[`RegBus] mtval;
+    wire MISALIGNED_EXCEPTION;  //todo
 
     always @(posedge clk_i)  begin
         if(n_rst_i == `RstEnable)

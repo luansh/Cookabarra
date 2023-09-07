@@ -23,55 +23,55 @@
 
 module id_ex(
 
-    input wire                    clk_i,
-    input wire                    n_rst_i,
+    input wire clk_i,
+    input wire n_rst_i,
 
     /* ------- signals from the ctrl unit --------*/
-    input wire[5:0]               stall_i,
-    input wire                    flush_i,
+    input wire[5:0] stall_i,
+    input wire flush_i,
 
     /* ------- signals from the decoder --------*/
-    input wire[`RegBus]           pc_i,
-    input wire[`RegBus]           inst_i,
-    input wire[`RegBus]           next_pc_i,
-    input wire                    next_taken_i,
-    input wire                    branch_slot_end_i,
+    input wire[`RegBus] pc_i,
+    input wire[`RegBus] inst_i,
+    input wire[`RegBus] next_pc_i,
+    input wire next_taken_i,
+    input wire branch_slot_end_i,
 
-    input wire[`AluSelBus]        alusel_i,
-    input wire[`AluOpBus]         uopcode_i,
+    input wire[`AluSelBus] alusel_i,
+    input wire[`AluOpBus] uopcode_i,
 
-    input wire[`RegBus]           rs1_data_i,
-    input wire[`RegBus]           rs2_data_i,
-    input reg[`RegBus]            imm_i,
-    input wire                    rd_we_i,
-    input wire[`RegAddrBus]       rd_addr_i,
+    input wire[`RegBus] rs1_data_i,
+    input wire[`RegBus] rs2_data_i,
+    input reg[`RegBus] imm_i,
+    input wire rd_we_i,
+    input wire[`RegAddrBus] rd_wa_i,
 
-    input wire                    csr_we_i,
-    input wire[`RegBus]           csr_addr_i,
+    input wire csr_we_i,
+    input wire[`RegBus] csr_addr_i,
 
-    input wire[`RegBus]           exception_i,
+    input wire[`RegBus] exception_i,
 
     /* ------- signals to exu --------*/
-    output reg[`RegBus]           pc_o,
-    output reg[`RegBus]           inst_o,
-    output reg[`RegBus]           next_pc_o,
-    output reg                    next_taken_o,
-    output reg                    branch_slot_end_o,
+    output reg[`RegBus] pc_o,
+    output reg[`RegBus] inst_o,
+    output reg[`RegBus] next_pc_o,
+    output reg next_taken_o,
+    output reg branch_slot_end_o,
 
-    output reg[`AluSelBus]        alusel_o,
-    output reg[`AluOpBus]         uopcode_o,
+    output reg[`AluSelBus] alusel_o,
+    output reg[`AluOpBus] uop_o,
 
-    output reg[`RegBus]           rs1_data_o,
-    output reg[`RegBus]           rs2_data_o,
-    output reg[`RegBus]           imm_o,
-    output reg                    rd_we_o,
+    output reg[`RegBus] rs1_data_o,
+    output reg[`RegBus] rs2_data_o,
+    output reg[`RegBus] imm_o,
+    output reg rd_we_o,
 
-    output reg                    csr_we_o,
-    output reg[`RegAddrBus]       rd_addr_o,
+    output reg csr_we_o,
+    output reg[`RegAddrBus] rd_addr_o,
 
-    output reg[`RegBus]           csr_addr_o,
+    output reg[`RegBus] csr_addr_o,
 
-    output reg[31:0]              exception_o
+    output reg[31:0] exception_o
 );
 
     always @ (posedge clk_i) begin
@@ -81,7 +81,7 @@ module id_ex(
             branch_slot_end_o <= 1'b0;
 
             alusel_o <= `EXE_TYPE_NOP;
-            uopcode_o <= `UOP_CODE_NOP;
+            uop_o <= `UOP_CODE_NOP;
 
             rs1_data_o <= `ZeroWord;
             rs2_data_o <= `ZeroWord;
@@ -99,7 +99,7 @@ module id_ex(
             inst_o <= `NOP_INST;
             branch_slot_end_o <= 1'b0;
 
-            uopcode_o <= `UOP_CODE_NOP;
+            uop_o <= `UOP_CODE_NOP;
             alusel_o <= `EXE_TYPE_NOP;
 
             rs1_data_o <= `ZeroWord;
@@ -118,7 +118,7 @@ module id_ex(
             inst_o <= `NOP_INST;
             branch_slot_end_o <= 1'b0;
 
-            uopcode_o <= `UOP_CODE_NOP;
+            uop_o <= `UOP_CODE_NOP;
             alusel_o <= `EXE_TYPE_NOP;
 
             rs1_data_o <= `ZeroWord;
@@ -140,14 +140,14 @@ module id_ex(
             next_taken_o <= next_taken_i;
             branch_slot_end_o <= branch_slot_end_i;
 
-            uopcode_o <= uopcode_i;
+            uop_o <= uopcode_i;
             alusel_o <= alusel_i;
 
             rs1_data_o <= rs1_data_i;
             rs2_data_o <= rs2_data_i;
             imm_o <= imm_i;
 
-            rd_addr_o <= rd_addr_i;
+            rd_addr_o <= rd_wa_i;
             rd_we_o <= rd_we_i;
 
             csr_we_o <= csr_we_i;

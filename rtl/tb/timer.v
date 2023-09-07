@@ -22,19 +22,19 @@ module timer #(
   // Bus address width
   parameter int unsigned AddressWidth = 32
 ) (
-  input  wire                    clk_i,
-  input  wire                    rst_ni,
+  input  wire clk_i,
+  input  wire rst_ni,
   // Bus interface
-  input  wire                    timer_req_i,
+  input  wire timer_req_i,
 
   input  wire [AddressWidth-1:0] timer_addr_i,
-  input  wire                    timer_we_i,
-  input  wire [DataWidth/8-1:0]  timer_be_i,
-  input  wire [DataWidth-1:0]    timer_wdata_i,
-  output wire                    timer_rvalid_o,
-  output wire [DataWidth-1:0]    timer_rdata_o,
-  output wire                    timer_err_o,
-  output wire                    timer_intr_o
+  input  wire timer_we_i,
+  input  wire [DataWidth/8-1:0] timer_be_i,
+  input  wire [DataWidth-1:0] timer_wdata_i,
+  output wire timer_rvalid_o,
+  output wire [DataWidth-1:0] timer_rdata_o,
+  output wire timer_err_o,
+  output wire timer_intr_o
 );
 
   // The timers are always 64 bits
@@ -48,17 +48,17 @@ module timer #(
   localparam bit [9:0] MTIMECMP_LOW = 8;
   localparam bit [9:0] MTIMECMP_HIGH = 12;
 
-  reg                 timer_we;
-  reg                 mtime_we, mtimeh_we;
-  reg                 mtimecmp_we, mtimecmph_we;
+  reg timer_we;
+  reg mtime_we, mtimeh_we;
+  reg mtimecmp_we, mtimecmph_we;
   reg [DataWidth-1:0] mtime_wdata, mtimeh_wdata;
   reg [DataWidth-1:0] mtimecmp_wdata, mtimecmph_wdata;
-  reg [TW-1:0]        mtime_q, mtime_d, mtime_inc;
-  reg [TW-1:0]        mtimecmp_q, mtimecmp_d;
-  reg                 interrupt_q, interrupt_d;
-  reg                 error_q, error_d;
+  reg [TW-1:0] mtime_q, mtime_d, mtime_inc;
+  reg [TW-1:0] mtimecmp_q, mtimecmp_d;
+  reg interrupt_q, interrupt_d;
+  reg error_q, error_d;
   reg [DataWidth-1:0] rdata_q, rdata_d;
-  reg                 rvalid_q;
+  reg rvalid_q;
 
   // Global write enable for all registers
   assign timer_we = timer_req_i & timer_we_i;
@@ -69,9 +69,9 @@ module timer #(
   // Generate write data based on byte strobes
   for (genvar b = 0; b < DataWidth / 8; b++) begin : gen_byte_wdata
 
-    assign mtime_wdata[(b*8)+:8]     = timer_be_i[b] ? timer_wdata_i[b*8+:8] : mtime_q[(b*8)+:8];
-    assign mtimeh_wdata[(b*8)+:8]    = timer_be_i[b] ? timer_wdata_i[b*8+:8] : mtime_q[DataWidth+(b*8)+:8];
-    assign mtimecmp_wdata[(b*8)+:8]  = timer_be_i[b] ? timer_wdata_i[b*8+:8] : mtimecmp_q[(b*8)+:8];
+    assign mtime_wdata[(b*8)+:8] = timer_be_i[b] ? timer_wdata_i[b*8+:8] : mtime_q[(b*8)+:8];
+    assign mtimeh_wdata[(b*8)+:8] = timer_be_i[b] ? timer_wdata_i[b*8+:8] : mtime_q[DataWidth+(b*8)+:8];
+    assign mtimecmp_wdata[(b*8)+:8] = timer_be_i[b] ? timer_wdata_i[b*8+:8] : mtimecmp_q[(b*8)+:8];
     assign mtimecmph_wdata[(b*8)+:8] = timer_be_i[b] ? timer_wdata_i[b*8+:8] : mtimecmp_q[DataWidth+(b*8)+:8];
   end
 

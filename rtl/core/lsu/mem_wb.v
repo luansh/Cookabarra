@@ -23,36 +23,36 @@
 
 module mem_wb(
 
-    input wire                    clk_i,
-    input wire                    n_rst_i,
+    input wire clk_i,
+    input wire n_rst_i,
 
     /*-- signals from contrl module -----*/
-    input wire[5:0]               stall_i,
-    input wire                    flush_i,
+    input wire[5:0] stall_i,
+    input wire flush_i,
 
     /*-- signals from mem -----*/
 	//GPR
-    input wire                    rd_we_i,
-    input wire[`RegAddrBus]       rd_addr_i,
-    input wire[`RegBus]           rd_wdata_i,
+    input wire rd_we_i,
+    input wire[`RegAddrBus] rd_wa_i,
+    input wire[`RegBus] rd_wd_i,
 
     //CSR
-    input wire                    csr_we_i,
-    input wire[`RegBus]           csr_waddr_i,
-    input wire[`RegBus]           csr_wdata_i,
+    input wire csr_we_i,
+    input wire[`RegBus] csr_waddr_i,
+    input wire[`RegBus] csr_wdata_i,
 
     /*-- signals passed to mem_wb stage -----*/
 	//GPR
-    output reg                    rd_we_o,
-    output reg[`RegAddrBus]       rd_addr_o,
-    output reg[`RegBus]           rd_wdata_o,
+    output reg rd_we_o,
+    output reg[`RegAddrBus] rd_addr_o,
+    output reg[`RegBus] rd_wdata_o,
 
     //CSR
-    output reg                    csr_we_o,
-    output reg[`RegBus]           csr_waddr_o,
-    output reg[`RegBus]           csr_wdata_o,
+    output reg csr_we_o,
+    output reg[`RegBus] csr_waddr_o,
+    output reg[`RegBus] csr_wdata_o,
 
-    output reg                    instret_incr_o
+    output reg instret_incr_o
 );
 
     always @ (posedge clk_i) begin
@@ -91,8 +91,8 @@ module mem_wb(
         end else if(stall_i[4] == `NoStop) begin
 		    // write the GPR
             rd_we_o <= rd_we_i;
-            rd_addr_o <= rd_addr_i;
-            rd_wdata_o <= rd_wdata_i;
+            rd_addr_o <= rd_wa_i;
+            rd_wdata_o <= rd_wd_i;
 
 			// write the CSR
             csr_we_o <= csr_we_i;

@@ -7,110 +7,95 @@
 // Description: the instruction decode stage
 --------------------------------------------------------------------------*/
 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//-----------------------------------------------------------------
-
 `include "defines.v"
 
 module id(
-
-    input wire                    n_rst_i,
+    input wire n_rst_i,
 
     /* ------- signals from the if_id unit --------*/
-    input wire[`InstAddrBus]      pc_i,
-    input wire[`InstBus]          inst_i,
-    input wire                    branch_slot_end_i,
+    input wire[`InstAddrBus] pc_i,
+    input wire[`InstBus] inst_i,
+    input wire branch_slot_end_i,
 
-    input wire[`RegBus]           next_pc_i,
-    input wire                    next_taken_i,
+    input wire[`RegBus] next_pc_i,
+    input wire next_taken_i,
 
     //pass the gpr read signals to the gpr module, read the gpr
-    output reg                    rs1_re_o,      // read rs1 or not
-    output reg                    rs2_re_o,      // read rs2 or not
-    output reg[`RegAddrBus]       rs1_raddr_o,   // address of rs1
-    output reg[`RegAddrBus]       rs2_raddr_o,   // address of rs2
+    output reg rs1_re_o,      // read rs1 or not
+    output reg rs2_re_o,      // read rs2 or not
+    output reg[`RegAddrBus] rs1_raddr_o,   // address of rs1
+    output reg[`RegAddrBus] rs2_raddr_o,   // address of rs2
     // GPR reponse to the above read request with the rs1 and rs2 values
-    input wire[`RegBus]           rs1_rdata_i,
-    input wire[`RegBus]           rs2_rdata_i,
+    input wire[`RegBus] rs1_rd_i,
+    input wire[`RegBus] rs2_rd_i,
 
     /* ---------signals from exu -----------------*/
-    input wire                    branch_redirect_i,
+    input wire branch_redirect_i,
 
     // some neccessary signals forwarded from exe unit, to detect data dependance.
     // if the exe unis is executing load instruction, and the rd is one of the rs,
     // notify the ctrl unit to stall pipeline
-    input wire[`AluOpBus]         ex_uopcode_i,
+    input wire[`AluOpBus] ex_uopcode_i,
 
     // the rd info fowarded from ex to determine the data dependance
-    input wire                    ex_rd_we_i,      // update the rd or not at exe stage
-    input wire[`RegAddrBus]       ex_rd_waddr_i,   // the rd address
-    input wire[`RegBus]           ex_rd_wdata_i,   // the data to write to rd
+    input wire ex_rd_we_i,      // update the rd or not at exe stage
+    input wire[`RegAddrBus] ex_rd_waddr_i,   // the rd address
+    input wire[`RegBus] ex_rd_wdata_i,   // the data to write to rd
 
 
     /* ------- signals forwarded from the lsu unit --------*/
-    input wire                    mem_rd_we_i,
-    input wire[`RegAddrBus]       mem_rd_waddr_i,
-    input wire[`RegBus]           mem_rd_wdata_i,
+    input wire mem_rd_we_i,
+    input wire[`RegAddrBus] mem_rd_waddr_i,
+    input wire[`RegBus] mem_rd_wdata_i,
 
 
     /* ------- signals to the ctrl  ---------------*/
-    output wire                   stall_req_o,
+    output wire stall_req_o,
 
     /* ------- signals to the execution unit --------*/
-    output reg[`RegBus]           pc_o,
-    output reg[`RegBus]           inst_o,
-    output reg[`RegBus]           next_pc_o,
-    output reg                    next_taken_o,
-    output reg                    branch_slot_end_o,
+    output reg[`RegBus] pc_o,
+    output reg[`RegBus] inst_o,
+    output reg[`RegBus] next_pc_o,
+    output reg next_taken_o,
+    output reg branch_slot_end_o,
 
-    output reg[`RegBus]           imm_o,
+    output reg[`RegBus] imm_o,
 
-    output reg                    csr_we_o,
-    output reg[`RegBus]           csr_addr_o,
+    output reg csr_we_o,
+    output reg[`RegBus] csr_addr_o,
 
-    output reg[`RegBus]           rs1_data_o,
-    output reg[`RegBus]           rs2_data_o,
-    output reg                    rd_we_o,
-    output reg[`RegAddrBus]       rd_waddr_o,
+    output reg[`RegBus] rs1_data_o,
+    output reg[`RegBus] rs2_data_o,
+    output reg rd_we_o,
+    output reg[`RegAddrBus] rd_wa_o,
 
-    output reg[`AluSelBus]        alusel_o,
-    output reg[`AluOpBus]         uopcode_o,
+    output reg[`AluSelBus] alusel_o,
+    output reg[`AluOpBus] uop_o,
 
-    output wire[31:0]             exception_o
-);
+    output wire[31:0] exception_o);
 
     //decode the funct7, funct3, opcode, rs2, rs1, rd
-    wire[6:0]     opcode = inst_i[6:0];
-    wire[4:0]     rd = inst_i[11:7];
-    wire[2:0]     funct3 = inst_i[14:12];
-    wire[4:0]     rs1 = inst_i[19:15];
-    wire[4:0]     rs2 = inst_i[24:20];
-    wire[6:0]     funct7 = inst_i[31:25];
+    wire[6:0] opcode = inst_i[6:0];
+    wire[4:0] rd = inst_i[11:7];
+    wire[2:0] funct3 = inst_i[14:12];
+    wire[4:0] rs1 = inst_i[19:15];
+    wire[4:0] rs2 = inst_i[24:20];
+    wire[6:0] funct7 = inst_i[31:25];
 
-    reg[`RegBus]  imm;
-    reg           csr_we;
-    reg[`RegBus]  csr_addr;
+    reg[`RegBus] imm;
+    reg csr_we;
+    reg[`RegBus] csr_addr;
 
-    reg           instvalid;
+    reg instvalid;
 
-    reg           rs1_load_depend;   //rs1 is the rd of the previous load
-    reg           rs2_load_depend;   //rs2 is the rd of the previous load
-    wire          pre_inst_is_load;  //the previous instruction is a lb, lh, lw, etc
+    reg rs1_load_depend;   //rs1 is the rd of the previous load
+    reg rs2_load_depend;   //rs2 is the rd of the previous load
+    wire pre_inst_is_load;  //the previous instruction is a lb, lh, lw, etc
 
-    reg           excepttype_mret;
-    reg           excepttype_ecall;
-    reg           excepttype_ebreak;
-    reg           excepttype_illegal_inst;
+    reg excepttype_mret;
+    reg excepttype_ecall;
+    reg excepttype_ebreak;
+    reg excepttype_illegal_inst;
 
     // check there is a load dependance
     assign stall_req_o = rs1_load_depend | rs2_load_depend;
@@ -155,10 +140,10 @@ module id(
             rs2_data_o = `ZeroWord;
 
             rd_we_o = `WriteDisable;
-            rd_waddr_o = `NOPRegAddr;
+            rd_wa_o = `NOPRegAddr;
 
             alusel_o = `EXE_TYPE_NOP;
-            uopcode_o = `UOP_CODE_NOP;
+            uop_o = `UOP_CODE_NOP;
 
             excepttype_ecall = `False_v;
             excepttype_mret = `False_v;
@@ -181,10 +166,10 @@ module id(
             rs2_data_o = `ZeroWord;
 
             rd_we_o = `WriteDisable;
-            rd_waddr_o = `NOPRegAddr;
+            rd_wa_o = `NOPRegAddr;
 
             alusel_o = `EXE_TYPE_NOP;
-            uopcode_o = `UOP_CODE_NOP;
+            uop_o = `UOP_CODE_NOP;
 
             excepttype_ecall = `False_v;
             excepttype_mret = `False_v;
@@ -207,10 +192,10 @@ module id(
             rs2_data_o = `ZeroWord;
 
             rd_we_o = `WriteDisable;
-            rd_waddr_o = `NOPRegAddr;
+            rd_wa_o = `NOPRegAddr;
 
             alusel_o = `EXE_TYPE_NOP;
-            uopcode_o = `UOP_CODE_NOP;
+            uop_o = `UOP_CODE_NOP;
 
             excepttype_ecall = `False_v;
             excepttype_mret = `False_v;
@@ -221,66 +206,62 @@ module id(
 
             case (opcode)
 /*-----------------------------------decode special instructions, started -------------------------------------------------------*/
+//Load U-Immediate
                 `INST_OPCODE_LUI: begin  //7'b0110111
                     // imm:[31:12], rd:[11:7], opcode[6:0] = 0110111
                     // LUI places the U-immediate value in the top 20 bits of the destination register rd,
                     // and fill in the lowest 12 bits with zeros.
-                    // format: lui rd, imm  :  x[rd] = sext(immediate[31:12] << 12)
+//lui rd, imm ##x[rd] = sext(immediate[31:12] << 12)
                     // decode the imm and extend to 32 bit logically
-                    imm = {inst_i[31:12], 12'b0};
+                    imm = {inst_i[31:12], 12'd0};
                     // no rs required
-                    rd_we_o = `WriteEnable;
-                    rd_waddr_o = rd;
+                    {rd_we_o, rd_wa_o} = {`WriteEnable, rd};
                     alusel_o = `EXE_TYPE_LOGIC;
-                    uopcode_o = `UOP_CODE_LUI;
+                    uop_o = `UOP_CODE_LUI;
                     instvalid = `InstValid;
                 end
-
+//Add Upper Immediate (And) PC (To Rd)
+//该指令不会修改PC的值，可以配合JALR指令使用，以修改PC，跳转至指定位置
                 `INST_OPCODE_AUIPC: begin  //7'b0010111
                     // imm:[31:12], rd:[11:7], opcode[6:0] = 0010111
                     // AUIPC adds upper immediate to PC. This instruction adds a 20-bit immediate value to the
                     // upper 20 bits of the program counter.
-                    // auipc rd,imm  :  x[rd] = pc + sext(immediate[31:12] << 12)
-                    imm = {inst_i[31:12], 12'b0};    // decode the imm and extend to 32 bit logically
+//auipc rd, imm ##x[rd] = pc + sext(immediate[31:12] << 12)
+                    imm = {inst_i[31:12], 12'd0};
+                    {rd_we_o, rd_wa_o} = {`WriteEnable, rd};
                     // no rs required
-                    rd_we_o = `WriteEnable;
-                    rd_waddr_o = rd;
                     alusel_o = `EXE_TYPE_LOGIC;
-                    uopcode_o = `UOP_CODE_AUIPC;
+                    uop_o = `UOP_CODE_AUIPC;
                     instvalid = `InstValid;
                 end
-
+//Jump And Link
                 `INST_OPCODE_JAL: begin
                     // imm(20, 10:1, 11, 19:12):[31:12], rd:[11:7], opcode[6:0] = 1101111
                     // JAL(jump and link). Transfer control to the PC-relative address provided in the 20-bit signed immediate value
                     // and store the address of the next instruction (the return address) in the destination register.
-                    // jal rd,offset  :  // jal rd,offset  :  x[rd] = pc+4; pc += sext(offset)
+//jal rd, offset##x[rd] = pc + 4;pc += sext(offset)
                     imm = {{12{inst_i[31]}}, inst_i[19:12], inst_i[20], inst_i[30:21], 1'b0};
                     // no rs required
-                    rd_we_o = `WriteEnable;
-                    rd_waddr_o = rd;
+                    {rd_we_o, rd_wa_o} = {`WriteEnable, rd};
                     alusel_o = `EXE_TYPE_BRANCH;
-                    uopcode_o = `UOP_CODE_JAL;
+                    uop_o = `UOP_CODE_JAL;
                     instvalid = `InstValid;
                 end
-
+//Jump And Link Register
                 `INST_OPCODE_JALR: begin // 7'b1100111
                     // imm:[31:20], rs1:[19:15], funct3 =000, rd:[11:7], opcode[6:0]=1100111
                     // JALR(jump and link, register). Compute the target address as the sum of the source register and a signed 12- bit immediate value,
                     // then jump to that address and store the address of the next instruction in the destination register.
-                    // jalr rd,rs1,offset  :   t =pc+4; pc=(x[rs1]+sext(offset))&∼1; x[rd]=t
+//jalr rd, rs1, offset##v=pc+4;/pc=(x[rs1]+sext(offset))&∼1;/x[rd]=v
                     imm = {{20{inst_i[31]}}, inst_i[31:20]};
-                    //rs1 required
+//读取rs1 中的值，作为pc的基址
                     rs1_re_o = 1'b1;
-                    rd_we_o = `WriteEnable;
-                    rd_waddr_o = rd;
+                    {rd_we_o, rd_wa_o} = {`WriteEnable, rd};
                     alusel_o = `EXE_TYPE_BRANCH;
-                    uopcode_o = `UOP_CODE_JALR;
+                    uop_o = `UOP_CODE_JALR;
                     instvalid = `InstValid;
                 end
 /*-----------------------------------decode special instructions, ended -------------------------------------------------------*/
-
-
 
 /*-----------------------------------decode Type B instruction, started -------------------------------------------------------*/
                 `INST_OPCODE_BRANCH: begin  //1100011
@@ -300,37 +281,37 @@ module id(
                         /*---------- beq, rs1, rs2;  started --------------*/
                         // beq rs1,rs2,offset  :   if (rs1 == rs2) pc += sext(offset)
                         `INST_BEQ: begin
-                            uopcode_o = `UOP_CODE_BEQ;
+                            uop_o = `UOP_CODE_BEQ;
                         end
 
                         /*---------- bneq, rs1, rs2;  started --------------*/
                         // bne rs1,rs2,offset  :   if (rs1 != rs2) pc += sext(offset)
                         `INST_BNE: begin
-                            uopcode_o = `UOP_CODE_BNE;
+                            uop_o = `UOP_CODE_BNE;
                         end
 
                         /*---------- bge, rs1, rs2;  started --------------*/
                         // bge rs1,rs2,offset  :   if (rs1 >=s rs2) pc += sext(offset)
                         `INST_BGE: begin
-                            uopcode_o = `UOP_CODE_BGE;
+                            uop_o = `UOP_CODE_BGE;
                         end
 
                         /*---------- bgeu, rs1, rs2;  started --------------*/
                         // bgeu rs1,rs2,offset  :   if (rs1 >=u rs2) pc += sext(offset)
                         `INST_BGEU: begin
-                            uopcode_o = `UOP_CODE_BGEU;
+                            uop_o = `UOP_CODE_BGEU;
                          end
 
                         /*---------- blt, rs1, rs2;  started --------------*/
                         // blt rs1,rs2,offset  :   if (rs1 <s rs2) pc += sext(offset)
                         `INST_BLT: begin
-                            uopcode_o = `UOP_CODE_BLT;
+                            uop_o = `UOP_CODE_BLT;
                         end
 
                         /*---------- bltu, rs1, rs2;  started --------------*/
                         // bltu rs1,rs2,offset  :   if (rs1 >u rs2) pc += sext(offset)
                         `INST_BLTU: begin
-                            uopcode_o = `UOP_CODE_BLTU;
+                            uop_o = `UOP_CODE_BLTU;
                         end
 
                         default: begin
@@ -353,34 +334,34 @@ module id(
                     rs1_re_o = 1'b1;
                     //no rs2
                     rd_we_o = `WriteEnable;
-                    rd_waddr_o = rd;
+                    rd_wa_o = rd;
                     alusel_o = `EXE_TYPE_LOAD_STORE;
                     instvalid = `InstValid;
 
                     case (funct3)
                         `INST_LB: begin
                             // lb rd,offset(rs1)  :  x[rd] = sext(M[x[rs1] + sext(offset)][7:0])
-                            uopcode_o = `UOP_CODE_LB;
+                            uop_o = `UOP_CODE_LB;
                         end
 
                         `INST_LBU: begin
                             // lbu rd,offset(rs1)  :  x[rd] = M[x[rs1] + sext(offset)][7:0]
-                            uopcode_o = `UOP_CODE_LBU;
+                            uop_o = `UOP_CODE_LBU;
                         end
 
                         `INST_LH: begin
                             // lh rd,offset(rs1)  :   x[rd] = sext(M[x[rs1] + sext(offset)][15:0])
-                            uopcode_o = `UOP_CODE_LH;
+                            uop_o = `UOP_CODE_LH;
                         end
 
                         `INST_LHU: begin
                             // lhu rs2,offset(rs1)  :   x[rd] = M[x[rs1] + sext(offset)][15:0]
-                            uopcode_o = `UOP_CODE_LHU;
+                            uop_o = `UOP_CODE_LHU;
                         end
 
                         `INST_LW: begin
                             // lw rd,offset(rs1)  :   x[rd] = sext(M[x[rs1] + sext(offset)][31:0])
-                            uopcode_o = `UOP_CODE_LW;
+                            uop_o = `UOP_CODE_LW;
                         end
 
                         default: begin
@@ -407,17 +388,17 @@ module id(
                     case (funct3)
                         `INST_SB:  begin
                             // sb rs2,offset(rs1)  :   M[x[rs1] + sext(offset)] = x[rs2][7:0]
-                            uopcode_o = `UOP_CODE_SB;
+                            uop_o = `UOP_CODE_SB;
                         end
 
                         `INST_SH:  begin
                             // sh rs2,offset(rs1)  :   M[x[rs1] + sext(offset)] = x[rs2][15:0]
-                            uopcode_o = `UOP_CODE_SH;
+                            uop_o = `UOP_CODE_SH;
                         end
 
                         `INST_SW:  begin
                             // sw rs2,offset(rs1)  :   M[x[rs1] + sext(offset)] = x[rs2][31:0]
-                            uopcode_o = `UOP_CODE_SW;
+                            uop_o = `UOP_CODE_SW;
                         end
 
                         default: begin
@@ -436,7 +417,7 @@ module id(
                     rs1_re_o = 1'b1;
                     // no rs2
                     rd_we_o = `WriteEnable;
-                    rd_waddr_o = rd;
+                    rd_wa_o = rd;
                     instvalid = `InstValid;
 
                     case (funct3)
@@ -446,7 +427,7 @@ module id(
                         `INST_ADDI: begin
                             imm = {{20{inst_i[31]}}, inst_i[31:20]};  //extend to 32 bits
                             alusel_o = `EXE_TYPE_ARITHMETIC;
-                            uopcode_o = `UOP_CODE_ADDI;
+                            uop_o = `UOP_CODE_ADDI;
                         end
 
                         // slti: set less than immediate, set the destination register to 1 if the first source operand is less than
@@ -455,7 +436,7 @@ module id(
                         `INST_SLTI: begin
                             imm = {{20{inst_i[31]}}, inst_i[31:20]};  //extend to 32 bits
                             alusel_o = `EXE_TYPE_LOGIC;
-                            uopcode_o = `UOP_CODE_SLTI;
+                            uop_o = `UOP_CODE_SLTI;
                         end
 
                         // sltiu: Place the value 1 in register rd if register rs1 is less than the immediate when
@@ -464,7 +445,7 @@ module id(
                         `INST_SLTIU: begin
                             imm = {{20{inst_i[31]}}, inst_i[31:20]};  //extend to 32 bits
                             alusel_o = `EXE_TYPE_LOGIC;
-                            uopcode_o = `UOP_CODE_SLTIU;
+                            uop_o = `UOP_CODE_SLTIU;
                         end
 
                         // Performs bitwise AND on register rs1 and the sign-extended 12-bit
@@ -473,7 +454,7 @@ module id(
                         `INST_ANDI: begin
                             imm = {{20{inst_i[31]}}, inst_i[31:20]};  //extend to 32 bits
                             alusel_o = `EXE_TYPE_LOGIC;
-                            uopcode_o = `UOP_CODE_ANDI;
+                            uop_o = `UOP_CODE_ANDI;
                         end
 
                         // Performs bitwise OR on register rs1 and the sign-extended 12-bit immediate
@@ -482,7 +463,7 @@ module id(
                         `INST_ORI: begin
                             imm = {{20{inst_i[31]}}, inst_i[31:20]};  //extend to 32 bits
                             alusel_o = `EXE_TYPE_LOGIC;
-                            uopcode_o = `UOP_CODE_ORI;
+                            uop_o = `UOP_CODE_ORI;
                         end
 
                         // Performs bitwise XOR on register rs1 and the sign-extended 12-bit
@@ -491,7 +472,7 @@ module id(
                         `INST_XORI: begin
                             imm = {{20{inst_i[31]}}, inst_i[31:20]};  //extend to 32 bits
                             alusel_o = `EXE_TYPE_LOGIC;
-                            uopcode_o = `UOP_CODE_XORI;
+                            uop_o = `UOP_CODE_XORI;
                         end
 
                         // slli, srli, srai: Perform  shifts of logical left (sll) and right (srl), and arithmetic right shifts (sra).
@@ -500,7 +481,7 @@ module id(
                             // slli rd,rs1,shamt  :   x[rd] = x[rs1] << shamt
                             imm = {27'b0, inst_i[24:20]};
                             alusel_o = `EXE_TYPE_SHIFT;
-                            uopcode_o = `UOP_CODE_SLLI;
+                            uop_o = `UOP_CODE_SLLI;
                         end
 
 
@@ -510,11 +491,11 @@ module id(
                             if(funct7[6:1] == 6'b000000) begin
                                 // srli rd,rs1,shamt  :   x[rd] = x[rs1] >>u shamt
                                 alusel_o = `EXE_TYPE_SHIFT;
-                                uopcode_o = `UOP_CODE_SRLI;
+                                uop_o = `UOP_CODE_SRLI;
                             end else if (funct7[6:1] == 6'b010000) begin
                                 // srai rd,rs1,shamt  :   x[rd] = x[rs1] >>s shamt
                                 alusel_o = `EXE_TYPE_SHIFT;
-                                uopcode_o = `UOP_CODE_SRAI;
+                                uop_o = `UOP_CODE_SRAI;
                             end else begin
                                 $display("invalid funct7 (%b) for SRI, pc=%h, inst=%h, funct3=%d", funct7[6:1], pc_i, inst_i, funct3);
                                 instvalid = `InstInvalid;
@@ -537,7 +518,7 @@ module id(
                     rs1_re_o = 1'b1;
                     rs2_re_o = 1'b1;
                     rd_we_o = `WriteEnable;
-                    rd_waddr_o = rd;
+                    rd_wa_o = rd;
                     instvalid = `InstValid;
 
                     if ((funct7 == 7'b0000000) || (funct7 == 7'b0100000)) begin
@@ -547,11 +528,11 @@ module id(
                                 if(funct7 == 7'b0000000) begin
                                     // add rd,rs1,rs2  :  x[rd] = x[rs1] + x[rs2]
                                     alusel_o = `EXE_TYPE_ARITHMETIC;
-                                    uopcode_o = `UOP_CODE_ADD;
+                                    uop_o = `UOP_CODE_ADD;
                                 end else begin
                                     // sub rd,rs1,rs2  :  x[rd] = x[rs1] - x[rs2]
                                     alusel_o = `EXE_TYPE_ARITHMETIC;
-                                    uopcode_o = `UOP_CODE_SUB;
+                                    uop_o = `UOP_CODE_SUB;
                                 end
                             end
 
@@ -559,19 +540,19 @@ module id(
                             `INST_AND: begin
                                 // and rd,rs1,rs2  :  x[rd] = x[rs1] & x[rs2]
                                 alusel_o = `EXE_TYPE_LOGIC;
-                                uopcode_o = `UOP_CODE_AND;
+                                uop_o = `UOP_CODE_AND;
                             end
 
                             `INST_OR: begin
                                 // or rd,rs1,rs2  :  x[rd] = x[rs1] | x[rs2]
                                 alusel_o = `EXE_TYPE_LOGIC;
-                                uopcode_o = `UOP_CODE_OR;
+                                uop_o = `UOP_CODE_OR;
                             end
 
                             `INST_XOR: begin
                                 // xor rd,rs1,rs2  :  x[rd] = x[rs1] ^ x[rs2]
                                 alusel_o = `EXE_TYPE_LOGIC;
-                                uopcode_o = `UOP_CODE_XOR;
+                                uop_o = `UOP_CODE_XOR;
                             end
 
                             // sll, srl, sra: Perform logical left and right shifts (sll and srl), and arithmetic right shifts (sra).
@@ -581,18 +562,18 @@ module id(
                             `INST_SLL: begin
                                 // sll rd,rs1,rs2  :   x[rd] = x[rs1] << x[rs2]
                                 alusel_o = `EXE_TYPE_SHIFT;
-                                uopcode_o = `UOP_CODE_SLL;
+                                uop_o = `UOP_CODE_SLL;
                             end
 
                             `INST_SRL_SRA: begin
                                 if(funct7 == 7'b0000000) begin  //srl
                                     // srl rd,rs1,rs2  :   x[rd] = x[rs1] >>u x[rs2]
                                     alusel_o = `EXE_TYPE_SHIFT;
-                                    uopcode_o = `UOP_CODE_SRL;
+                                    uop_o = `UOP_CODE_SRL;
                                 end else begin  //sra
                                     // sra rd,rs1,rs2  :   x[rd] = x[rs1] >>s x[rs2]
                                     alusel_o = `EXE_TYPE_SHIFT;
-                                    uopcode_o = `UOP_CODE_SRA;
+                                    uop_o = `UOP_CODE_SRA;
                                 end
                             end
 
@@ -602,13 +583,13 @@ module id(
                             `INST_SLT: begin
                                 // slt rd,rs1,rs2  :   x[rd] = x[rs1] <s x[rs2]
                                 alusel_o = `EXE_TYPE_LOGIC;
-                                uopcode_o = `UOP_CODE_SLT;
+                                uop_o = `UOP_CODE_SLT;
                             end
 
                             `INST_SLTU: begin
                                 // sltu rd,rs1,rs2  :   x[rd] = x[rs1] <u x[rs2]
                                 alusel_o = `EXE_TYPE_LOGIC;
-                                uopcode_o = `UOP_CODE_SLTU;
+                                uop_o = `UOP_CODE_SLTU;
                             end
 
                             default: begin
@@ -626,25 +607,25 @@ module id(
                             `INST_MUL: begin
                                 // mul rd,rs1,rs2  :    x[rd] = x[rs1] × x[rs2]
                                 alusel_o = `EXE_TYPE_MUL;
-                                uopcode_o = `UOP_CODE_MULT;
+                                uop_o = `UOP_CODE_MULT;
                             end
 
                             `INST_MULH: begin
                                 // mulh rd,rs1,rs2  :   x[rd] = (x[rs1] s×s x[rs2]) >>s XLEN
                                 alusel_o = `EXE_TYPE_MUL;
-                                uopcode_o = `UOP_CODE_MULH;
+                                uop_o = `UOP_CODE_MULH;
                             end
 
                             `INST_MULHU: begin
                                 // mulhu rd,rs1,rs2  :   x[rd] = (x[rs1] u × x[rs2]) >>u XLEN
                                 alusel_o = `EXE_TYPE_MUL;
-                                uopcode_o = `UOP_CODE_MULHU;
+                                uop_o = `UOP_CODE_MULHU;
                             end
 
                             `INST_MULHSU: begin
                                 // mulhsu rd,rs1,rs2  :   x[rd] = (x[rs1] s × x[rs2]) >>s XLEN
                                 alusel_o = `EXE_TYPE_MUL;
-                                uopcode_o = `UOP_CODE_MULHSU;
+                                uop_o = `UOP_CODE_MULHSU;
                             end
 
                             // div, divu : Perform division of two 32-bit registers, rounding the result toward zero,
@@ -656,25 +637,25 @@ module id(
                             `INST_DIV: begin
                                 // div rd,rs1,rs2  :   x[rd] = x[rs1] /s x[rs2]
                                 alusel_o = `EXE_TYPE_DIV;
-                                uopcode_o = `UOP_CODE_DIV;
+                                uop_o = `UOP_CODE_DIV;
                             end
 
                             `INST_DIVU: begin
                                 // divu rd,rs1,rs2  :   x[rd] = x[rs1] /u x[rs2]
                                 alusel_o = `EXE_TYPE_DIV;
-                                uopcode_o = `UOP_CODE_DIVU;
+                                uop_o = `UOP_CODE_DIVU;
                             end
 
                             `INST_REM: begin
                                 // rem rd,rs1,rs2  :    x[rd] = x[rs1] %s x[rs2]
                                 alusel_o = `EXE_TYPE_DIV;
-                                uopcode_o = `UOP_CODE_REM;
+                                uop_o = `UOP_CODE_REM;
                             end
 
                             `INST_REMU: begin
                                 // remu rd,rs1,rs2  :   x[rd] = x[rs1] %u x[rs2]
                                 alusel_o = `EXE_TYPE_DIV;
-                                uopcode_o = `UOP_CODE_REMU;
+                                uop_o = `UOP_CODE_REMU;
                             end
 
                             default: begin
@@ -697,7 +678,7 @@ module id(
                     // csr[31:20], uimm[19:15], funct3[14:12], opcode[6:0] = 7'b1110011
                     csr_addr = {20'h0, inst_i[31:20]};
                     imm = {27'b0, inst_i[19:15]};
-                    rd_waddr_o = rd;
+                    rd_wa_o = rd;
                     instvalid = `InstValid;
 
                     case (funct3)
@@ -712,7 +693,7 @@ module id(
                             csr_we = `WriteEnable;
 
                             alusel_o = `EXE_TYPE_CSR;
-                            uopcode_o = `UOP_CODE_CSRRW;
+                            uop_o = `UOP_CODE_CSRRW;
                         end
 
                         `INST_CSRRWI: begin
@@ -725,7 +706,7 @@ module id(
                             csr_we = `WriteEnable;
 
                             alusel_o = `EXE_TYPE_CSR;
-                            uopcode_o = `UOP_CODE_CSRRWI;
+                            uop_o = `UOP_CODE_CSRRWI;
                         end
 
                         `INST_CSRRS: begin
@@ -738,7 +719,7 @@ module id(
                             csr_we = `WriteEnable;
 
                             alusel_o = `EXE_TYPE_CSR;
-                            uopcode_o = `UOP_CODE_CSRRS;
+                            uop_o = `UOP_CODE_CSRRS;
                         end
 
                         `INST_CSRRSI: begin
@@ -752,7 +733,7 @@ module id(
                             csr_we = `WriteEnable;
 
                             alusel_o = `EXE_TYPE_CSR;
-                            uopcode_o = `UOP_CODE_CSRRSI;
+                            uop_o = `UOP_CODE_CSRRSI;
                         end
 
                         `INST_CSRRC: begin
@@ -765,7 +746,7 @@ module id(
                             csr_we = `WriteEnable;
 
                             alusel_o = `EXE_TYPE_CSR;
-                            uopcode_o = `UOP_CODE_CSRRC;
+                            uop_o = `UOP_CODE_CSRRC;
                         end
 
                         `INST_CSRRCI: begin
@@ -777,7 +758,7 @@ module id(
                             rd_we_o = `WriteEnable;
                             csr_we = `WriteEnable;
 
-                            uopcode_o = `UOP_CODE_CSRRCI;
+                            uop_o = `UOP_CODE_CSRRCI;
                             alusel_o = `EXE_TYPE_CSR;
                         end
 
@@ -793,7 +774,7 @@ module id(
                                 // performs no other operation.
                                 // ecall  :   RaiseException(EnvironmentCall)
                                 alusel_o = `EXE_TYPE_NOP;
-                                uopcode_o = `UOP_CODE_ECALL;
+                                uop_o = `UOP_CODE_ECALL;
                                 excepttype_ecall= `True_v;
                             end
 
@@ -802,7 +783,7 @@ module id(
                                 // Return from traps in M-mode, and MRET copies MPIE into MIE, then sets MPIE.
                                 // mret  :   ExceptionReturn(Machine)
                                 alusel_o = `EXE_TYPE_NOP;
-                                uopcode_o = `UOP_CODE_MRET;
+                                uop_o = `UOP_CODE_MRET;
                                 excepttype_mret = `True_v;
                             end
 
@@ -812,7 +793,7 @@ module id(
                                 // Return from traps in U-mode, and URET copies UPIE into UIE, then sets UPIE.
                                 // uret  :   ExceptionReturn(User)
                                 alusel_o = `EXE_TYPE_NOP;
-                                uopcode_o = `UOP_CODE_ERET;
+                                uop_o = `UOP_CODE_ERET;
                                 excepttype_is_eret = `True_v;
                             end
 
@@ -822,7 +803,7 @@ module id(
                                 // It generates a breakpoint exception and performs no other operation.
                                 // ebreak  :   RaiseException(Breakpoint)
                                 alusel_o = `EXE_TYPE_NOP;
-                                uopcode_o = `UOP_CODE_EBREAK;
+                                uop_o = `UOP_CODE_EBREAK;
                             end
 
                             if( (funct7==7'b0000100) && (rs2 == 5'b00010) ) begin   // INST_SRET
@@ -930,7 +911,7 @@ module id(
                     end else if((rs1_re_o == 1'b1) && (mem_rd_we_i == 1'b1) && (mem_rd_waddr_i == rs1_raddr_o)) begin
                         rs1_data_o = mem_rd_wdata_i;
                     end else if(rs1_re_o == 1'b1) begin
-                        rs1_data_o = rs1_rdata_i;
+                        rs1_data_o = rs1_rd_i;
                     end
                 end
             end
@@ -956,7 +937,7 @@ module id(
                     end else if((rs2_re_o == 1'b1) && (mem_rd_we_i == 1'b1) && (mem_rd_waddr_i == rs2_raddr_o)) begin
                         rs2_data_o = mem_rd_wdata_i;
                     end else if(rs2_re_o == 1'b1) begin
-                        rs2_data_o = rs2_rdata_i;
+                        rs2_data_o = rs2_rd_i;
                     end
                 end
             end

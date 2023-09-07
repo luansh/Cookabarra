@@ -23,24 +23,24 @@
 
 module div(
 
-    input wire                    clk_i,
-    input wire                    n_rst_i,
+    input wire clk_i,
+    input wire n_rst_i,
     /* ------- signals from the exe unit --------*/
-    input wire                    div_signed_i,
-    input wire[31:0]              dividend_i,
-    input wire[31:0]              divisor_i,
-    input wire                    start_i,       //start the division, keep valid on the whole division procedure
-    input wire                    annul_i,       // when a exeception or interrupt happened, stop the division
+    input wire div_signed_i,
+    input wire[31:0] dividend_i,
+    input wire[31:0] divisor_i,
+    input wire start_i,       //start the division, keep valid on the whole division procedure
+    input wire annul_i,       // when a exeception or interrupt happened, stop the division
     /* ------- signals to the exe unit --------*/
-    output reg[63:0]              result_o,      // result_o[31:0]:quotient:,  result_o[63:32]:remainder
-    output reg                    ready_o        // the result is ready
+    output reg[63:0] result_o,      // result_o[31:0]:quotient:,  result_o[63:32]:remainder
+    output reg ready_o        // the result is ready
 );
 
     wire[32:0] div_temp;
-    reg[5:0]   cnt;
+    reg[5:0] cnt;
 
     reg[64:0] dividend;
-    reg[1:0]  state;
+    reg[1:0] state;
     reg[31:0] divisor;
     reg[31:0] temp_op1;
     reg[31:0] temp_op2;
