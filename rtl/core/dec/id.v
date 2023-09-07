@@ -537,23 +537,10 @@ module id(
                             end
 
                             // and, or, xor: Perform the indicated bitwise operation on the two source operands.
-                            `INST_AND: begin
-                                // and rd,rs1,rs2  :  x[rd] = x[rs1] & x[rs2]
-                                alusel_o = `EXE_TYPE_LOGIC;
-                                uop_o = `UOP_CODE_AND;
-                            end
 
-                            `INST_OR: begin
-                                // or rd,rs1,rs2  :  x[rd] = x[rs1] | x[rs2]
-                                alusel_o = `EXE_TYPE_LOGIC;
-                                uop_o = `UOP_CODE_OR;
-                            end
-
-                            `INST_XOR: begin
-                                // xor rd,rs1,rs2  :  x[rd] = x[rs1] ^ x[rs2]
-                                alusel_o = `EXE_TYPE_LOGIC;
-                                uop_o = `UOP_CODE_XOR;
-                            end
+                            `INST_AND: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_AND};//and rd, rs1, rs2##x[rd] = x[rs1] & x[rs2]
+                            `INST_OR: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_OR};//or rd, rs1, rs2 ##x[rd] = x[rs1] | x[rs2]
+                            `INST_XOR: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_XOR};//xor rd, rs1, rs2##x[rd] = x[rs1] ^ x[rs2]
 
                             // sll, srl, sra: Perform logical left and right shifts (sll and srl), and arithmetic right shifts (sra).
                             // Logical shifts insert zero bits into vacated locations. Arithmetic right shifts replicate the sign bit into vacated locations.
