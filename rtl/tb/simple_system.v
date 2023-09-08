@@ -129,7 +129,7 @@ module simple_system(
 
     	.inst_ce_i(rom_ce),
 		.pc_i(inst_addr),
-		.inst_o(inst)		
+		.ins_o(inst)		
 	);
 
 

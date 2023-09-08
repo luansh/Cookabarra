@@ -36,7 +36,7 @@ module ram(
 	// instrution port
     input  wire inst_ce_i,
     input  wire[`InstAddrBus] pc_i,
-    output reg[`InstBus] inst_o	
+    output reg[`InstBus] ins_o	
 );
     localparam reg[31:0] CHAR_OUT_ADDR = 32'h00020000;
     localparam reg[31:0] SIM_CTRL_ADDR = 32'h00020002;
@@ -79,9 +79,9 @@ module ram(
     /*------------------ instruction port ----------------------*/
     always @ (*) begin
         if (inst_ce_i == `ChipDisable) begin
-            inst_o = `NOP_INST;
+            ins_o = `NOP_INST;
         end else begin
-            inst_o = mem[pc_i[`DataMemNumLog2+1:2]];  // the instruction address was aligned by 4 bytes
+            ins_o = mem[pc_i[`DataMemNumLog2+1:2]];  // the instruction address was aligned by 4 bytes
         end
     end
 

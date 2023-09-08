@@ -37,14 +37,14 @@ module if_id(
 	input wire branch_slot_end_i,
 
     /* ------- signals from the inst_rom  --------*/
-    input wire[`InstBus] inst_i, //the instruction
+    input wire[`InstBus] ins_i, //the instruction
 
     /* ---------signals from exu -----------------*/
     input wire branch_redirect_i,
 
 	/* ------- signals to the decode -------------*/
     output reg[`InstAddrBus] pc_o,
-    output reg[`InstBus] inst_o,
+    output reg[`InstBus] ins_o,
     output reg[`InstAddrBus] next_pc_o,
     output reg next_taken_o,
 
@@ -54,25 +54,25 @@ module if_id(
     always @ (posedge clk_i) begin
         if (n_rst_i == `RstEnable) begin
             pc_o <= `ZeroWord;
-            inst_o <= `NOP_INST;
+            ins_o <= `NOP_INST;
             branch_slot_end_o <= 1'b0;
         end else if (branch_redirect_i == 1'b1) begin
             pc_o <= pc_i;
-            inst_o <= `NOP_INST;
+            ins_o <= `NOP_INST;
             branch_slot_end_o <= 1'b0;
         end else if(flush_i == 1'b1 ) begin
             pc_o <= pc_i;
-            inst_o <= `NOP_INST;
+            ins_o <= `NOP_INST;
             branch_slot_end_o <= 1'b0;
 		// stop the fetching but keep the decoder on going
         end else if(stall_i[1] == `Stop && stall_i[2] == `NoStop) begin
             pc_o <= pc_i;
-            inst_o <= `NOP_INST;
+            ins_o <= `NOP_INST;
             branch_slot_end_o <= 1'b0;
         //pass the signals from ifu to decoder
         end else if(stall_i[1] == `NoStop) begin
             pc_o <= pc_i;
-            inst_o <= inst_i;
+            ins_o <= ins_i;
             next_pc_o <= next_pc_i;
             next_taken_o <= next_taken_i;
             branch_slot_end_o <= branch_slot_end_i;

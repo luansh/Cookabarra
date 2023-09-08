@@ -32,7 +32,7 @@ module id_ex(
 
     /* ------- signals from the decoder --------*/
     input wire[`RegBus] pc_i,
-    input wire[`RegBus] inst_i,
+    input wire[`RegBus] ins_i,
     input wire[`RegBus] next_pc_i,
     input wire next_taken_i,
     input wire branch_slot_end_i,
@@ -40,8 +40,8 @@ module id_ex(
     input wire[`AluSelBus] alusel_i,
     input wire[`AluOpBus] uop_i,
 
-    input wire[`RegBus] rs1_data_i,
-    input wire[`RegBus] rs2_data_i,
+    input wire[`RegBus] rs1_d_i,
+    input wire[`RegBus] rs2_d_i,
     input reg[`RegBus] imm_i,
     input wire rd_we_i,
     input wire[`RegAddrBus] rd_wa_i,
@@ -53,7 +53,7 @@ module id_ex(
 
     /* ------- signals to exu --------*/
     output reg[`RegBus] pc_o,
-    output reg[`RegBus] inst_o,
+    output reg[`RegBus] ins_o,
     output reg[`RegBus] next_pc_o,
     output reg next_taken_o,
     output reg branch_slot_end_o,
@@ -67,7 +67,7 @@ module id_ex(
     output reg rd_we_o,
 
     output reg csr_we_o,
-    output reg[`RegAddrBus] rd_addr_o,
+    output reg[`RegAddrBus] rd_a_o,
 
     output reg[`RegBus] csr_addr_o,
 
@@ -77,7 +77,7 @@ module id_ex(
     always @ (posedge clk_i) begin
         if (n_rst_i == `RstEnable) begin
             pc_o <= `ZeroWord;
-            inst_o <= `NOP_INST;
+            ins_o <= `NOP_INST;
             branch_slot_end_o <= 1'b0;
 
             alusel_o <= `EXE_TYPE_NOP;
@@ -87,7 +87,7 @@ module id_ex(
             rs2_data_o <= `ZeroWord;
             imm_o <= `ZeroWord;
 
-            rd_addr_o <= `NOPRegAddr;
+            rd_a_o <= `NOPRegAddress;
             rd_we_o <= `WriteDisable;
 
             csr_we_o <= `WriteDisable;
@@ -96,7 +96,7 @@ module id_ex(
             exception_o <= `ZeroWord;
         end else if(flush_i == 1'b1 ) begin
             pc_o <= `ZeroWord;
-            inst_o <= `NOP_INST;
+            ins_o <= `NOP_INST;
             branch_slot_end_o <= 1'b0;
 
             uop_o <= `UOP_CODE_NOP;
@@ -106,7 +106,7 @@ module id_ex(
             rs2_data_o <= `ZeroWord;
             imm_o <= `ZeroWord;
 
-            rd_addr_o <= `NOPRegAddr;
+            rd_a_o <= `NOPRegAddress;
             rd_we_o <= `WriteDisable;
 
             csr_we_o <= `WriteDisable;
@@ -115,7 +115,7 @@ module id_ex(
             exception_o <= `ZeroWord;
         end else if(stall_i[2] == `Stop && stall_i[3] == `NoStop) begin
             pc_o <= `ZeroWord;
-            inst_o <= `NOP_INST;
+            ins_o <= `NOP_INST;
             branch_slot_end_o <= 1'b0;
 
             uop_o <= `UOP_CODE_NOP;
@@ -125,7 +125,7 @@ module id_ex(
             rs2_data_o <= `ZeroWord;
             imm_o <= `ZeroWord;
 
-            rd_addr_o <= `NOPRegAddr;
+            rd_a_o <= `NOPRegAddress;
             rd_we_o <= `WriteDisable;
 
             csr_we_o <= `WriteDisable;
@@ -134,7 +134,7 @@ module id_ex(
             exception_o <= `ZeroWord;
         end else if(stall_i[2] == `NoStop) begin
             pc_o <= pc_i;
-            inst_o <= inst_i;
+            ins_o <= ins_i;
             // pass down the branch prediction info
             next_pc_o <= next_pc_i;
             next_taken_o <= next_taken_i;
@@ -143,11 +143,11 @@ module id_ex(
             uop_o <= uop_i;
             alusel_o <= alusel_i;
 
-            rs1_data_o <= rs1_data_i;
-            rs2_data_o <= rs2_data_i;
+            rs1_data_o <= rs1_d_i;
+            rs2_data_o <= rs2_d_i;
             imm_o <= imm_i;
 
-            rd_addr_o <= rd_wa_i;
+            rd_a_o <= rd_wa_i;
             rd_we_o <= rd_we_i;
 
             csr_we_o <= csr_we_i;

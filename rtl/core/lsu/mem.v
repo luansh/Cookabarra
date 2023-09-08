@@ -17,7 +17,7 @@ module mem(
     /*-- signals from exu-----*/
     input wire[`RegBus] exception_i,       // exception type
     input wire[`RegBus] pc_i,       // the pc when exception happened
-    input wire[`RegBus] inst_i,            // the instruction caused the exception
+    input wire[`RegBus] ins_i,            // the instruction caused the exception
 
     input wire rd_we_i,
     input wire[`RegAddrBus] rd_wa_i,
@@ -28,7 +28,7 @@ module mem(
     input wire[`RegBus] mem_wdata_i,
 
     /*-- signals to access the external memory -----*/
-    output reg[`RegBus] mem_addr_o,
+    output reg[`RegBus] mem_a_o,
     output wire mem_we_o,
     output reg[3:0] mem_sel_o,          //the selector for bytes operation
     output reg[`RegBus] mem_data_o,
@@ -46,8 +46,8 @@ module mem(
 
     /*-- pass down to mem_wb stage -----*/
     output reg rd_we_o,
-    output reg[`RegAddrBus] rd_addr_o,
-    output reg[`RegBus] rd_wdata_o,
+    output reg[`RegAddrBus] rd_a_o,
+    output reg[`RegBus] rd_wd_o,
 
     output reg csr_we_o,
     output reg[`RegBus] csr_waddr_o,
@@ -57,7 +57,7 @@ module mem(
     output wire stall_req_o,
     output reg[`RegBus] exception_o,
     output reg[`RegBus] pc_o,
-    output reg[`RegBus] inst_o
+    output reg[`RegBus] ins_o
 
 );
 
@@ -93,15 +93,15 @@ module mem(
 
     // to the next stage
     assign pc_o = pc_i;
-    assign inst_o = inst_i;
+    assign ins_o = ins_i;
 
     assign csr_we_o = csr_we_i;
     assign csr_waddr_o = csr_waddr_i;
     assign csr_wdata_o = csr_wdata_i;
 
     assign rd_we_o = rd_we_i;
-    assign rd_addr_o = rd_wa_i;
-    assign rd_wdata_o = rd_wd_i;
+    assign rd_a_o = rd_wa_i;
+    assign rd_wd_o = rd_wd_i;
 
     assign mem_we = ( (uop_i == `UOP_CODE_SB) || (uop_i == `UOP_CODE_SH)
                     ||(uop_i == `UOP_CODE_SW) ) ? 1'b1 : 1'b0;
@@ -112,23 +112,23 @@ module mem(
 
     assign mem_we_o = mem_we & (~(|exception_o));  // if exeception happened, give up the store operation on the ram
     assign mem_ce_o = mem_we_o | mem_re;
-    assign mem_addr_o = mem_addr_i;
+    assign mem_a_o = mem_addr_i;
 
     assign stall_req_o = 0;
 
     always @ (*) begin
-        if(n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RstEnable) begin
 			//operation on RAM
-            mem_addr_o = `ZeroWord;
+            mem_a_o = `ZeroWord;
             mem_we = `WriteDisable;
             mem_sel_o = 4'b0000;
             mem_data_o = `ZeroWord;
             mem_ce_o = `ChipDisable;
 
             //GPR
-            rd_addr_o = `NOPRegAddr;
+            rd_a_o = `NOPRegAddress;
             rd_we_o = `WriteDisable;
-            rd_wdata_o = `ZeroWord;
+            rd_wd_o = `ZeroWord;
 
 			//CSR
             csr_we_o = `WriteDisable;
@@ -137,30 +137,30 @@ module mem(
 
             exception_o = `ZeroWord;
             pc_o = `ZeroWord;
-            inst_o = `NOP_INST;
+            ins_o = `NOP_INST;
         end else begin
             mem_sel_o = 4'b1111;
             case (uop_i)
                 `UOP_CODE_LB:     begin
                     case (mem_addr_i[1:0])
                         2'b00:  begin
-                            rd_wdata_o = {{24{mem_data_i[7]}},mem_data_i[7:0]};
+                            rd_wd_o = {{24{mem_data_i[7]}},mem_data_i[7:0]};
                             mem_sel_o = 4'b1000;
                         end
                         2'b01:  begin
-                            rd_wdata_o = {{24{mem_data_i[15]}},mem_data_i[15:8]};
+                            rd_wd_o = {{24{mem_data_i[15]}},mem_data_i[15:8]};
                             mem_sel_o = 4'b0100;
                         end
                         2'b10:  begin
-                            rd_wdata_o = {{24{mem_data_i[23]}},mem_data_i[23:16]};
+                            rd_wd_o = {{24{mem_data_i[23]}},mem_data_i[23:16]};
                             mem_sel_o = 4'b0010;
                         end
                         2'b11:  begin
-                            rd_wdata_o = {{24{mem_data_i[31]}},mem_data_i[31:24]};
+                            rd_wd_o = {{24{mem_data_i[31]}},mem_data_i[31:24]};
                             mem_sel_o = 4'b0001;
                         end
                         default:    begin
-                            rd_wdata_o = `ZeroWord;
+                            rd_wd_o = `ZeroWord;
                         end
                     endcase
                 end
@@ -168,23 +168,23 @@ module mem(
                 `UOP_CODE_LBU:        begin
                     case (mem_addr_i[1:0])
                         2'b00:  begin
-                            rd_wdata_o = {{24{1'b0}},mem_data_i[7:0]};
+                            rd_wd_o = {{24{1'b0}},mem_data_i[7:0]};
                             mem_sel_o = 4'b1000;
                         end
                         2'b01:  begin
-                            rd_wdata_o = {{24{1'b0}},mem_data_i[15:8]};
+                            rd_wd_o = {{24{1'b0}},mem_data_i[15:8]};
                             mem_sel_o = 4'b0100;
                         end
                         2'b10:  begin
-                            rd_wdata_o = {{24{1'b0}},mem_data_i[23:16]};
+                            rd_wd_o = {{24{1'b0}},mem_data_i[23:16]};
                             mem_sel_o = 4'b0010;
                         end
                         2'b11:  begin
-                            rd_wdata_o = {{24{1'b0}},mem_data_i[31:24]};
+                            rd_wd_o = {{24{1'b0}},mem_data_i[31:24]};
                             mem_sel_o = 4'b0001;
                         end
                         default:    begin
-                            rd_wdata_o = `ZeroWord;
+                            rd_wd_o = `ZeroWord;
                         end
                     endcase
                 end
@@ -192,15 +192,15 @@ module mem(
                 `UOP_CODE_LH:     begin
                     case (mem_addr_i[1:0])
                         2'b00:  begin
-                            rd_wdata_o = {{16{mem_data_i[15]}},mem_data_i[15:0]};
+                            rd_wd_o = {{16{mem_data_i[15]}},mem_data_i[15:0]};
                             mem_sel_o = 4'b1100;
                         end
                         2'b10:  begin
-                            rd_wdata_o = {{16{mem_data_i[31]}},mem_data_i[31:16]};
+                            rd_wd_o = {{16{mem_data_i[31]}},mem_data_i[31:16]};
                             mem_sel_o = 4'b0011;
                         end
                         default:    begin
-                            rd_wdata_o = `ZeroWord;
+                            rd_wd_o = `ZeroWord;
                         end
                     endcase
                 end
@@ -208,21 +208,21 @@ module mem(
                 `UOP_CODE_LHU:        begin
                     case (mem_addr_i[1:0])
                         2'b00:  begin
-                            rd_wdata_o = {{16{1'b0}},mem_data_i[15:0]};
+                            rd_wd_o = {{16{1'b0}},mem_data_i[15:0]};
                             mem_sel_o = 4'b1100;
                         end
                         2'b10:  begin
-                            rd_wdata_o = {{16{1'b0}},mem_data_i[31:16]};
+                            rd_wd_o = {{16{1'b0}},mem_data_i[31:16]};
                             mem_sel_o = 4'b0011;
                         end
                         default:    begin
-                            rd_wdata_o = `ZeroWord;
+                            rd_wd_o = `ZeroWord;
                         end
                     endcase
                 end
 
                 `UOP_CODE_LW:     begin
-                    rd_wdata_o = mem_data_i;
+                    rd_wd_o = mem_data_i;
                     mem_sel_o = 4'b1111;
                 end
 

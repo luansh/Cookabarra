@@ -170,7 +170,7 @@
       //-------signals from ex_mem -------
     wire mem_rd_we_i;
     wire[`RegAddrBus] mem_rd_addr_i;
-    wire[`RegBus] mem_rd_wdata_i;
+    wire[`RegBus] mem_rd_wd_i;
 
     wire[`AluOpBus] mem_uop_i;
     wire[`RegBus] mem_mem_addr_i;
@@ -313,13 +313,13 @@
           .branch_slot_end_i(if_branch_slot_end_o),
 
       //from rom
-      .inst_i(rom_data_i),
+      .ins_i(rom_data_i),
 
       .branch_redirect_i(ex_branch_redirect_o),
 
       // to id
       .pc_o(id_pc_i),
-      .inst_o(id_inst_i),
+      .ins_o(id_inst_i),
           .next_pc_o(id_next_pc_i),
           .next_taken_o(id_next_taken_i),
       .branch_slot_end_o(id_branch_slot_end_i)
@@ -332,7 +332,7 @@
 
       //signal from the if_id
       .pc_i(id_pc_i),
-      .inst_i(id_inst_i),
+      .ins_i(id_inst_i),
           .next_pc_i(id_next_pc_i),
           .next_taken_i(id_next_taken_i),
           .branch_slot_end_i(id_branch_slot_end_i),
@@ -340,8 +340,8 @@
       //signal to read regfile
       .rs1_re_o(id_rs1_re_o),
       .rs2_re_o(id_rs2_re_o),
-      .rs1_raddr_o(id_rs1_raddr_o),
-      .rs2_raddr_o(id_rs2_raddr_o),
+      .rs1_ra_o(id_rs1_raddr_o),
+      .rs2_ra_o(id_rs2_raddr_o),
 
           // signal from regfile
       .rs1_rd_i(reg_rs1_rdata_o),
@@ -351,20 +351,20 @@
       .branch_redirect_i(ex_branch_redirect_o),
           .ex_uop_i(ex_uopcode_o),
       .ex_rd_we_i(ex_rd_we_o),
-      .ex_rd_waddr_i(ex_rd_addr_o),
-      .ex_rd_wdata_i(ex_rd_wdata_o),
+      .ex_rd_wa_i(ex_rd_addr_o),
+      .ex_rd_wd_i(ex_rd_wdata_o),
 
         //bypass the dest rd in mem to decode
       .mem_rd_we_i(mem_rd_we_o),
-      .mem_rd_waddr_i(mem_rd_addr_o),
-      .mem_rd_wdata_i(mem_rd_wdata_o),
+      .mem_rd_wa_i(mem_rd_addr_o),
+      .mem_rd_wd_i(mem_rd_wdata_o),
 
           //signal to ctrl
       .stall_req_o(id_stall_req_o),
 
       //signals to id_ex
           .pc_o(id_pc_o),
-      .inst_o(id_inst_o),
+      .ins_o(id_inst_o),
           .next_pc_o(id_next_pc_o),
           .next_taken_o(id_next_taken_o),
       .branch_slot_end_o(id_branch_slot_end_o),
@@ -398,7 +398,7 @@
 
       //signal from id
       .pc_i(id_pc_o),
-          .inst_i(id_inst_o),
+          .ins_i(id_inst_o),
           .next_pc_i(id_next_pc_o),
           .next_taken_i(id_next_taken_o),
       .branch_slot_end_i(id_branch_slot_end_o),
@@ -406,8 +406,8 @@
       .alusel_i(id_alusel_o),
       .uop_i(id_uopcode_o),
 
-      .rs1_data_i(id_rs1_data_o),
-      .rs2_data_i(id_rs2_data_o),
+      .rs1_d_i(id_rs1_data_o),
+      .rs2_d_i(id_rs2_data_o),
           .imm_i(id_imm_o),
       .rd_we_i(id_rd_we_o),
       .rd_wa_i(id_rd_waddr_o),
@@ -420,7 +420,7 @@
 
       //signal to ex
       .pc_o(ex_pc_i),
-      .inst_o(ex_inst_i),
+      .ins_o(ex_inst_i),
           .next_pc_o(ex_next_pc_i),
           .next_taken_o(ex_next_taken_i),
           .branch_slot_end_o(ex_branch_slot_end_i),
@@ -432,7 +432,7 @@
       .rs2_data_o(ex_rs2_data_i),
       .imm_o(ex_imm_i),
       .rd_we_o(ex_rd_we_i),
-      .rd_addr_o(ex_rd_addr_i),
+      .rd_a_o(ex_rd_addr_i),
 
       .csr_we_o(ex_csr_we_i),
           .csr_addr_o(ex_csr_addr_i),
@@ -447,7 +447,7 @@
 
       //from the id_ex
       .pc_i(ex_pc_i),
-      .inst_i(ex_inst_i),
+      .ins_i(ex_inst_i),
           .next_pc_i(ex_next_pc_i),
       .next_taken_i(ex_next_taken_i),
           .branch_slot_end_i(ex_branch_slot_end_i),
@@ -455,8 +455,8 @@
       .alusel_i(ex_alusel_i),
       .uop_i(ex_uop_i),
 
-      .rs1_data_i(ex_rs1_data_i),
-      .rs2_data_i(ex_rs2_data_i),
+      .rs1_d_i(ex_rs1_data_i),
+      .rs2_d_i(ex_rs2_data_i),
       .imm_i(ex_imm_i),
       .rd_we_i(ex_rd_we_i),
       .rd_wa_i(ex_rd_addr_i),
@@ -494,7 +494,7 @@
 
       //pass down the signals to next pipeline stage
       .pc_o(ex_pc_o),
-      .inst_o(ex_inst_o),
+      .ins_o(ex_inst_o),
 
       // branch
           .branch_request_o (ex_branch_request_o),  // is this instruction a branch/jump ?
@@ -513,12 +513,12 @@
       .csr_wdata_o(ex_csr_wdata_o),
 
       .rd_we_o(ex_rd_we_o),    //foward the rd info to idu meanwhile
-      .rd_addr_o(ex_rd_addr_o),
-      .rd_wdata_o(ex_rd_wdata_o),
+      .rd_a_o(ex_rd_addr_o),
+      .rd_wd_o(ex_rd_wdata_o),
 
       .uop_o(ex_uopcode_o),
-      .mem_addr_o(ex_mem_addr_o),
-      .mem_wdata_o(ex_mem_wdata_o),
+      .mem_a_o(ex_mem_addr_o),
+      .mem_wd_o(ex_mem_wdata_o),
 
       .exception_o(ex_excepttype_o)
     );
@@ -548,7 +548,7 @@
 
       //from the exu
       .pc_i(ex_pc_o),
-      .inst_i(ex_inst_o),
+      .ins_i(ex_inst_o),
 
           .branch_tag_i(ex_branch_tag_o),
       .branch_slot_end_i(ex_branch_slot_end_o),
@@ -569,15 +569,15 @@
 
       // pass down to lsu
       .rd_we_o(mem_rd_we_i),    //forward to id meanwhile
-      .rd_addr_o(mem_rd_addr_i),
-      .rd_wdata_o(mem_rd_wdata_i),
+      .rd_a_o(mem_rd_addr_i),
+      .rd_wd_o(mem_rd_wd_i),
 
       // load or store
         .uop_o(mem_uop_i),
 
       // store to the memory
-      .mem_addr_o(mem_mem_addr_i),
-      .mem_wdata_o(mem_mem_wdata_i),
+      .mem_a_o(mem_mem_addr_i),
+      .mem_wd_o(mem_mem_wdata_i),
 
       .csr_we_o(mem_csr_we_i),    //forward to ex meanwhile
       .csr_waddr_o(mem_csr_waddr_i),
@@ -585,7 +585,7 @@
 
       .exception_o(mem_excepttype_i),
       .pc_o(mem_pc_i),
-      .inst_o(mem_inst_i)
+      .ins_o(mem_inst_i)
     );
 
     mem mem0(
@@ -594,19 +594,19 @@
       // signals from exu
           .exception_i(mem_excepttype_i),
       .pc_i(mem_pc_i),
-      .inst_i(mem_inst_i),
+      .ins_i(mem_inst_i),
 
       // GPR
       .rd_we_i(mem_rd_we_i),
       .rd_wa_i(mem_rd_addr_i),
-      .rd_wd_i(mem_rd_wdata_i),
+      .rd_wd_i(mem_rd_wd_i),
 
           .uop_i(mem_uop_i),
       .mem_addr_i(mem_mem_addr_i),
       .mem_wdata_i(mem_mem_wdata_i),
 
       // read or write the memory
-      .mem_addr_o(ram_addr_o),
+      .mem_a_o(ram_addr_o),
       .mem_we_o(ram_we_o),
       .mem_sel_o(ram_sel_o),
       .mem_data_o(ram_data_o),
@@ -627,8 +627,8 @@
       //pass down to mem_wb stage
       //GPR
       .rd_we_o(mem_rd_we_o),
-      .rd_addr_o(mem_rd_addr_o),
-      .rd_wdata_o(mem_rd_wdata_o),
+      .rd_a_o(mem_rd_addr_o),
+      .rd_wd_o(mem_rd_wdata_o),
 
           // CSR
       .csr_we_o(mem_csr_we_o),
@@ -639,7 +639,7 @@
       .stall_req_o(mem_stall_req_o),
       .exception_o(mem_excepttype_o),
       .pc_o(mem_pc_o),
-      .inst_o(mem_inst_o)
+      .ins_o(mem_inst_o)
 
     );
 
@@ -662,8 +662,8 @@
 
       // pass down to write back stage, update the csr and gpr
       .rd_we_o(wb_rd_we_i),
-      .rd_addr_o(wb_rd_addr_i),
-      .rd_wdata_o(wb_rd_wdata_i),
+      .rd_a_o(wb_rd_addr_i),
+      .rd_wd_o(wb_rd_wdata_i),
 
       .csr_we_o(wb_csr_we_i),
       .csr_waddr_o(wb_csr_waddr_i),
@@ -679,7 +679,7 @@
         //from mem
           .exception_i(mem_excepttype_o),
       .pc_i(mem_pc_o),
-      .inst_i(mem_inst_o),
+      .ins_i(mem_inst_o),
           //from if, id, eu, mem
           .stallreq_from_if_i(if_stall_req_o),
       .stallreq_from_id_i(id_stall_req_o),

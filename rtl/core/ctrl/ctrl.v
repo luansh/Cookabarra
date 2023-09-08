@@ -29,7 +29,7 @@ module ctrl(
 
     input wire[`RegBus] exception_i,
     input wire[`RegBus] pc_i,
-    input wire[`RegBus] inst_i,
+    input wire[`RegBus] ins_i,
 
     /* ----- stall request from other modules --------*/
     input wire stallreq_from_if_i,
@@ -268,7 +268,7 @@ module ctrl(
                 trap_casue_o <= 4'b0010; // Illegal instruction, cause = 2
                 ie_type_o <= 1'b0;
                 set_mtval_o <= 1'b1;
-                mtval_o <= inst_i;     //set to the instruction
+                mtval_o <= ins_i;     //set to the instruction
 
             end else if(ebreak) begin
                 trap_casue_o <= 4'b0011; // Breakpoint, cause =3

@@ -44,8 +44,8 @@ module mem_wb(
     /*-- signals passed to mem_wb stage -----*/
 	//GPR
     output reg rd_we_o,
-    output reg[`RegAddrBus] rd_addr_o,
-    output reg[`RegBus] rd_wdata_o,
+    output reg[`RegAddrBus] rd_a_o,
+    output reg[`RegBus] rd_wd_o,
 
     //CSR
     output reg csr_we_o,
@@ -59,8 +59,8 @@ module mem_wb(
         if(n_rst_i == `RstEnable) begin
 		    // GPR
             rd_we_o <= `WriteDisable;
-            rd_addr_o <= `NOPRegAddr;
-            rd_wdata_o <= `ZeroWord;
+            rd_a_o <= `NOPRegAddress;
+            rd_wd_o <= `ZeroWord;
 
 			// CSR
             csr_we_o <= `WriteDisable;
@@ -70,8 +70,8 @@ module mem_wb(
             instret_incr_o  <= 1'b0;
         end else if(flush_i == 1'b1 ) begin  //need to flush the pipeline
             rd_we_o <= `WriteDisable;
-            rd_addr_o <= `NOPRegAddr;
-            rd_wdata_o <= `ZeroWord;
+            rd_a_o <= `NOPRegAddress;
+            rd_wd_o <= `ZeroWord;
 
             csr_we_o <= `WriteDisable;
             csr_waddr_o <= `ZeroWord;
@@ -80,8 +80,8 @@ module mem_wb(
             instret_incr_o <= 1'b0;
         end else if(stall_i[4] == `Stop && stall_i[5] == `NoStop) begin  //stall this stage
             rd_we_o <= `WriteDisable;
-            rd_addr_o <= `NOPRegAddr;
-            rd_wdata_o <= `ZeroWord;
+            rd_a_o <= `NOPRegAddress;
+            rd_wd_o <= `ZeroWord;
 
             csr_we_o <= `WriteDisable;
             csr_waddr_o <= `ZeroWord;
@@ -91,8 +91,8 @@ module mem_wb(
         end else if(stall_i[4] == `NoStop) begin
 		    // write the GPR
             rd_we_o <= rd_we_i;
-            rd_addr_o <= rd_wa_i;
-            rd_wdata_o <= rd_wd_i;
+            rd_a_o <= rd_wa_i;
+            rd_wd_o <= rd_wd_i;
 
 			// write the CSR
             csr_we_o <= csr_we_i;

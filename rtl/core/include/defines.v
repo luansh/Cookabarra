@@ -34,8 +34,8 @@
 `define AluOpBus                15:0
 `define AluSelBus               3:0
 
-`define InstValid               1'b1
-`define InstInvalid             1'b0
+  `define INS_VALID 1'b1
+  `define INS_INVALID 1'b0
 
 `define Stop                    1'b1
 `define NoStop                  1'b0
@@ -77,7 +77,7 @@
 `define DoubleRegBus            63:0
 `define RegNum                  32
 `define RegNumLog2              5
-`define NOPRegAddr              5'b00000
+`define NOPRegAddress              5'b00000
 
 /*-------------------------------------- div -----------------------------------*/
 `define DivFree                 2'b00
@@ -91,91 +91,159 @@
 
 //https://zhuanlan.zhihu.com/p/261705919
 /*--------------------------------- instruction type ----------------------------*/
-`define INST_OPCODE_LUI         7'b0110111   // {imm[31:12],                     rd,          opcode=0110111}
-`define INST_OPCODE_AUIPC       7'b0010111   // {imm[31:12],                     rd,          opcode=0010111}
-`define INST_OPCODE_JAL         7'b1101111   // {imm[20|10:1|11|19:12],          rd,          opcode=1101111}
-`define INST_OPCODE_JALR        7'b1100111   // {imm[11:0],         rs1, 000,    rd,          opcode=1100111}
+//Load U-Immediate
+//{imm[31:12], rd, opcode=0110111}
+//lui rd, imm_r ##x[rd]=sext(immediate[31:12]<<12)
+  `define INS_OPCODE_LUI 7'b0110111
 
-`define INST_OPCODE_BRANCH      7'b1100011   // {imm[12|10:5], rs2, rs1, funct3, imm[4:1|11], opcode=1100011}
-`define INST_OPCODE_LOAD        7'b0000011   // {imm[11:0],         rs1, funct3, rd,          opcode=0000011}
-`define INST_OPCODE_STORE       7'b0100011   // {imm[11:5],    rs2, rs1, funct3, imm[4:0],    opcode=0100011}
-`define INST_OPCODE_IMM         7'b0010011   // {imm[11:0],         rs1, funct3, rd,          opcode=0010011}
-`define INST_OPCODE_REG         7'b0110011   // {funct7,       rs2, rs1, funct3, rd,          opcode=0110011}
-`define INST_OPCODE_FENCE       7'b0001111   // {fm, pred, succ,    rs1, 000,    rd,          opcode=0001111}
-`define INST_OPCODE_CSR         7'b1110011   // {csr,               rs1, funct3, rd,          opcode=1110011}
+//Add Upper Immediate (And) PC (To Rd)
+//{imm[31:12], rd, opcode=0010111}
+//该指令不会修改PC的值，可以配合JALR指令使用，以修改PC，跳转至指定位置
+//auipc rd, imm_r ##x[rd]=pc+sext(immediate[31:12]<<12)
+  `define INS_OPCODE_AUIPC 7'b0010111
+
+//Jump And Link
+//{imm[20|10:1|11|19:12], rd, opcode=1101111}
+//jal rd, offset##x[rd]=pc+4;/pc+=sext(offset)
+  `define INS_OPCODE_JAL 7'b1101111
+
+//Jump And Link Register
+//{imm[11:0], rs1, 000, rd, opcode=1100111}
+//jalr rd, rs1, offset##v=pc+4;/pc=(x[rs1]+sext(offset))&∼1;/x[rd]=v
+  `define INS_OPCODE_JALR 7'b1100111
+
+//{imm[12|10:5], rs2, rs1, fun3, imm[4:1|11], opcode=1100011}
+//beq rs1, rs2, offset##if (rs1==rs2) pc+=sext(offset)
+//bne rs1, rs2, offset##if (rs1!=rs2) pc+=sext(offset)
+//bge rs1, rs2, offset##if (rs1>=srs2) pc+=sext(offset)
+//bgeu rs1, rs2, offset ##if (rs1>=urs2) pc+=sext(offset)
+//blt rs1, rs2, offset##if (rs1<srs2) pc+=sext(offset)
+//bltu rs1, rs2, offset ##if (rs1<urs2) pc+=sext(offset)
+  `define INS_OPCODE_BRANCH 7'b1100011
+
+//{imm[11:0], rs1, fun3, rd, opcode=0000011}
+//lb rd, offset(rs1)##x[rd]=sext(M[x[rs1]+sext(offset)][7:0])
+//lbu rd, offset(rs1) ##x[rd]=M[x[rs1]+sext(offset)][7:0]
+//lh rd, offset(rs1)##x[rd]=sext(M[x[rs1]+sext(offset)][15:0])
+//lhu rd, offset(rs1) ##x[rd]=M[x[rs1]+sext(offset)][15:0]
+//lw rd, offset(rs1)##x[rd]=sext(M[x[rs1]+sext(offset)][31:0])
+  `define INS_OPCODE_LOAD 7'b0000011
+
+//{imm[11:5], rs2, rs1, fun3, imm[4:0], opcode=0100011}
+//sb rs2, offset(rs1) ##M[x[rs1]+sext(offset)]=x[rs2][7:0]
+//sh rs2, offset(rs1) ##M[x[rs1]+sext(offset)]=x[rs2][15:0]
+//sw rs2, offset(rs1) ##M[x[rs1]+sext(offset)]=x[rs2][31:0]
+  `define INS_OPCODE_STORE 7'b0100011
+
+//{imm[11:0], rs1, fun3, rd, opcode=0010011}
+//addi rd, rs1, imm ##x[rd]=x[rs1]+sext(imm)
+//slti rd, rs1, imm ##x[rd]=x[rs1]<s(sext(imm))
+//sltiu rd, rs1, imm##x[rd]=x[rs1]<u(sext(imm))
+//andi rd, rs1, imm ##x[rd]=x[rs1]&sext(imm)
+//ori rd, rs1, imm##[rd]=x[rs1]|sext(imm)
+//xori rd, rs1, imm ##x[rd]=x[rs1]^sext(imm)
+//https://blog.csdn.net/qq_33880925/article/details/123354557
+//slli rd, rs1, imm ##x[rd]=x[rs1]<<imm
+//srli rd, rs1, imm ##x[rd]=x[rs1]>>u(imm)
+//srai rd, rs1, imm ##x[rd]=x[rs1]>>s(imm)
+  `define INS_OPCODE_IMM 7'b0010011
+
+//{fun7, rs2, rs1, fun3, rd, opcode=0110011}
+//add rd, rs1, rs2##x[rd]=x[rs1]+x[rs2]
+//sub rd, rs1, rs2##x[rd]=x[rs1]-x[rs2]
+//and rd, rs1, rs2##x[rd]=x[rs1]&x[rs2]
+//or rd, rs1, rs2 ##x[rd]=x[rs1]|x[rs2]
+//xor rd, rs1, rs2##x[rd]=x[rs1]^x[rs2]
+//sll rd, rs1, rs2##x[rd]=x[rs1]<<x[rs2]
+//srl rd, rs1, rs2##x[rd]=x[rs1]>>u(x[rs2])
+//sra rd, rs1, rs2##x[rd]=x[rs1]>>s(x[rs2])
+//slt rd, rs1, rs2##x[rd]=x[rs1]<s(x[rs2])
+//sltu rd, rs1, rs2 ##x[rd]=x[rs1]<u(x[rs2])
+//mul rd, rs1, rs2##x[rd]=x[rs1]*x[rs2]
+//mulh rd, rs1, rs2 ##x[rd]=((x[rs1])s*s(x[rs2]))>>s(XLEN)
+//mulhu rd, rs1, rs2##x[rd]=((x[rs1])u*u(x[rs2]))>>u(XLEN)
+//mulhsu rd, rs1, rs2 ##x[rd]=((x[rs1])s*u(x[rs2]))>>s(XLEN)
+//div rd, rs1, rs2##x[rd]=x[rs1]/s(x[rs2])
+//divu rd, rs1, rs2 ##x[rd]=x[rs1]/u(x[rs2])
+//rem rd, rs1, rs2##x[rd]=x[rs1]%s(x[rs2])
+//remu rd, rs1, rs2 ##x[rd]=x[rs1]%u(x[rs2])
+  `define INS_OPCODE_REG 7'b0110011
+
+`define INS_OPCODE_FENCE       7'b0001111   // {fm, pred, succ,    rs1, 000,    rd,          opcode=0001111}
+`define INS_OPCODE_CSR         7'b1110011   // {csr,               rs1, fun3, rd,          opcode=1110011}
 
 
 /*---------------------------------------AluOp-----------------------------------*/
 
-// B type inst  {imm[12|10:5], rs2, rs1, funct3, imm[4:1|11, opcode=1100011}
-`define INST_BEQ                3'b000
-`define INST_BNE                3'b001
-`define INST_BLT                3'b100
-`define INST_BGE                3'b101
-`define INST_BLTU               3'b110
-`define INST_BGEU               3'b111
+// B type inst  {imm[12|10:5], rs2, rs1, fun3, imm[4:1|11, opcode=1100011}
+`define INS_BEQ                3'b000
+`define INS_BNE                3'b001
+`define INS_BLT                3'b100
+`define INS_BGE                3'b101
+`define INS_BLTU               3'b110
+`define INS_BGEU               3'b111
 
-// L type inst, {imm[11:0], rs1[4:0], funct3[2:0], rd[4:0],opcode=0000011}
-`define INST_LB                 3'b000
-`define INST_LH                 3'b001
-`define INST_LW                 3'b010
-`define INST_LBU                3'b100
-`define INST_LHU                3'b101
+// L type inst, {imm[11:0], rs1[4:0], fun3[2:0], rd[4:0],opcode=0000011}
+`define INS_LB                 3'b000
+`define INS_LH                 3'b001
+`define INS_LW                 3'b010
+`define INS_LBU                3'b100
+`define INS_LHU                3'b101
 
-// S type inst, {imm[11:5], rs2, rs1, funct3, imm[4:0], opcode=0100011}
-`define INST_SB                 3'b000
-`define INST_SH                 3'b001
-`define INST_SW                 3'b010
-
-
-// I type inst,  {imm[11:0], rs1[4:0], funct3[2:0], rd[4:0],opcode=0010011}
-`define INST_ADDI               3'b000
-`define INST_SLTI               3'b010
-`define INST_SLTIU              3'b011
-`define INST_XORI               3'b100
-`define INST_ORI                3'b110
-`define INST_ANDI               3'b111
-
-`define INST_SLLI               3'b001  // {7'b0000000, shamt[4:0], rs1[4:0], funct3[2:0], rd[4:0],opcode=0010011}
-`define INST_SRLI_SRAI          3'b101  // {7'b0000000, shamt[4:0], rs1[4:0], funct3[2:0], rd[4:0],opcode=0010011} INST_SRLI
-                                        // {7'b0100000, shamt[4:0], rs1[4:0], funct3[2:0], rd[4:0],opcode=0010011} INST_SRAI
+// S type inst, {imm[11:5], rs2, rs1, fun3, imm[4:0], opcode=0100011}
+`define INS_SB                 3'b000
+`define INS_SH                 3'b001
+`define INS_SW                 3'b010
 
 
-// R type inst, {funct7, rs2, rs1, funct3, rd, opcode=0110011}, funct7=0000000 or 0100000
+// I type inst,  {imm[11:0], rs1[4:0], fun3[2:0], rd[4:0],opcode=0010011}
+`define INS_ADDI               3'b000
+`define INS_SLTI               3'b010
+`define INS_SLTIU              3'b011
+`define INS_XORI               3'b100
+`define INS_ORI                3'b110
+`define INS_ANDI               3'b111
+
+`define INS_SLLI               3'b001  // {7'b0000000, shamt[4:0], rs1[4:0], fun3[2:0], rd[4:0],opcode=0010011}
+`define INS_SRLI_SRAI          3'b101  // {7'b0000000, shamt[4:0], rs1[4:0], fun3[2:0], rd[4:0],opcode=0010011} INS_SRLI
+                                        // {7'b0100000, shamt[4:0], rs1[4:0], fun3[2:0], rd[4:0],opcode=0010011} INS_SRAI
+
+
+// R type inst, {fun7, rs2, rs1, fun3, rd, opcode=0110011}, fun7=0000000 or 0100000
 // R-1: LOGIC inst
-`define INST_ADD_SUB            3'b000  // {funct7=0000000, rs2, rs1, funct3, rd, opcode=0110011} ADD
-                                        // {funct7=0100000, rs2, rs1, funct3, rd, opcode=0110011} SUB
-`define INST_SLL                3'b001  // {funct7=0000000, rs2, rs1, funct3, rd, opcode=0110011}
-`define INST_SLT                3'b010  // {funct7=0000000, rs2, rs1, funct3, rd, opcode=0110011}
-`define INST_SLTU               3'b011  // {funct7=0000000, rs2, rs1, funct3, rd, opcode=0110011}
-`define INST_XOR                3'b100  // {funct7=0000000, rs2, rs1, funct3, rd, opcode=0110011}
-`define INST_SRL_SRA            3'b101  // {funct7=0000000, rs2, rs1, funct3, rd, opcode=0110011} SRL
-                                        // {funct7=0100000, rs2, rs1, funct3, rd, opcode=0110011} SRA
-`define INST_OR                 3'b110  // {funct7=0000000, rs2, rs1, funct3, rd, opcode=0110011}
-`define INST_AND                3'b111  // {funct7=0000000, rs2, rs1, funct3, rd, opcode=0110011}
+`define INS_ADD_SUB            3'b000  // {fun7=0000000, rs2, rs1, fun3, rd, opcode=0110011} ADD
+                                        // {fun7=0100000, rs2, rs1, fun3, rd, opcode=0110011} SUB
+`define INS_SLL                3'b001  // {fun7=0000000, rs2, rs1, fun3, rd, opcode=0110011}
+`define INS_SLT                3'b010  // {fun7=0000000, rs2, rs1, fun3, rd, opcode=0110011}
+`define INS_SLTU               3'b011  // {fun7=0000000, rs2, rs1, fun3, rd, opcode=0110011}
+`define INS_XOR                3'b100  // {fun7=0000000, rs2, rs1, fun3, rd, opcode=0110011}
+`define INS_SRL_SRA            3'b101  // {fun7=0000000, rs2, rs1, fun3, rd, opcode=0110011} SRL
+                                        // {fun7=0100000, rs2, rs1, fun3, rd, opcode=0110011} SRA
+`define INS_OR                 3'b110  // {fun7=0000000, rs2, rs1, fun3, rd, opcode=0110011}
+`define INS_AND                3'b111  // {fun7=0000000, rs2, rs1, fun3, rd, opcode=0110011}
 
-//R-2: Multiply inst, {funct7, rs2, rs1, funct3, rd, opcode=0110011}, funct7=000001
-`define INST_MUL                3'b000  // {funct7=0000001, rs2, rs1, funct3, rd, opcode=0110011}
-`define INST_MULH               3'b001
-`define INST_MULHSU             3'b010
-`define INST_MULHU              3'b011
-`define INST_DIV                3'b100
-`define INST_DIVU               3'b101
-`define INST_REM                3'b110
-`define INST_REMU               3'b111
+//R-2: Multiply inst, {fun7, rs2, rs1, fun3, rd, opcode=0110011}, fun7=000001
+`define INS_MUL                3'b000  // {fun7=0000001, rs2, rs1, fun3, rd, opcode=0110011}
+`define INS_MULH               3'b001
+`define INS_MULHSU             3'b010
+`define INS_MULHU              3'b011
+`define INS_DIV                3'b100
+`define INS_DIVU               3'b101
+`define INS_REM                3'b110
+`define INS_REMU               3'b111
 
-// CSR inst, {csr, rs1, funct3, rd, opcode=1110011}
-`define INST_CSRRW              3'b001
-`define INST_CSRRS              3'b010
-`define INST_CSRRC              3'b011
-`define INST_CSRRWI             3'b101
-`define INST_CSRRSI             3'b110
-`define INST_CSRRCI             3'b111
-`define INST_CSR_SPECIAL        3'b000
+// CSR inst, {csr, rs1, fun3, rd, opcode=1110011}
+`define INS_CSRRW              3'b001
+`define INS_CSRRS              3'b010
+`define INS_CSRRC              3'b011
+`define INS_CSRRWI             3'b101
+`define INS_CSRRSI             3'b110
+`define INS_CSRRCI             3'b111
+`define INS_CSR_SPECIAL        3'b000
 
 // Fence type inst
-`define INST_FENCE              3'b000
-`define INST_FENCE_I            3'b001
+`define INS_FENCE              3'b000
+`define INS_FENCE_I            3'b001
 
 
 

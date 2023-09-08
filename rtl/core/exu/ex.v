@@ -6,7 +6,7 @@ module ex(
 
     /* ------- signals from the decoder unit --------*/
     input wire[`RegBus] pc_i,
-    input wire[`RegBus] inst_i,
+    input wire[`RegBus] ins_i,
 
     input wire[`RegBus] next_pc_i,
 	input wire next_taken_i,
@@ -15,8 +15,8 @@ module ex(
     input wire[`AluSelBus] alusel_i,
     input wire[`AluOpBus] uop_i,
 
-    input wire[`RegBus] rs1_data_i,
-    input wire[`RegBus] rs2_data_i,
+    input wire[`RegBus] rs1_d_i,
+    input wire[`RegBus] rs2_d_i,
     input wire[`RegBus] imm_i,
 
     input wire rd_we_i,
@@ -57,7 +57,7 @@ module ex(
 
     /* ------- passed to next pipeline --------*/
     output reg[`RegBus] pc_o,
-    output reg[`RegBus] inst_o,
+    output reg[`RegBus] ins_o,
 
     //branch related
     output reg branch_request_o,  // is this instruction a branch/jump ?
@@ -78,12 +78,12 @@ module ex(
     output reg[`RegBus] csr_wdata_o,
 
     output reg rd_we_o,
-    output reg[`RegAddrBus] rd_addr_o,
-    output reg[`RegBus] rd_wdata_o,
+    output reg[`RegAddrBus] rd_a_o,
+    output reg[`RegBus] rd_wd_o,
 
     output reg[`AluOpBus] uop_o,    // used in the lsu, for determine it is a load or store
-    output reg[`RegBus] mem_addr_o,   // the memory address to access
-    output reg[`RegBus] mem_wdata_o,  // the data to write to the memory for the store instruction
+    output reg[`RegBus] mem_a_o,   // the memory address to access
+    output reg[`RegBus] mem_wd_o,  // the data to write to the memory for the store instruction
 
 	// the accumulated exception if there are some
     output reg[31:0] exception_o
@@ -91,91 +91,90 @@ module ex(
     reg stallreq_for_div;
 
     assign pc_o = pc_i;
-    assign inst_o = inst_i;
+    assign ins_o = ins_i;
     assign branch_slot_end_o = branch_slot_end_i;
 
     // to identify call or ret
-    wire[4:0] rs1 = inst_i[19:15];
+    wire[4:0] rs1 = ins_i[19:15];
 
     assign csr_we_o = csr_we_i;
     assign csr_waddr_o = csr_addr_i;
 
     assign rd_we_o = rd_we_i;
-    assign rd_addr_o = rd_wa_i;
+    assign rd_a_o = rd_wa_i;
 
     assign uop_o = uop_i;
 
     assign exception_o = exception_i;
 
-    wire[`RegBus] pc_plus_4;
-    assign pc_plus_4 = pc_i + 4;    //for jar or jalr, the rd should be updated to pc + 4
+    wire[`RegBus] pc_plus_4_w;
+    assign pc_plus_4_w = pc_i + 4;    //for jar or jalr, the rd should be updated to pc + 4
 
-    wire[`RegBus] pc_add_imm;
-    assign pc_add_imm = pc_i + imm_i;
+    wire[`RegBus] pc_add_imm_w;
+    assign pc_add_imm_w = pc_i + imm_i;
 
-    wire[`RegBus] rs1_add_imm;
-    assign rs1_add_imm = rs1_data_i + imm_i;
+    wire[`RegBus] rs1_add_imm_w;
+    assign rs1_add_imm_w = rs1_d_i + imm_i;
 
-    wire[`RegBus] rs1_or_imm;
-    assign  rs1_or_imm = rs1_data_i | imm_i;
+    wire[`RegBus] rs1_or_imm_w;
+    assign  rs1_or_imm_w = rs1_d_i | imm_i;
 
-    wire[`RegBus] rs1_and_imm;
-    assign  rs1_and_imm = rs1_data_i & imm_i;
+    wire[`RegBus] rs1_and_imm_w;
+    assign  rs1_and_imm_w = rs1_d_i & imm_i;
 
-    wire[`RegBus] rs1_xor_imm;
-    assign  rs1_xor_imm = rs1_data_i ^ imm_i;
+    wire[`RegBus] rs1_xor_imm_w;
+    assign  rs1_xor_imm_w = rs1_d_i ^ imm_i;
 
-    wire[`RegBus] rs1_add_rs2;
-    assign rs1_add_rs2 = rs1_data_i + rs2_data_i;
+    wire[`RegBus] rs1_add_rs2_w;
+    assign rs1_add_rs2_w = rs1_d_i + rs2_d_i;
 
-    wire[`RegBus] rs1_sub_rs2;
-    assign rs1_sub_rs2 = rs1_data_i - rs2_data_i;
+    wire[`RegBus] rs1_sub_rs2_w;
+    assign rs1_sub_rs2_w = rs1_d_i - rs2_d_i;
 
-    wire[`RegBus] rs1_and_rs2;
-    assign  rs1_and_rs2 = rs1_data_i & rs2_data_i;
+    wire[`RegBus] rs1_and_rs2_w;
+    assign  rs1_and_rs2_w = rs1_d_i & rs2_d_i;
 
-    wire[`RegBus] rs1_or_rs2;
-    assign  rs1_or_rs2 = rs1_data_i |rs2_data_i;
+    wire[`RegBus] rs1_or_rs2_w;
+    assign  rs1_or_rs2_w = rs1_d_i |rs2_d_i;
 
-    wire[`RegBus] rs1_xor_rs2;
-    assign  rs1_xor_rs2 = rs1_data_i ^ rs2_data_i;
+    wire[`RegBus] rs1_xor_rs2_w;
+    assign  rs1_xor_rs2_w = rs1_d_i ^ rs2_d_i;
 
     /* ------ used in the be, bne, bge, blt ------*/
-    wire rs1_ge_rs2_signed;
-    wire rs1_ge_rs2_unsigned;
-    wire rs1_eq_rs2;
+    wire rs1_eq_rs2_w;
+    wire rs1_ge_rs2_signed_w;
+    wire rs1_ge_rs2_unsigned_w;
 
-    assign rs1_ge_rs2_signed = $signed(rs1_data_i) >= $signed(rs2_data_i);
-    assign rs1_ge_rs2_unsigned = rs1_data_i >= rs2_data_i;
-    assign rs1_eq_rs2 = (rs1_data_i == rs2_data_i);
+    assign rs1_ge_rs2_signed_w = $signed(rs1_d_i) >= $signed(rs2_d_i);
+    assign rs1_ge_rs2_unsigned_w = rs1_d_i >= rs2_d_i;
+    assign rs1_eq_rs2_w = (rs1_d_i == rs2_d_i);
 
-    /* ------ used in slti, sltiu  ------*/
-    wire rs1_ge_imm_signed;
-    wire rs1_ge_imm_unsigned;
-    wire rs1_eq_imm;
+    wire rs1_eq_imm_w;
+    wire rs1_ge_imm_signed_w;
+    wire rs1_ge_imm_unsigned_w;
 
-    assign rs1_ge_imm_signed = $signed(rs1_data_i) >= $signed(imm_i);
-    assign rs1_ge_imm_unsigned = rs1_data_i >= imm_i;
-    assign rs1_eq_imm = (rs1_data_i == imm_i);
+    assign rs1_eq_imm_w = (rs1_d_i == imm_i);
+    assign rs1_ge_imm_signed_w = $signed(rs1_d_i) >= $signed(imm_i);
+    assign rs1_ge_imm_unsigned_w = rs1_d_i >= imm_i;
 
-    wire[31:0] sr_shift;
-    wire[31:0] sr_shift_mask;
-    assign sr_shift = rs1_data_i >> rs2_data_i[4:0];
-    assign sr_shift_mask = 32'hffffffff >> rs2_data_i[4:0];
+    wire[31:0] sr_shift_w;
+    wire[31:0] sr_shift_mask_w;
+    assign sr_shift_w = rs1_d_i >> rs2_d_i[4:0];
+    assign sr_shift_mask_w = 32'hFFFFFFFF >> rs2_d_i[4:0];
 
-    wire[31:0] sri_shift;
-    wire[31:0] sri_shift_mask;
-    assign sri_shift = rs1_data_i >> imm_i;
-    assign sri_shift_mask = 32'hffffffff >> imm_i;
+    wire[31:0] sri_shift_w;
+    wire[31:0] sri_shift_mask_w;
+    assign sri_shift_w = rs1_d_i >> imm_i;
+    assign sri_shift_mask_w = 32'hFFFFFFFF >> imm_i;
 
-//对于存储操作，执行单元ex，产生读写的内存地址以及写入数据
+  //对于存储操作，执行单元ex，产生读写的内存地址以及写入数据
     // handle the load and store instruction
     // (1) calcuate the memory address to acccess
     // (2) if it is a store instruction, the data to write was required as well
     always @ (*) begin
-        if(n_rst_i == `RstEnable) begin
-            mem_addr_o = `ZeroWord;
-            mem_wdata_o = `ZeroWord;
+        if (n_rst_i == `RstEnable) begin
+            mem_a_o = `ZeroWord;
+            mem_wd_o = `ZeroWord;
         end else begin
             case (uop_i)
                 /* ---------------------L-type instruction --------------*/
@@ -186,7 +185,7 @@ module ex(
                     // lhu rs2,offset(rs1)  :  x[rd] = M[x[rs1] + sext(offset)][15:0]
                     // lw rd,offset(rs1)  :  x[rd] = sext(M[x[rs1] + sext(offset)][31:0])
 //rs1+imm 作为所要加载数据的内存地址，输出到 LSU进行访存操作
-                    mem_addr_o = rs1_add_imm;
+                    mem_a_o = rs1_add_imm_w;
                 end
 
                 /* ---------------------S-type instruction --------------*/
@@ -194,9 +193,9 @@ module ex(
                     // sb rs2,offset(rs1)  :   M[x[rs1] + sext(offset)] = x[rs2][7:0]
                     // sh rs2,offset(rs1)  :   M[x[rs1] + sext(offset)] = x[rs2][15:0]
                     // sw rs2,offset(rs1)  :   M[x[rs1] + sext(offset)] = x[rs2][31:0]
-                    mem_addr_o = rs1_add_imm;
+                    mem_a_o = rs1_add_imm_w;
 //rs2 中保存要存储到内存的数据值
-                    mem_wdata_o = rs2_data_i;
+                    mem_wd_o = rs2_d_i;
                 end
 
                 default: begin
@@ -206,14 +205,13 @@ module ex(
         end // else
     end //always
 
-    // handle the load and store instruction
-    reg[`RegBus] jump_result;
-    reg[`RegBus] logic_result;
-    reg[`RegBus] shift_result;
-    reg[`RegBus] arithmetic_result;
-    reg[`RegBus] mul_result;
-    reg[`RegBus] div_result;
-    reg[`RegBus] csr_result;
+    reg[`RegBus] arithmetic_result_r;
+    reg[`RegBus] csr_result_r;
+    reg[`RegBus] div_result_r;
+    reg[`RegBus] jump_result_r;
+    reg[`RegBus] logic_result_r;
+    reg[`RegBus] mul_result_r;
+    reg[`RegBus] shift_result_r;
 
     // handle csr instruction
     wire read_csr_enable;
@@ -222,27 +220,27 @@ module ex(
 
     // get the lastest csr value to update the rd
     always @ (*) begin
-        csr_result = `ZeroWord;
+        csr_result_r = `ZeroWord;
         csr_raddr_o = `ZeroWord;
         if (read_csr_enable) begin
             // If rd=x0, then the instruction shall not read the CSR and shall not cause any
             // of the side effects that might occur on a CSR read.
             // read the csr
             csr_raddr_o = csr_addr_i;
-            csr_result = csr_rdata_i;
+            csr_result_r = csr_rdata_i;
             // check the data dependance, if mem stage is updating the csr, use the lastest value
-            if( mem_csr_we_i == `WriteEnable && mem_csr_waddr_i == csr_addr_i) begin
-                csr_result = mem_csr_wdata_i;
+            if ( mem_csr_we_i == `WriteEnable && mem_csr_waddr_i == csr_addr_i) begin
+                csr_result_r = mem_csr_wdata_i;
             // check the data dependance, if wb stage is updating the csr, use the lastest value
-            end else if( wb_csr_we_i == `WriteEnable && wb_csr_waddr_i == csr_addr_i) begin
-                csr_result = wb_csr_wdata_i;
+            end else if ( wb_csr_we_i == `WriteEnable && wb_csr_waddr_i == csr_addr_i) begin
+                csr_result_r = wb_csr_wdata_i;
             end
         end
     end
 
     // calculate the data to write to the csr
     always @ (*) begin
-        if(n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RstEnable) begin
             csr_waddr_o = `ZeroWord;
             csr_wdata_o = `ZeroWord;
         end else begin
@@ -250,7 +248,7 @@ module ex(
             case (uop_i)
                 `UOP_CODE_CSRRW: begin
                     // csrrw rd,offset,rs1  :   t = CSRs[csr]; CSRs[csr] = x[rs1]; x[rd] = t
-                    csr_wdata_o = rs1_data_i;
+                    csr_wdata_o = rs1_d_i;
                 end
 
                 `UOP_CODE_CSRRWI: begin
@@ -260,22 +258,22 @@ module ex(
 
                 `UOP_CODE_CSRRS: begin
                     // csrrs rd,offset,rs1  :   t = CSRs[csr]; CSRs[csr] = t | x[rs1]; x[rd] = t
-                    csr_wdata_o = rs1_data_i | csr_result;
+                    csr_wdata_o = rs1_d_i | csr_result_r;
                 end
 
                 `UOP_CODE_CSRRSI: begin
                    // csrrsi rd,offset,uimm  :  t = CSRs[csr]; CSRs[csr] = t | zimm; x[rd] = t
-                    csr_wdata_o = imm_i | csr_result;
+                    csr_wdata_o = imm_i | csr_result_r;
                 end
 
                 `UOP_CODE_CSRRC: begin
                     // csrrc rd,offset,rs1  :   t = CSRs[csr]; CSRs[csr] = t &∼x[rs1]; x[rd] = t
-                    csr_wdata_o = csr_result & (~rs1_data_i);
+                    csr_wdata_o = csr_result_r & (~rs1_d_i);
                 end
 
                 `UOP_CODE_CSRRCI: begin
                     // csrrci rd,offset,uimm  :  t = CSRs[csr]; CSRs[csr] = t &∼zimm; x[rd] = t
-                    csr_wdata_o = csr_result & (~imm_i);
+                    csr_wdata_o = csr_result_r & (~imm_i);
                 end
 
                 default: begin
@@ -287,8 +285,8 @@ module ex(
 
     // jump and branch instructions
     always @ (*) begin
-        if(n_rst_i == `RstEnable) begin
-            jump_result = `ZeroWord;
+        if (n_rst_i == `RstEnable) begin
+            jump_result_r = `ZeroWord;
 
             branch_request_o = 1'b0;
             branch_is_taken_o = 1'b0;
@@ -302,7 +300,7 @@ module ex(
             branch_tag_o = 1'b0;
 
         end else begin
-            jump_result = `ZeroWord;
+            jump_result_r = `ZeroWord;
 
             branch_request_o = 1'b0;
             branch_is_taken_o = 1'b0;
@@ -317,12 +315,12 @@ module ex(
             case (uop_i)
                 `UOP_CODE_JAL: begin
                     // jal rd,offset  :  x[rd] = pc+4; pc += sext(offset)
-                    jump_result = pc_plus_4;  //save to rd
-                    branch_target_o = pc_add_imm;
+                    jump_result_r = pc_plus_4_w;  //save to rd
+                    branch_target_o = pc_add_imm_w;
                     branch_is_taken_o = 1'b1;
 
                     /* A JAL instruction should push the return address onto a return-address stack (RAS) only when rd=x1/x5.*/
-                    if( (rd_wa_i == 5'b00001) || (rd_wa_i == 5'b00101) ) begin
+                    if ( (rd_wa_i == 5'b00001) || (rd_wa_i == 5'b00101) ) begin
                         branch_is_call_o = 1'b1;
                     end else begin
                         branch_is_jmp_o = 1'b1;
@@ -331,8 +329,8 @@ module ex(
 
                 `UOP_CODE_JALR: begin
                     // jalr rd,rs1,offset  :   t =pc+4; pc=(x[rs1]+sext(imm))&∼1; x[rd]=t
-                    jump_result = pc_plus_4;
-                    branch_target_o = rs1_data_i + imm_i;
+                    jump_result_r = pc_plus_4_w;
+                    branch_target_o = rs1_d_i + imm_i;
                     branch_is_taken_o = 1'b1;
 
                     /* JALR instructions should push/pop a RAS as shown in the Table
@@ -344,9 +342,9 @@ module ex(
                    (4) link  |   link   | 0       |   push and pop
                    (5) link  |   link   | 1       |   push
                     ------------------------------------------------ */
-                    if(rd_wa_i == 5'b00001 || rd_wa_i == 5'b00101) begin  //rd is linker reg
-                        if(rs1 == 5'b00001 || rs1 == 5'b00101) begin  //rs1 is linker reg as well
-                            if(rd_wa_i == rs1) begin     //(5)
+                    if (rd_wa_i == 5'b00001 || rd_wa_i == 5'b00101) begin  //rd is linker reg
+                        if (rs1 == 5'b00001 || rs1 == 5'b00101) begin  //rs1 is linker reg as well
+                            if (rd_wa_i == rs1) begin     //(5)
                                 branch_is_call_o = 1'b1;
                             end else begin
                                 branch_is_call_o = 1'b1;   //(4)
@@ -354,225 +352,135 @@ module ex(
                             end
                         end else begin
                             branch_is_call_o = 1'b1; //(3)
-                        end // if(rs1 == 5'b00001 || rs1 == 5'b00101) begin
+                        end // if (rs1 == 5'b00001 || rs1 == 5'b00101) begin
                     end else begin  //rd is not linker reg
-                        if(rs1 == 5'b00001 || rs1 == 5'b00101) begin  // rs1 is linker reg
+                        if (rs1 == 5'b00001 || rs1 == 5'b00101) begin  // rs1 is linker reg
                             branch_is_ret_o = 1'b1; //(2)
                         end else begin  //rs1 is not linker reg
                             branch_is_jmp_o = 1'b1; // (1)
                         end
-                    end //if(rd_wa_i == 5'b00001 || rd_wa_i == 5'b00101) begin
+                    end //if (rd_wa_i == 5'b00001 || rd_wa_i == 5'b00101) begin
                end
 
                 /* ---------------------B-Type instruction --------------*/
                 `UOP_CODE_BEQ: begin
                     // beq rs1,rs2,offset  :   if (rs1 == rs2) pc += sext(imm)
-                    branch_target_o = pc_add_imm;
-                    branch_is_taken_o = rs1_eq_rs2;
+                    branch_target_o = pc_add_imm_w;
+                    branch_is_taken_o = rs1_eq_rs2_w;
                 end
 
                 `UOP_CODE_BNE: begin
                    // bne rs1,rs2,offset  :   if (rs1 != rs2) pc += sext(offset)
-                    branch_target_o = pc_add_imm;
-                    branch_is_taken_o = (~rs1_eq_rs2);
+                    branch_target_o = pc_add_imm_w;
+                    branch_is_taken_o = (~rs1_eq_rs2_w);
                 end
 
                 `UOP_CODE_BGE: begin
                     // bge rs1,rs2,offset  :   if (rs1 >=s rs2) pc += sext(offset)
-                    branch_target_o = pc_add_imm;
-                    branch_is_taken_o = (rs1_ge_rs2_signed);
+                    branch_target_o = pc_add_imm_w;
+                    branch_is_taken_o = (rs1_ge_rs2_signed_w);
                 end
 
                 `UOP_CODE_BGEU: begin
                     // bgeu rs1,rs2,offset  :   if (rs1 >=u rs2) pc += sext(offset)
-                    branch_target_o = pc_add_imm;
-                    branch_is_taken_o = (rs1_ge_rs2_unsigned);
+                    branch_target_o = pc_add_imm_w;
+                    branch_is_taken_o = (rs1_ge_rs2_unsigned_w);
                 end
 
                 `UOP_CODE_BLT: begin
                    // blt rs1,rs2,offset  :   if (rs1 <s rs2) pc += sext(offset)
-                    branch_target_o = pc_add_imm;
-                    branch_is_taken_o = (~rs1_ge_rs2_signed);
+                    branch_target_o = pc_add_imm_w;
+                    branch_is_taken_o = (~rs1_ge_rs2_signed_w);
                 end
 
                 `UOP_CODE_BLTU: begin
                     // bltu rs1,rs2,offset  :   if (rs1 >u rs2) pc += sext(offset)
-                    branch_target_o = pc_add_imm;
-                    branch_is_taken_o = (~rs1_ge_rs2_unsigned);
+                    branch_target_o = pc_add_imm_w;
+                    branch_is_taken_o = (~rs1_ge_rs2_unsigned_w);
                 end
 
                 default: begin
                 end
             endcase // case (uop_i)
 
-            if( (uop_i == `UOP_CODE_JAL) || (uop_i == `UOP_CODE_JALR) || (uop_i == `UOP_CODE_BEQ) || (uop_i == `UOP_CODE_BNE) ||
+            if ( (uop_i == `UOP_CODE_JAL) || (uop_i == `UOP_CODE_JALR) || (uop_i == `UOP_CODE_BEQ) || (uop_i == `UOP_CODE_BNE) ||
                 (uop_i == `UOP_CODE_BGE) || (uop_i == `UOP_CODE_BGEU) || (uop_i == `UOP_CODE_BLT) || (uop_i == `UOP_CODE_BLTU) ) begin
 
                 branch_request_o = 1'b1;
 
-                if(branch_is_taken_o == 1'b1) begin   //taken
-                    if( (next_taken_i == 1'b0) || (next_pc_i != branch_target_o) ) begin     //miss predicted taken or target
+                if (branch_is_taken_o == 1'b1) begin   //taken
+                    if ( (next_taken_i == 1'b0) || (next_pc_i != branch_target_o) ) begin     //miss predicted taken or target
                         branch_redirect_o = `Branch;
                         branch_redirect_pc_o = branch_target_o;
                         branch_tag_o = branch_redirect_o;  // indicate a branch started
                         $display("miss predicted, pc=%h, next_take=%d, branch_taken=%d, next_pc=%h, branch_target=%h is_call=%d, is_ret=%d, is_jmp=%d",
                         pc_i, next_taken_i, branch_is_taken_o, next_pc_i, branch_target_o, branch_is_call_o, branch_is_ret_o, branch_is_jmp_o);
                     end
-                end else begin  //if(branch_is_taken_o == 1'b1) begin
-                    if( next_taken_i == 1'b1 ) begin //miss predicted taken
+                end else begin  //if (branch_is_taken_o == 1'b1) begin
+                    if ( next_taken_i == 1'b1 ) begin //miss predicted taken
                         branch_redirect_o = `Branch;
                         branch_redirect_pc_o = pc_i+4;
                         branch_tag_o = branch_redirect_o;  // indicate a branch started
                         $display("miss predicted, pc=%h, branch_taken=%d, next_take=%d, next_pc=%h", pc_i, branch_is_taken_o, next_taken_i, next_pc_i);
                     end
-                end  // if(branch_is_taken_o == 1'b1) begin
-            end  //  if( (uop_i == `UOP_CODE_JAL) || (uop_i == `UOP_CODE_JALR) ||
-        end  // if(n_rst_i == `RstEnable) begin
+                end  // if (branch_is_taken_o == 1'b1) begin
+            end  //  if ( (uop_i == `UOP_CODE_JAL) || (uop_i == `UOP_CODE_JALR) ||
+        end  // if (n_rst_i == `RstEnable) begin
     end //always
 
+  //Logic
+    always @ (*)
+      if (n_rst_i == `RstEnable) logic_result_r = `ZeroWord;
+      else
+        case (uop_i)
+          `UOP_CODE_LUI: logic_result_r = imm_i;
+          `UOP_CODE_AUIPC: logic_result_r = pc_add_imm_w;
+          `UOP_CODE_SLTI: logic_result_r = {32{(~rs1_ge_imm_signed_w)}} & 32'h1;
+          `UOP_CODE_SLTIU: logic_result_r = {32{(~rs1_ge_imm_unsigned_w)}} & 32'h1;
+          `UOP_CODE_ANDI: logic_result_r = rs1_and_imm_w;
+          `UOP_CODE_ORI: logic_result_r = rs1_or_imm_w;
+          `UOP_CODE_XORI: logic_result_r = rs1_xor_imm_w;
+          `UOP_CODE_AND: logic_result_r = rs1_and_rs2_w;
+          `UOP_CODE_OR: logic_result_r = rs1_or_rs2_w;
+          `UOP_CODE_XOR: logic_result_r = rs1_xor_rs2_w;
+          `UOP_CODE_SLT: logic_result_r = {32{(~rs1_ge_rs2_signed_w)}} & 32'h1;
+          `UOP_CODE_SLTU: logic_result_r = {32{(~rs1_ge_rs2_unsigned_w)}} & 32'h1;
+          default: logic_result_r = `ZeroWord;
+        endcase
+  //Shift
+    always @ (*)
+      if (n_rst_i == `RstEnable) shift_result_r = `ZeroWord;
+      else
+        case (uop_i)
+          `UOP_CODE_SLLI: shift_result_r = rs1_d_i << imm_i;
+          `UOP_CODE_SRLI: shift_result_r = rs1_d_i >> imm_i;
+          `UOP_CODE_SRAI: shift_result_r = (sri_shift_w & sri_shift_mask_w) | ({32{rs1_d_i[31]}} & (~sri_shift_mask_w));
+          `UOP_CODE_SLL: shift_result_r = rs1_d_i << rs2_d_i[4:0];
+          `UOP_CODE_SRL: shift_result_r = rs1_d_i >> rs2_d_i[4:0];
+          `UOP_CODE_SRA: shift_result_r = (sr_shift_w & sr_shift_mask_w) | ({32{rs1_d_i[31]}} & (~sr_shift_mask_w));
+          default: shift_result_r = `ZeroWord;
+        endcase
 
-
-    // logic
+  //Arithmetic
     always @ (*) begin
-        if(n_rst_i == `RstEnable) begin
-            logic_result = `ZeroWord;
+        if (n_rst_i == `RstEnable) begin
+            arithmetic_result_r = `ZeroWord;
         end else begin
-            logic_result = `ZeroWord;
-            case (uop_i)
-               `UOP_CODE_LUI:  begin
-                    // lui rd,imm  :  x[rd] = sext(immediate[31:12] << 12)
-                    logic_result = imm_i;
-                end
-
-               `UOP_CODE_AUIPC:  begin
-                    // auipc rd,imm  : 	x[rd] = pc + sext(immediate[31:12] << 12)
-                    logic_result = pc_add_imm;
-                end
-
-                `UOP_CODE_SLTI: begin
-                    // slti rd,rs1,imm  :  x[rd] = x[rs1] <s sext(immediate)
-                    logic_result = {32{(~rs1_ge_imm_signed)}} & 32'h1;
-                end
-
-                `UOP_CODE_SLTIU: begin
-                    // sltiu rd,rs1,imm  :  x[rd] = x[rs1] <u sext(immediate)
-                    logic_result = {32{(~rs1_ge_imm_unsigned)}} & 32'h1;
-                end
-
-                `UOP_CODE_ANDI: begin
-                    // andi rd,rs1,imm  :   x[rd] = x[rs1] & sext(immediate)
-                    logic_result = rs1_and_imm;
-                end
-
-                `UOP_CODE_ORI: begin
-                    // ori rd,rs1,imm  :  x[rd] = x[rs1] | sext(immediate)
-                    logic_result = rs1_or_imm;
-                end
-
-                `UOP_CODE_XORI: begin
-                    // xori rd,rs1,imm  :  x[rd] = x[rs1] ^ sext(immediate)
-                    logic_result = rs1_xor_imm;
-                end
-
-               `UOP_CODE_AND: begin
-                    // and rd,rs1,rs2  :  x[rd] = x[rs1] & x[rs2]
-                    logic_result = rs1_and_rs2;
-                end
-
-                `UOP_CODE_OR: begin
-                    // or rd,rs1,rs2  :  x[rd] = x[rs1] | x[rs2]
-                    logic_result = rs1_or_rs2;
-                end
-
-                `UOP_CODE_XOR: begin
-                    // xor rd,rs1,rs2  :  x[rd] = x[rs1] ^ x[rs2]
-                    logic_result = rs1_xor_rs2;
-                end
-
-                `UOP_CODE_SLT: begin
-                    // slt rd,rs1,rs2  :   x[rd] = x[rs1] <s x[rs2]
-                    logic_result = {32{(~rs1_ge_rs2_signed)}} & 32'h1;
-                end
-
-                `UOP_CODE_SLTU: begin
-                    // sltu rd,rs1,rs2  :   x[rd] = x[rs1] <u x[rs2]
-                    logic_result = {32{(~rs1_ge_rs2_unsigned)}} & 32'h1;
-                end
-
-                default: begin
-
-                end
-            endcase // case (uop_i)
-        end  // end else begin
-    end //always
-
-
-    //shift
-    always @ (*) begin
-        if(n_rst_i == `RstEnable) begin
-            shift_result = `ZeroWord;
-        end else begin
-            shift_result = `ZeroWord;
-            case (uop_i)
-                `UOP_CODE_SLLI: begin
-                    // slli rd,rs1,shamt  :   x[rd] = x[rs1] << shamt
-                    shift_result = rs1_data_i << imm_i;
-                end
-
-                `UOP_CODE_SRLI: begin
-                    // srli rd,rs1,shamt  :   x[rd] = x[rs1] >>u shamt
-                    shift_result = rs1_data_i >> imm_i;
-                end
-
-                `UOP_CODE_SRAI: begin
-                    // srai rd,rs1,shamt  :   x[rd] = x[rs1] >>s shamt
-                    shift_result = (sri_shift & sri_shift_mask) | ({32{rs1_data_i[31]}} & (~sri_shift_mask));
-                end
-
-               `UOP_CODE_SLL: begin
-                    // sll rd,rs1,rs2  :   x[rd] = x[rs1] << x[rs2]
-                    shift_result = rs1_data_i << rs2_data_i[4:0];
-                end
-
-                `UOP_CODE_SRL: begin
-                    // srl rd,rs1,rs2  :   x[rd] = x[rs1] >>u x[rs2]
-                    shift_result = rs1_data_i >> rs2_data_i[4:0];
-                end
-
-                `UOP_CODE_SRA: begin
-                    // sra rd,rs1,rs2  :   x[rd] = x[rs1] >>s x[rs2]
-                    shift_result = (sr_shift & sr_shift_mask) | ({32{rs1_data_i[31]}} & (~sr_shift_mask));
-                end
-
-                default: begin
-
-                end
-            endcase // case (uop_i)
-        end  // end else begin
-    end //always
-
-
-
-    //arithmetic
-    always @ (*) begin
-        if(n_rst_i == `RstEnable) begin
-            arithmetic_result = `ZeroWord;
-        end else begin
-            arithmetic_result = `ZeroWord;
+            arithmetic_result_r = `ZeroWord;
             case (uop_i)
                 `UOP_CODE_ADDI: begin
                     // addi rd,rs1,imm :  x[rd] = x[rs1] + sext(immediate)
-                    arithmetic_result = rs1_add_imm;
+                    arithmetic_result_r = rs1_add_imm_w;
                 end
 
                 `UOP_CODE_ADD: begin
                     // add rd,rs1,rs2  :  x[rd] = x[rs1] + x[rs2]
-                    arithmetic_result = rs1_add_rs2;
+                    arithmetic_result_r = rs1_add_rs2_w;
                 end
 
                 `UOP_CODE_SUB: begin
                     // sub rd,rs1,rs2  :  x[rd] = x[rs1] - x[rs2]
-                    arithmetic_result = rs1_sub_rs2;
+                    arithmetic_result_r = rs1_sub_rs2_w;
                 end
 
                 default: begin
@@ -597,74 +505,74 @@ module ex(
     reg[`RegBus] rs1_data_invert;
     reg[`RegBus] rs2_data_invert;
 
-    assign rs1_data_invert = ~rs1_data_i + 1;
-    assign rs2_data_invert = ~rs2_data_i + 1;
+    assign rs1_data_invert = ~rs1_d_i + 1;
+    assign rs2_data_invert = ~rs2_d_i + 1;
 
     always @ (*) begin
         case (uop_i)
             `UOP_CODE_MULT, `UOP_CODE_MULHU: begin
-                mul_op1 = rs1_data_i;
-                mul_op2 = rs2_data_i;
+                mul_op1 = rs1_d_i;
+                mul_op2 = rs2_d_i;
             end
 
             `UOP_CODE_MULHSU: begin
-                mul_op1 = (rs1_data_i[31] == 1'b1)? (rs1_data_invert): rs1_data_i;
-                mul_op2 = rs2_data_i;
+                mul_op1 = (rs1_d_i[31] == 1'b1) ? (rs1_data_invert) : rs1_d_i;
+                mul_op2 = rs2_d_i;
             end
 
             `UOP_CODE_MULH: begin
-                mul_op1 = (rs1_data_i[31] == 1'b1)? (rs1_data_invert): rs1_data_i;
-                mul_op2 = (rs2_data_i[31] == 1'b1)? (rs2_data_invert): rs2_data_i;
+                mul_op1 = (rs1_d_i[31] == 1'b1)? (rs1_data_invert): rs1_d_i;
+                mul_op2 = (rs2_d_i[31] == 1'b1)? (rs2_data_invert): rs2_d_i;
             end
 
             default: begin
-                mul_op1 = rs1_data_i;
-                mul_op2 = rs2_data_i;
+                mul_op1 = rs1_d_i;
+                mul_op2 = rs2_d_i;
             end
         endcase
     end
 
 
     always @ (*) begin
-        if(n_rst_i == `RstEnable) begin
-            mul_result = `ZeroWord;
+        if (n_rst_i == `RstEnable) begin
+            mul_result_r = `ZeroWord;
         end else begin
-            mul_result = `ZeroWord;
+            mul_result_r = `ZeroWord;
             case (uop_i)
                 `UOP_CODE_MULT: begin
                     // mul rd,rs1,rs2  :    x[rd] = x[rs1] × x[rs2]
-                    mul_result = mul_temp[31:0];
+                    mul_result_r = mul_temp[31:0];
                 end
 
                 `UOP_CODE_MULHU: begin
                     // mulhu rd,rs1,rs2  :   x[rd] = (x[rs1] u × x[rs2]) >>u XLEN
-                    mul_result = mul_temp[63:32];
+                    mul_result_r = mul_temp[63:32];
                 end
 
                 `UOP_CODE_MULH: begin
                     // mulh rd,rs1,rs2  :   x[rd] = (x[rs1] s×s x[rs2]) >>s XLEN
-                    case ({rs1_data_i[31], rs2_data_i[31]})
+                    case ({rs1_d_i[31], rs2_d_i[31]})
                         2'b00: begin
-                            mul_result = mul_temp[63:32];
+                            mul_result_r = mul_temp[63:32];
                         end
                         2'b11: begin
-                            mul_result = mul_temp[63:32];
+                            mul_result_r = mul_temp[63:32];
                         end
                         2'b10: begin
-                            mul_result = mul_temp_invert[63:32];
+                            mul_result_r = mul_temp_invert[63:32];
                         end
                         default: begin
-                            mul_result = mul_temp_invert[63:32];
+                            mul_result_r = mul_temp_invert[63:32];
                         end
                     endcase
                 end
 
                 `UOP_CODE_MULHSU: begin
                     // mulhsu rd,rs1,rs2  :   x[rd] = (x[rs1] s × x[rs2]) >>s XLEN
-                    if (rs1_data_i[31] == 1'b1) begin
-                        mul_result = mul_temp_invert[63:32];
+                    if (rs1_d_i[31] == 1'b1) begin
+                        mul_result_r = mul_temp_invert[63:32];
                     end else begin
-                        mul_result = mul_temp[63:32];
+                        mul_result_r = mul_temp[63:32];
                     end
                 end
 
@@ -683,7 +591,7 @@ module ex(
 
     // division and rem instructions
     always @ (*) begin
-        if(n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RstEnable) begin
             stallreq_for_div = `NoStop;
             dividend_o = `ZeroWord;
             divisor_o = `ZeroWord;
@@ -698,73 +606,73 @@ module ex(
             case (uop_i)
                 `UOP_CODE_DIV:        begin
                     // div rd,rs1,rs2  :   x[rd] = x[rs1] /s x[rs2]
-                    if(div_ready_i == `DivResultNotReady) begin
-                        dividend_o = rs1_data_i;
-                        divisor_o = rs2_data_i;
+                    if (div_ready_i == `DivResultNotReady) begin
+                        dividend_o = rs1_d_i;
+                        divisor_o = rs2_d_i;
                         div_start_o = `DivStart;
                         div_signed_o = 1'b1;       // signed division
                         stallreq_for_div = `Stop;  // stop the pipeline
                     end else begin
-                        dividend_o = rs1_data_i;
-                        divisor_o = rs2_data_i;
+                        dividend_o = rs1_d_i;
+                        divisor_o = rs2_d_i;
                         div_start_o = `DivStop;
                         div_signed_o = 1'b1;
                         stallreq_for_div = `NoStop;  // resume the pipeline
-                        div_result = div_result_i[31:0]; // get the quotient
+                        div_result_r = div_result_i[31:0]; // get the quotient
                     end
                 end
 
                `UOP_CODE_DIVU:       begin
                     // divu rd,rs1,rs2  :   x[rd] = x[rs1] /u x[rs2]
-                    if(div_ready_i == `DivResultNotReady) begin
-                        dividend_o = rs1_data_i;
-                        divisor_o = rs2_data_i;
+                    if (div_ready_i == `DivResultNotReady) begin
+                        dividend_o = rs1_d_i;
+                        divisor_o = rs2_d_i;
                         div_start_o = `DivStart;
                         div_signed_o = 1'b0;        // unsigned division
                         stallreq_for_div = `Stop;
                     end else begin
-                        dividend_o = rs1_data_i;
-                        divisor_o = rs2_data_i;
+                        dividend_o = rs1_d_i;
+                        divisor_o = rs2_d_i;
                         div_start_o = `DivStop;
                         div_signed_o = 1'b0;
                         stallreq_for_div = `NoStop;
-                        div_result = div_result_i[31:0];
+                        div_result_r = div_result_i[31:0];
                     end
                 end
 
                 `UOP_CODE_REM: begin
                     // rem rd,rs1,rs2  :    x[rd] = x[rs1] %s x[rs2]
-                    if(div_ready_i == `DivResultNotReady) begin
-                        dividend_o = rs1_data_i;
-                        divisor_o = rs2_data_i;
+                    if (div_ready_i == `DivResultNotReady) begin
+                        dividend_o = rs1_d_i;
+                        divisor_o = rs2_d_i;
                         div_start_o = `DivStart;
                         div_signed_o = 1'b1;
                         stallreq_for_div = `Stop;
                     end else begin
-                        dividend_o = rs1_data_i;
-                        divisor_o = rs2_data_i;
+                        dividend_o = rs1_d_i;
+                        divisor_o = rs2_d_i;
                         div_start_o = `DivStop;
                         div_signed_o = 1'b1;
                         stallreq_for_div = `NoStop;
-                        div_result = div_result_i[63:32]; // get the remainder
+                        div_result_r = div_result_i[63:32]; // get the remainder
                     end
                 end
 
                 `UOP_CODE_REMU: begin
                     // remu rd,rs1,rs2  :   x[rd] = x[rs1] %u x[rs2]
-                   if(div_ready_i == `DivResultNotReady) begin
-                        dividend_o = rs1_data_i;
-                        divisor_o = rs2_data_i;
+                   if (div_ready_i == `DivResultNotReady) begin
+                        dividend_o = rs1_d_i;
+                        divisor_o = rs2_d_i;
                         div_start_o = `DivStart;
                         div_signed_o = 1'b0;
                         stallreq_for_div = `Stop;
                     end else begin
-                        dividend_o = rs1_data_i;
-                        divisor_o = rs2_data_i;
+                        dividend_o = rs1_d_i;
+                        divisor_o = rs2_d_i;
                         div_start_o = `DivStop;
                         div_signed_o = 1'b0;
                         stallreq_for_div = `NoStop;
-                        div_result = div_result_i[63:32];
+                        div_result_r = div_result_i[63:32];
                     end
                 end
 
@@ -774,43 +682,21 @@ module ex(
         end // else begin
     end  //always
 
-//选择对应类型的运算结果
+  //选择对应类型的运算结果
     /* selector the alu result to write to the rd*/
-    always @ (*) begin
-        rd_addr_o = rd_wa_i;
-        case ( alusel_i )
-            `EXE_TYPE_BRANCH:  begin
-                rd_wdata_o = jump_result;
-            end
-
-            `EXE_TYPE_LOGIC: begin
-                rd_wdata_o = logic_result;
-            end
-
-            `EXE_TYPE_SHIFT: begin
-                rd_wdata_o = shift_result;
-            end
-
-            `EXE_TYPE_ARITHMETIC: begin
-                rd_wdata_o = arithmetic_result;
-            end
-
-            `EXE_TYPE_MUL:  begin
-                rd_wdata_o = mul_result;
-            end
-
-            `EXE_TYPE_DIV: begin
-                rd_wdata_o = div_result;
-            end
-
-            `EXE_TYPE_CSR: begin
-                rd_wdata_o = csr_result;
-            end
-
-            default: begin
-                rd_wdata_o = `ZeroWord;
-            end
-        endcase
+    always @ (*)
+    begin
+      rd_a_o = rd_wa_i;
+      case (alusel_i)
+        `EXE_TYPE_ARITHMETIC: rd_wd_o = arithmetic_result_r;
+        `EXE_TYPE_BRANCH: rd_wd_o = jump_result_r;
+        `EXE_TYPE_DIV: rd_wd_o = div_result_r;
+        `EXE_TYPE_LOGIC: rd_wd_o = logic_result_r;
+        `EXE_TYPE_MUL: rd_wd_o = mul_result_r;
+        `EXE_TYPE_SHIFT: rd_wd_o = shift_result_r;
+        `EXE_TYPE_CSR: rd_wd_o = csr_result_r;
+        default: rd_wd_o = `ZeroWord;
+      endcase
     end
 
-endmodule
+  endmodule

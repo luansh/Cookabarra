@@ -10,7 +10,7 @@
 
     /* ------- signals from the exe unit --------*/
     input wire[`RegBus] pc_i,
-    input reg[`RegBus] inst_i,
+    input reg[`RegBus] ins_i,
 
     input wire branch_tag_i,       //this instruction is a branch instr
     input wire branch_slot_end_i,  //fetch unit started from the target inst
@@ -31,12 +31,12 @@
 
     /* ------- signals to the lsu  --------*/
     output reg rd_we_o,
-    output reg[`RegAddrBus] rd_addr_o,
-    output reg[`RegBus] rd_wdata_o,
+    output reg[`RegAddrBus] rd_a_o,
+    output reg[`RegBus] rd_wd_o,
 
     output reg[`AluOpBus] uop_o,
-    output reg[`RegBus] mem_addr_o,
-    output reg[`RegBus] mem_wdata_o,
+    output reg[`RegBus] mem_a_o,
+    output reg[`RegBus] mem_wd_o,
 
     output reg csr_we_o,
     output reg[`RegBus] csr_waddr_o,
@@ -44,7 +44,7 @@
 
     output reg[`RegBus] exception_o,
     output reg[`RegBus] pc_o,
-    output reg[`RegBus] inst_o
+    output reg[`RegBus] ins_o
 
 );
 
@@ -55,32 +55,32 @@
     always @ (posedge clk_i) begin
         if(n_rst_i == `RstEnable) begin
             //GPR
-            rd_addr_o <= `NOPRegAddr;
+            rd_a_o <= `NOPRegAddress;
             rd_we_o <= `WriteDisable;
-            rd_wdata_o <= `ZeroWord;
+            rd_wd_o <= `ZeroWord;
 			//CSR
             uop_o <= `UOP_CODE_NOP;
-            mem_addr_o <= `ZeroWord;
-            mem_wdata_o <= `ZeroWord;
+            mem_a_o <= `ZeroWord;
+            mem_wd_o <= `ZeroWord;
             csr_we_o <= `WriteDisable;
             csr_waddr_o <= `ZeroWord;
             csr_wdata_o <= `ZeroWord;
 
             exception_o <= `ZeroWord;
             pc_o <= `ZeroWord;
-            inst_o <= `NOP_INST;
+            ins_o <= `NOP_INST;
 
             branch_tag <= 1'b0;
             branch_pc <= `NOP_INST;
         //flush the pipeline
         end else if(flush_i == 1'b1 ) begin
-            rd_addr_o <= `NOPRegAddr;
+            rd_a_o <= `NOPRegAddress;
             rd_we_o <= `WriteDisable;
-            rd_wdata_o <= `ZeroWord;
+            rd_wd_o <= `ZeroWord;
 
             uop_o <= `UOP_CODE_NOP;
-            mem_addr_o <= `ZeroWord;
-            mem_wdata_o <= `ZeroWord;
+            mem_a_o <= `ZeroWord;
+            mem_wd_o <= `ZeroWord;
 
             csr_we_o <= `WriteDisable;
             csr_waddr_o <= `ZeroWord;
@@ -88,19 +88,19 @@
 
             exception_o <= `ZeroWord;
             pc_o <= `ZeroWord;
-            inst_o <= `NOP_INST;
+            ins_o <= `NOP_INST;
 
             branch_tag <= 1'b0;
             branch_pc <= `NOP_INST;
         // stall current stage
         end else if(stall_i[3] == `Stop && stall_i[4] == `NoStop) begin
-            rd_addr_o <= `NOPRegAddr;
+            rd_a_o <= `NOPRegAddress;
             rd_we_o <= `WriteDisable;
-            rd_wdata_o <= `ZeroWord;
+            rd_wd_o <= `ZeroWord;
 
             uop_o <= `UOP_CODE_NOP;
-            mem_addr_o <= `ZeroWord;
-            mem_wdata_o <= `ZeroWord;
+            mem_a_o <= `ZeroWord;
+            mem_wd_o <= `ZeroWord;
 
             csr_we_o <= `WriteDisable;
             csr_waddr_o <= `ZeroWord;
@@ -108,18 +108,18 @@
 
             exception_o <= `ZeroWord;
             pc_o <= `ZeroWord;
-            inst_o <= `NOP_INST;
+            ins_o <= `NOP_INST;
 
             branch_tag <= 1'b0;
             branch_pc <= `NOP_INST;
         end else if(stall_i[3] == `NoStop) begin
-            rd_addr_o <= rd_wa_i;
+            rd_a_o <= rd_wa_i;
             rd_we_o <= rd_we_i;
-            rd_wdata_o <= rd_wd_i;
+            rd_wd_o <= rd_wd_i;
 
             uop_o <= uop_i;
-            mem_addr_o <= mem_addr_i;
-            mem_wdata_o <= mem_wdata_i;
+            mem_a_o <= mem_addr_i;
+            mem_wd_o <= mem_wdata_i;
 
             csr_we_o <= csr_we_i;
             csr_waddr_o <= csr_waddr_i;
@@ -145,7 +145,7 @@
                 pc_o <= pc_i;
             end
 
-            inst_o <= inst_i;
+            ins_o <= ins_i;
         end    //if
     end      //always
 endmodule
