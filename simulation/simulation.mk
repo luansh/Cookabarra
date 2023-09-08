@@ -12,7 +12,7 @@ CC      = g++
 AR      = ar 
 ARFLAGS = -r
 LD      = ld
-LDFLAGS = 
+LDFLAGS = -lpthread
 
 
 ## Find the directory containing the Verilog sources.  This is given from
@@ -36,7 +36,7 @@ STANDARD_LIBS_DIR =
 
 TARGET_DIR = ./obj_dir
 
-objects = $(TARGET_DIR)/simu_main.o $(TARGET_DIR)/verilated_vcd_c.o $(TARGET_DIR)/verilated.o $(TARGET_DIR)/verilated_dpi.o
+objects = $(TARGET_DIR)/simu_main.o $(TARGET_DIR)/verilated_vcd_c.o $(TARGET_DIR)/verilated_threads.o $(TARGET_DIR)/verilated.o $(TARGET_DIR)/verilated_dpi.o
 
 target  = $(TARGET_DIR)/libtb.a
 
@@ -59,6 +59,14 @@ $(TARGET_DIR)/verilated_vcd_c.o: $(VINC)/verilated_vcd_c.cpp
 	@echo ' '
 
 $(TARGET_DIR)/verilated.o: $(VINC)/verilated.cpp
+	@echo 'Building file: $<'
+	@echo 'Invoking: $(CC) C Compiler'
+	$(CC) $(CFLAGS)  $< -o $@
+	@echo 'Finished building: $<'
+	@echo ' '
+
+
+$(TARGET_DIR)/verilated_threads.o: $(VINC)/verilated_threads.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: $(CC) C Compiler'
 	$(CC) $(CFLAGS)  $< -o $@

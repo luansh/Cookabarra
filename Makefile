@@ -2,7 +2,7 @@ CC      = g++
 AR      = ar 
 ARFLAGS = -r
 LD      = ld
-LDFLAGS = 
+LDFLAGS = -lpthread 
 
 # the linked lib 
 STANDARD_LIBS     = 
@@ -31,7 +31,7 @@ all: $(target)
 $(target): $(LOCAL_LIBS) 
 	@echo 'Building target: $@'
 	@echo 'Invoking: gcc C Linker'
-	$(CC) $(STANDARD_LIBS_DIR) -o $(target) $(STANDARD_LIBS) $(LOCAL_LIBS) $(LOCAL_LIBS)
+	$(CC) $(STANDARD_LIBS_DIR) -o $(target) $(STANDARD_LIBS) $(LOCAL_LIBS) $(LOCAL_LIBS) $(LDFLAGS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
