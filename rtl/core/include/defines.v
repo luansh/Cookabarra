@@ -260,67 +260,67 @@
 
 //https://zhuanlan.zhihu.com/p/349758402
 //Micro Opcode(uop)
-`define UOP_CODE_NOP            16'D0
-`define UOP_CODE_LUI            16'D1
-`define UOP_CODE_AUIPC          16'D2
-`define UOP_CODE_JAL            16'D3
-`define UOP_CODE_JALR           16'D4
+`define UOP_NOP            16'D0
+`define UOP_LUI            16'D1
+`define UOP_AUIPC          16'D2
+`define UOP_JAL            16'D3
+`define UOP_JALR           16'D4
 
-`define UOP_CODE_BEQ            16'D5
-`define UOP_CODE_BNE            16'D6
-`define UOP_CODE_BGE            16'D7
-`define UOP_CODE_BGEU           16'D8
-`define UOP_CODE_BLT            16'D9
-`define UOP_CODE_BLTU           16'D10
+`define UOP_BEQ            16'D5
+`define UOP_BNE            16'D6
+`define UOP_BGE            16'D7
+`define UOP_BGEU           16'D8
+`define UOP_BLT            16'D9
+`define UOP_BLTU           16'D10
 
-`define UOP_CODE_LB             16'D11
-`define UOP_CODE_LBU            16'D12
-`define UOP_CODE_LH             16'D13
-`define UOP_CODE_LHU            16'D14
-`define UOP_CODE_LW             16'D15
+`define UOP_LB             16'D11
+`define UOP_LBU            16'D12
+`define UOP_LH             16'D13
+`define UOP_LHU            16'D14
+`define UOP_LW             16'D15
 
-`define UOP_CODE_SB             16'D16
-`define UOP_CODE_SH             16'D17
-`define UOP_CODE_SW             16'D18
+`define UOP_SB             16'D16
+`define UOP_SH             16'D17
+`define UOP_SW             16'D18
 
-`define UOP_CODE_ADDI           16'D19
-`define UOP_CODE_SLTI           16'D20
-`define UOP_CODE_SLTIU          16'D21
-`define UOP_CODE_ANDI           16'D22
-`define UOP_CODE_ORI            16'D23
-`define UOP_CODE_XORI           16'D24
-`define UOP_CODE_SLLI           16'D25
-`define UOP_CODE_SRLI           16'D26
-`define UOP_CODE_SRAI           16'D27
+`define UOP_ADDI           16'D19
+`define UOP_SLTI           16'D20
+`define UOP_SLTIU          16'D21
+`define UOP_ANDI           16'D22
+`define UOP_ORI            16'D23
+`define UOP_XORI           16'D24
+`define UOP_SLLI           16'D25
+`define UOP_SRLI           16'D26
+`define UOP_SRAI           16'D27
 
-`define UOP_CODE_ADD            16'D28
-`define UOP_CODE_SUB            16'D29
-`define UOP_CODE_AND            16'D30
-`define UOP_CODE_OR             16'D31
-`define UOP_CODE_XOR            16'D32
-`define UOP_CODE_SLL            16'D33
-`define UOP_CODE_SRL            16'D34
-`define UOP_CODE_SRA            16'D35
-`define UOP_CODE_SLT            16'D36
-`define UOP_CODE_SLTU           16'D37
-`define UOP_CODE_MULT           16'D38
-`define UOP_CODE_MULH           16'D39
-`define UOP_CODE_MULHU          16'D40
-`define UOP_CODE_MULHSU         16'D41
-`define UOP_CODE_DIV            16'D42
-`define UOP_CODE_DIVU           16'D43
-`define UOP_CODE_REM            16'D44
-`define UOP_CODE_REMU           16'D45
+`define UOP_ADD            16'D28
+`define UOP_SUB            16'D29
+`define UOP_AND            16'D30
+`define UOP_OR             16'D31
+`define UOP_XOR            16'D32
+`define UOP_SLL            16'D33
+`define UOP_SRL            16'D34
+`define UOP_SRA            16'D35
+`define UOP_SLT            16'D36
+`define UOP_SLTU           16'D37
+`define UOP_MULT           16'D38
+`define UOP_MULH           16'D39
+`define UOP_MULHU          16'D40
+`define UOP_MULHSU         16'D41
+`define UOP_DIV            16'D42
+`define UOP_DIVU           16'D43
+`define UOP_REM            16'D44
+`define UOP_REMU           16'D45
 
-`define UOP_CODE_CSRRW          16'D46
-`define UOP_CODE_CSRRWI         16'D47
-`define UOP_CODE_CSRRS          16'D48
-`define UOP_CODE_CSRRSI         16'D49
-`define UOP_CODE_CSRRC          16'D50
-`define UOP_CODE_CSRRCI         16'D51
+`define UOP_CSRRW          16'D46
+`define UOP_CSRRWI         16'D47
+`define UOP_CSRRS          16'D48
+`define UOP_CSRRSI         16'D49
+`define UOP_CSRRC          16'D50
+`define UOP_CSRRCI         16'D51
 
-`define UOP_CODE_ECALL          16'D52
-`define UOP_CODE_MRET           16'D53
+`define UOP_ECALL          16'D52
+`define UOP_MRET           16'D53
 
 
 /*-------------------------- CSR reg addr -------------------------*/

@@ -59,7 +59,7 @@
             rd_we_o <= `WriteDisable;
             rd_wd_o <= `ZeroWord;
 			//CSR
-            uop_o <= `UOP_CODE_NOP;
+            uop_o <= `UOP_NOP;
             mem_a_o <= `ZeroWord;
             mem_wd_o <= `ZeroWord;
             csr_we_o <= `WriteDisable;
@@ -78,7 +78,7 @@
             rd_we_o <= `WriteDisable;
             rd_wd_o <= `ZeroWord;
 
-            uop_o <= `UOP_CODE_NOP;
+            uop_o <= `UOP_NOP;
             mem_a_o <= `ZeroWord;
             mem_wd_o <= `ZeroWord;
 
@@ -98,7 +98,7 @@
             rd_we_o <= `WriteDisable;
             rd_wd_o <= `ZeroWord;
 
-            uop_o <= `UOP_CODE_NOP;
+            uop_o <= `UOP_NOP;
             mem_a_o <= `ZeroWord;
             mem_wd_o <= `ZeroWord;
 

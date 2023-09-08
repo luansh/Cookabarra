@@ -81,7 +81,7 @@ module id_ex(
             branch_slot_end_o <= 1'b0;
 
             alusel_o <= `EXE_TYPE_NOP;
-            uop_o <= `UOP_CODE_NOP;
+            uop_o <= `UOP_NOP;
 
             rs1_data_o <= `ZeroWord;
             rs2_data_o <= `ZeroWord;
@@ -99,7 +99,7 @@ module id_ex(
             ins_o <= `NOP_INST;
             branch_slot_end_o <= 1'b0;
 
-            uop_o <= `UOP_CODE_NOP;
+            uop_o <= `UOP_NOP;
             alusel_o <= `EXE_TYPE_NOP;
 
             rs1_data_o <= `ZeroWord;
@@ -118,7 +118,7 @@ module id_ex(
             ins_o <= `NOP_INST;
             branch_slot_end_o <= 1'b0;
 
-            uop_o <= `UOP_CODE_NOP;
+            uop_o <= `UOP_NOP;
             alusel_o <= `EXE_TYPE_NOP;
 
             rs1_data_o <= `ZeroWord;

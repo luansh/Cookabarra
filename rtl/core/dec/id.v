@@ -90,7 +90,7 @@
 
     assign stall_req_o = rs1_load_depend | rs2_load_depend;
 
-    assign pre_ins_is_load = ((ex_uop_i == `UOP_CODE_LB) || (ex_uop_i == `UOP_CODE_LBU) || (ex_uop_i == `UOP_CODE_LH) || (ex_uop_i == `UOP_CODE_LHU) || (ex_uop_i == `UOP_CODE_LW)) ? 1'b1 : 1'b0;
+    assign pre_ins_is_load = ((ex_uop_i == `UOP_LB) || (ex_uop_i == `UOP_LBU) || (ex_uop_i == `UOP_LH) || (ex_uop_i == `UOP_LHU) || (ex_uop_i == `UOP_LW)) ? 1'b1 : 1'b0;
 
     assign pc_o = pc_i;
     assign imm_o = imm_r;
@@ -129,7 +129,7 @@
             {rd_we_o, rd_wa_o} = {`WriteDisable, `NOPRegAddress};
 
             alusel_o = `EXE_TYPE_NOP;
-            uop_o = `UOP_CODE_NOP;
+            uop_o = `UOP_NOP;
 
             excepttype_ecall = `False_v;
             excepttype_mret = `False_v;
@@ -154,7 +154,7 @@
             rd_wa_o = `NOPRegAddress;
 
             alusel_o = `EXE_TYPE_NOP;
-            uop_o = `UOP_CODE_NOP;
+            uop_o = `UOP_NOP;
 
             excepttype_ecall = `False_v;
             excepttype_mret = `False_v;
@@ -178,7 +178,7 @@
         {rd_we_o, rd_wa_o} = {`WriteDisable, `NOPRegAddress};
 
             alusel_o = `EXE_TYPE_NOP;
-            uop_o = `UOP_CODE_NOP;
+            uop_o = `UOP_NOP;
 
             excepttype_ecall = `False_v;
             excepttype_mret = `False_v;
@@ -194,20 +194,20 @@
           //由于 imm就绪，we有效，可立即写入（EX在下一周期执行写操作）
             imm_r = {ins_i[31:12], 12'd0};
             {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
-            {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_LOGIC, `UOP_CODE_LUI};
+            {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_LOGIC, `UOP_LUI};
           end
           `INS_OPCODE_AUIPC:
           begin
             imm_r = {ins_i[31:12], 12'd0};
             {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
-            {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_LOGIC, `UOP_CODE_AUIPC};
+            {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_LOGIC, `UOP_AUIPC};
           end
           `INS_OPCODE_JAL:
           begin
           //跳转+-1M
             imm_r = {{12{ins_i[31]}}, ins_i[19:12], ins_i[20], ins_i[30:21], 1'b0};
             {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
-            {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_BRANCH, `UOP_CODE_JAL};
+            {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_BRANCH, `UOP_JAL};
           end
           `INS_OPCODE_JALR:
           begin
@@ -215,7 +215,7 @@
           //读取rs1 中的值，作为pc的基址
             rs1_re_o = 1'b1;
             {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
-            {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_BRANCH, `UOP_CODE_JALR};
+            {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_BRANCH, `UOP_JALR};
           end
           `INS_OPCODE_BRANCH:
           begin
@@ -229,12 +229,12 @@
             {rs1_re_o, rs2_re_o} = 2'b11;
             {ins_valid_r, alusel_o} = {`INS_VALID, `EXE_TYPE_BRANCH};
             case (fun3)
-              `INS_BEQ: uop_o = `UOP_CODE_BEQ;
-              `INS_BNE: uop_o = `UOP_CODE_BNE;
-              `INS_BGE: uop_o = `UOP_CODE_BGE;
-              `INS_BGEU: uop_o = `UOP_CODE_BGEU;
-              `INS_BLT: uop_o = `UOP_CODE_BLT;
-              `INS_BLTU: uop_o = `UOP_CODE_BLTU;
+              `INS_BEQ: uop_o = `UOP_BEQ;
+              `INS_BNE: uop_o = `UOP_BNE;
+              `INS_BGE: uop_o = `UOP_BGE;
+              `INS_BGEU: uop_o = `UOP_BGEU;
+              `INS_BLT: uop_o = `UOP_BLT;
+              `INS_BLTU: uop_o = `UOP_BLTU;
               default:
               begin
                 $display("Invalid Fun3 In Branch Type(pc=%h, ins=%h, fun3=%d)", pc_i, ins_i, fun3);
@@ -249,11 +249,11 @@
             {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
             {ins_valid_r, alusel_o} = {`INS_VALID, `EXE_TYPE_LOAD_STORE};
             case (fun3)
-              `INS_LB: uop_o = `UOP_CODE_LB;
-              `INS_LBU: uop_o = `UOP_CODE_LBU;
-              `INS_LH: uop_o = `UOP_CODE_LH;
-              `INS_LHU: uop_o = `UOP_CODE_LHU;
-              `INS_LW: uop_o = `UOP_CODE_LW;
+              `INS_LB: uop_o = `UOP_LB;
+              `INS_LBU: uop_o = `UOP_LBU;
+              `INS_LH: uop_o = `UOP_LH;
+              `INS_LHU: uop_o = `UOP_LHU;
+              `INS_LW: uop_o = `UOP_LW;
               default:
               begin
                 $display("Invalid Fun3 In Load Type(pc=%h, ins=%h, fun3=%d)", pc_i, ins_i, fun3);
@@ -268,9 +268,9 @@
             {rs1_re_o, rs2_re_o} = 2'b11;
             {ins_valid_r, alusel_o} = {`INS_VALID, `EXE_TYPE_LOAD_STORE};
             case (fun3)
-              `INS_SB: uop_o = `UOP_CODE_SB;
-              `INS_SH: uop_o = `UOP_CODE_SH;
-              `INS_SW: uop_o = `UOP_CODE_SW;
+              `INS_SB: uop_o = `UOP_SB;
+              `INS_SH: uop_o = `UOP_SH;
+              `INS_SW: uop_o = `UOP_SW;
               default:
               begin
                 $display("Invalid Fun3 In Store Type(pc=%h, inst=%h, fun3=%d)", pc_i, ins_i, fun3);
@@ -285,23 +285,23 @@
             {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
             ins_valid_r = `INS_VALID;
             case (fun3)
-              `INS_ADDI: {alusel_o, uop_o} = {`EXE_TYPE_ARITHMETIC, `UOP_CODE_ADDI};
+              `INS_ADDI: {alusel_o, uop_o} = {`EXE_TYPE_ARITHMETIC, `UOP_ADDI};
             //rs1 中的值小于立即数，rd=1
-              `INS_SLTI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_SLTI};
-              `INS_SLTIU: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_SLTIU};
-              `INS_ANDI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_ANDI};
-              `INS_ORI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_ORI};
-              `INS_XORI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_XORI};
+              `INS_SLTI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_SLTI};
+              `INS_SLTIU: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_SLTIU};
+              `INS_ANDI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_ANDI};
+              `INS_ORI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_ORI};
+              `INS_XORI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_XORI};
               `INS_SLLI:
               begin
                 imm_r = {27'b0, ins_i[24:20]};
-                {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_CODE_SLLI};
+                {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_SLLI};
               end
               `INS_SRLI_SRAI:
               begin
                 imm_r = {27'b0, ins_i[24:20]};
-                if (fun7[6:1] == 6'b000000) {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_CODE_SRLI};
-                else if (fun7[6:1] == 6'b010000) {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_CODE_SRAI};
+                if (fun7[6:1] == 6'b000000) {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_SRLI};
+                else if (fun7[6:1] == 6'b010000) {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_SRAI};
                 else
                 begin
                   $display("Invalid Fun7 (%b) For SRI(pc=%h, inst=%h, fun3=%d)", fun7[6:1], pc_i, ins_i, fun3);
@@ -323,17 +323,17 @@
             if ((fun7 == 7'b0000000) || (fun7 == 7'b0100000))
               case (fun3)
                   `INS_ADD_SUB:
-                    if (fun7 == 7'b0000000) {alusel_o, uop_o} = {`EXE_TYPE_ARITHMETIC, `UOP_CODE_ADD};
-                    else {alusel_o, uop_o} = {`EXE_TYPE_ARITHMETIC, `UOP_CODE_SUB};
-                  `INS_AND: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_AND};
-                  `INS_OR: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_OR};
-                  `INS_XOR: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_XOR};
-                  `INS_SLL: {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_CODE_SLL};
+                    if (fun7 == 7'b0000000) {alusel_o, uop_o} = {`EXE_TYPE_ARITHMETIC, `UOP_ADD};
+                    else {alusel_o, uop_o} = {`EXE_TYPE_ARITHMETIC, `UOP_SUB};
+                  `INS_AND: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_AND};
+                  `INS_OR: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_OR};
+                  `INS_XOR: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_XOR};
+                  `INS_SLL: {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_SLL};
                   `INS_SRL_SRA:
-                      if (fun7 == 7'b0000000) {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_CODE_SRL};
-                      else {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_CODE_SRA};
-                  `INS_SLT: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_SLT};
-                  `INS_SLTU: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_CODE_SLTU};
+                      if (fun7 == 7'b0000000) {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_SRL};
+                      else {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_SRA};
+                  `INS_SLT: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_SLT};
+                  `INS_SLTU: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_SLTU};
                   default:
                   begin
                     $display("Invalid Fun3 In R Type(pc=%h, inst=%h, fun3=%d)", pc_i, ins_i, fun3);
@@ -342,14 +342,14 @@
               endcase
             else if (fun7 == 7'b0000001)
               case (fun3)
-                `INS_MUL: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_CODE_MULT};
-                `INS_MULH: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_CODE_MULH};
-                `INS_MULHU: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_CODE_MULHU};
-                `INS_MULHSU: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_CODE_MULHSU};
-                `INS_DIV: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_CODE_DIV};
-                `INS_DIVU: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_CODE_DIVU};
-                `INS_REM: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_CODE_REM};
-                `INS_REMU: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_CODE_REMU};
+                `INS_MUL: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_MULT};
+                `INS_MULH: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_MULH};
+                `INS_MULHU: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_MULHU};
+                `INS_MULHSU: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_MULHSU};
+                `INS_DIV: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_DIV};
+                `INS_DIVU: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_DIVU};
+                `INS_REM: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_REM};
+                `INS_REMU: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_REMU};
                 default:
                 begin
                   $display("Invalid Fun3 In R Type(pc=%h, inst=%h, fun3=%d)", pc_i, ins_i, fun3);
@@ -384,7 +384,7 @@
                             csr_we = `WriteEnable;
 
                             alusel_o = `EXE_TYPE_CSR;
-                            uop_o = `UOP_CODE_CSRRW;
+                            uop_o = `UOP_CSRRW;
                         end
 
                         `INS_CSRRWI: begin
@@ -397,7 +397,7 @@
                             csr_we = `WriteEnable;
 
                             alusel_o = `EXE_TYPE_CSR;
-                            uop_o = `UOP_CODE_CSRRWI;
+                            uop_o = `UOP_CSRRWI;
                         end
 
                         `INS_CSRRS: begin
@@ -410,7 +410,7 @@
                             csr_we = `WriteEnable;
 
                             alusel_o = `EXE_TYPE_CSR;
-                            uop_o = `UOP_CODE_CSRRS;
+                            uop_o = `UOP_CSRRS;
                         end
 
                         `INS_CSRRSI: begin
@@ -424,7 +424,7 @@
                             csr_we = `WriteEnable;
 
                             alusel_o = `EXE_TYPE_CSR;
-                            uop_o = `UOP_CODE_CSRRSI;
+                            uop_o = `UOP_CSRRSI;
                         end
 
                         `INS_CSRRC: begin
@@ -437,7 +437,7 @@
                             csr_we = `WriteEnable;
 
                             alusel_o = `EXE_TYPE_CSR;
-                            uop_o = `UOP_CODE_CSRRC;
+                            uop_o = `UOP_CSRRC;
                         end
 
                         `INS_CSRRCI: begin
@@ -449,7 +449,7 @@
                             rd_we_o = `WriteEnable;
                             csr_we = `WriteEnable;
 
-                            uop_o = `UOP_CODE_CSRRCI;
+                            uop_o = `UOP_CSRRCI;
                             alusel_o = `EXE_TYPE_CSR;
                         end
 
@@ -465,7 +465,7 @@
                                 // performs no other operation.
                                 // ecall  :   RaiseException(EnvironmentCall)
                                 alusel_o = `EXE_TYPE_NOP;
-                                uop_o = `UOP_CODE_ECALL;
+                                uop_o = `UOP_ECALL;
                                 excepttype_ecall= `True_v;
                             end
 
@@ -474,7 +474,7 @@
                                 // Return from traps in M-mode, and MRET copies MPIE into MIE, then sets MPIE.
                                 // mret  :   ExceptionReturn(Machine)
                                 alusel_o = `EXE_TYPE_NOP;
-                                uop_o = `UOP_CODE_MRET;
+                                uop_o = `UOP_MRET;
                                 excepttype_mret = `True_v;
                             end
 
@@ -484,7 +484,7 @@
                                 // Return from traps in U-mode, and URET copies UPIE into UIE, then sets UPIE.
                                 // uret  :   ExceptionReturn(User)
                                 alusel_o = `EXE_TYPE_NOP;
-                                uop_o = `UOP_CODE_ERET;
+                                uop_o = `UOP_ERET;
                                 excepttype_is_eret = `True_v;
                             end
 
@@ -494,7 +494,7 @@
                                 // It generates a breakpoint exception and performs no other operation.
                                 // ebreak  :   RaiseException(Breakpoint)
                                 alusel_o = `EXE_TYPE_NOP;
-                                uop_o = `UOP_CODE_EBREAK;
+                                uop_o = `UOP_EBREAK;
                             end
 
                             if ( (fun7==7'b0000100) && (rs2_w == 5'b00010) ) begin   // INS_SRET

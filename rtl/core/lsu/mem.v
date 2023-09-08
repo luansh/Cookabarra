@@ -73,15 +73,15 @@ module mem(
     reg load_addr_align_exception;
     reg store_addr_align_exception;
 
-    assign load_operation = ( (uop_i == `UOP_CODE_LH) || (uop_i == `UOP_CODE_LHU) ||(uop_i == `UOP_CODE_LW) ) ? 1'b1 : 1'b0;
+    assign load_operation = ( (uop_i == `UOP_LH) || (uop_i == `UOP_LHU) ||(uop_i == `UOP_LW) ) ? 1'b1 : 1'b0;
 
-    assign store_operation = ( (uop_i == `UOP_CODE_SH) ||(uop_i == `UOP_CODE_SW) ) ? 1'b1 : 1'b0;
+    assign store_operation = ( (uop_i == `UOP_SH) ||(uop_i == `UOP_SW) ) ? 1'b1 : 1'b0;
 
 
-    assign addr_align_halfword =(   ( (uop_i == `UOP_CODE_SH) || (uop_i == `UOP_CODE_LH) || (uop_i == `UOP_CODE_LHU) )
+    assign addr_align_halfword =(   ( (uop_i == `UOP_SH) || (uop_i == `UOP_LH) || (uop_i == `UOP_LHU) )
                                  && (mem_addr_i[0] == 1'b0) ) ? 1'b1 : 1'b0;
 
-    assign addr_align_word =(   ( (uop_i == `UOP_CODE_SW) || (uop_i == `UOP_CODE_LW) )
+    assign addr_align_word =(   ( (uop_i == `UOP_SW) || (uop_i == `UOP_LW) )
                              && (mem_addr_i[1:0] == 2'b00 ) ) ? 1'b1 : 1'b0;
 
     assign load_addr_align_exception = (~ (addr_align_halfword || addr_align_word)) & load_operation;
@@ -103,12 +103,12 @@ module mem(
     assign rd_a_o = rd_wa_i;
     assign rd_wd_o = rd_wd_i;
 
-    assign mem_we = ( (uop_i == `UOP_CODE_SB) || (uop_i == `UOP_CODE_SH)
-                    ||(uop_i == `UOP_CODE_SW) ) ? 1'b1 : 1'b0;
+    assign mem_we = ( (uop_i == `UOP_SB) || (uop_i == `UOP_SH)
+                    ||(uop_i == `UOP_SW) ) ? 1'b1 : 1'b0;
 
-    assign mem_re = ( (uop_i == `UOP_CODE_LB) || (uop_i == `UOP_CODE_LBU)
-	                ||(uop_i == `UOP_CODE_LH) || (uop_i == `UOP_CODE_LHU)
-			   	    ||(uop_i == `UOP_CODE_LW) ) ? 1'b1 : 1'b0;
+    assign mem_re = ( (uop_i == `UOP_LB) || (uop_i == `UOP_LBU)
+	                ||(uop_i == `UOP_LH) || (uop_i == `UOP_LHU)
+			   	    ||(uop_i == `UOP_LW) ) ? 1'b1 : 1'b0;
 
     assign mem_we_o = mem_we & (~(|exception_o));  // if exeception happened, give up the store operation on the ram
     assign mem_ce_o = mem_we_o | mem_re;
@@ -141,7 +141,7 @@ module mem(
         end else begin
             mem_sel_o = 4'b1111;
             case (uop_i)
-                `UOP_CODE_LB:     begin
+                `UOP_LB:     begin
                     case (mem_addr_i[1:0])
                         2'b00:  begin
                             rd_wd_o = {{24{mem_data_i[7]}},mem_data_i[7:0]};
@@ -165,7 +165,7 @@ module mem(
                     endcase
                 end
 
-                `UOP_CODE_LBU:        begin
+                `UOP_LBU:        begin
                     case (mem_addr_i[1:0])
                         2'b00:  begin
                             rd_wd_o = {{24{1'b0}},mem_data_i[7:0]};
@@ -189,7 +189,7 @@ module mem(
                     endcase
                 end
 
-                `UOP_CODE_LH:     begin
+                `UOP_LH:     begin
                     case (mem_addr_i[1:0])
                         2'b00:  begin
                             rd_wd_o = {{16{mem_data_i[15]}},mem_data_i[15:0]};
@@ -205,7 +205,7 @@ module mem(
                     endcase
                 end
 
-                `UOP_CODE_LHU:        begin
+                `UOP_LHU:        begin
                     case (mem_addr_i[1:0])
                         2'b00:  begin
                             rd_wd_o = {{16{1'b0}},mem_data_i[15:0]};
@@ -221,12 +221,12 @@ module mem(
                     endcase
                 end
 
-                `UOP_CODE_LW:     begin
+                `UOP_LW:     begin
                     rd_wd_o = mem_data_i;
                     mem_sel_o = 4'b1111;
                 end
 
-                `UOP_CODE_SB:     begin
+                `UOP_SB:     begin
                     mem_data_o = {mem_wdata_i[7:0],mem_wdata_i[7:0],mem_wdata_i[7:0],mem_wdata_i[7:0]};
                     case (mem_addr_i[1:0])
                         2'b00:  begin
@@ -247,7 +247,7 @@ module mem(
                     endcase
                 end
 
-                `UOP_CODE_SH:     begin
+                `UOP_SH:     begin
                     mem_data_o = {mem_wdata_i[15:0],mem_wdata_i[15:0]};
                     case (mem_addr_i[1:0])
                         2'b00:  begin
@@ -262,7 +262,7 @@ module mem(
                     endcase
                 end
 
-                `UOP_CODE_SW:  begin
+                `UOP_SW:  begin
                     // check the address align with 4 bytes
                     mem_data_o = mem_wdata_i;
                     mem_sel_o = 4'b1111;
