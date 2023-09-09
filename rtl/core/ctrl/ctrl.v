@@ -57,27 +57,14 @@
     output reg[`REG_BUS_D] new_pc_o   // notify the ifu to fetch the instruction from the new PC
   );
 
-    /* --------------------- handle the stall request -------------------*/
-    always @ (*) begin
-      if (n_rst_i == `RST_EN) begin
-        stall_o = 6'b000000;
-      // stall request from lsu: need to stop the ifu(0), IF_ID(1), ID_EXE(2), EXE_MEM(3), MEM_WB(4)
-      end else if (stallreq_from_mem_i == `STOP) begin
-        stall_o = 6'b011111;
-      // stall request from exu: stop the PC,IF_ID, ID_EXE, EXE_MEM
-      end else if (stallreq_from_ex_i == `STOP) begin
-        stall_o = 6'b001111;
-      // stall request from id: stop PC,IF_ID, ID_EXE
-      end else if (stallreq_from_id_i == `STOP) begin
-        stall_o = 6'b000111;
-      // stall request from if: stop the PC,IF_ID, ID_EXE
-      end else if (stallreq_from_if_i == `STOP) begin
-        stall_o = 6'b000111;
-      end else begin
-        stall_o = 6'b000000;
-      end // if
-    end // always
-
+  //0:IF/1:IF_ID/2:ID_EX/3:EX_MEM/4:MEM_WB
+    always @ (*)
+      if (n_rst_i == `RST_EN) stall_o = 6'b000000;
+      else if (stallreq_from_mem_i == `STOP) stall_o = 6'b011111; //暂停 LSU
+      else if (stallreq_from_ex_i == `STOP) stall_o = 6'b001111;//暂停EX
+      else if (stallreq_from_id_i == `STOP) stall_o = 6'b000111;//暂停ID
+      else if (stallreq_from_if_i == `STOP) stall_o = 6'b000111;//暂停IF
+      else stall_o = 6'b000000;
 
     /* --------------------- handle the the interrupt and exceptions -------------------*/
     // state registers
