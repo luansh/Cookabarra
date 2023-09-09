@@ -5,31 +5,31 @@ module ex(
     input wire n_rst_i,
 
     /* ------- signals from the decoder unit --------*/
-    input wire[`RegBus] pc_i,
-    input wire[`RegBus] ins_i,
+    input wire[`REG_BUS_D] pc_i,
+    input wire[`REG_BUS_D] ins_i,
 
-    input wire[`RegBus] next_pc_i,
+    input wire[`REG_BUS_D] next_pc_i,
 	input wire next_taken_i,
     input wire branch_slot_end_i,
 
     input wire[`AluSelBus] alusel_i,
     input wire[`AluOpBus] uop_i,
 
-    input wire[`RegBus] rs1_d_i,
-    input wire[`RegBus] rs2_d_i,
-    input wire[`RegBus] imm_i,
+    input wire[`REG_BUS_D] rs1_d_i,
+    input wire[`REG_BUS_D] rs2_d_i,
+    input wire[`REG_BUS_D] imm_i,
 
     input wire rd_we_i,
-    input wire[`RegAddrBus] rd_wa_i,
+    input wire[`REG_BUS_A] rd_wa_i,
 
     input wire csr_we_i,       // write csr or not
-    input wire[`RegBus] csr_addr_i,     // the csr address, could be read or write
+    input wire[`REG_BUS_D] csr_addr_i,     // the csr address, could be read or write
 
     input wire[31:0] exception_i,    // the execeptions detected in the decode stage, ecall, mret, invalid instructions
 
     /* ------- signals with division unit --------*/
-    output reg[`RegBus] dividend_o,
-    output reg[`RegBus] divisor_o,
+    output reg[`REG_BUS_D] dividend_o,
+    output reg[`REG_BUS_D] divisor_o,
     output reg div_start_o,
     // output reg div_annul_o,   // not used at the moment
     output reg div_signed_o,
@@ -41,23 +41,23 @@ module ex(
     output reg stall_req_o,     // need to stall the pipeline on the division operation, it needs 32 cycles
 
     /* ------- signals with csr unit --------*/
-    output reg[`RegBus] csr_raddr_o,
-    input wire[`RegBus] csr_rdata_i,
+    output reg[`REG_BUS_D] csr_raddr_o,
+    input wire[`REG_BUS_D] csr_rdata_i,
 
     /* ------- bypass signals from lsu, for csr dependance detection --------*/
     input wire mem_csr_we_i,
-    input wire[`RegBus] mem_csr_waddr_i,
-    input wire[`RegBus] mem_csr_wdata_i,
+    input wire[`REG_BUS_D] mem_csr_waddr_i,
+    input wire[`REG_BUS_D] mem_csr_wdata_i,
 
     /* ------- bypass signals from write back, for csr dependance detection --------*/
     input wire wb_csr_we_i,
-    input wire[`RegBus] wb_csr_waddr_i,
-    input wire[`RegBus] wb_csr_wdata_i,
+    input wire[`REG_BUS_D] wb_csr_waddr_i,
+    input wire[`REG_BUS_D] wb_csr_wdata_i,
 
 
     /* ------- passed to next pipeline --------*/
-    output reg[`RegBus] pc_o,
-    output reg[`RegBus] ins_o,
+    output reg[`REG_BUS_D] pc_o,
+    output reg[`REG_BUS_D] ins_o,
 
     //branch related
     output reg branch_request_o,  // is this instruction a branch/jump ?
@@ -65,25 +65,25 @@ module ex(
     output reg branch_is_call_o,
     output reg branch_is_ret_o,
     output reg branch_is_jmp_o,
-    output reg[`RegBus] branch_target_o,
+    output reg[`REG_BUS_D] branch_target_o,
 
     output reg branch_redirect_o,  // if this is a branch instruction and branch miss predicted
-    output reg[`RegBus] branch_redirect_pc_o,
+    output reg[`REG_BUS_D] branch_redirect_pc_o,
 
     output reg branch_tag_o,
     output reg branch_slot_end_o,
 
     output reg csr_we_o,
-    output reg[`RegBus] csr_waddr_o,
-    output reg[`RegBus] csr_wdata_o,
+    output reg[`REG_BUS_D] csr_wa_o,
+    output reg[`REG_BUS_D] csr_wd_o,
 
     output reg rd_we_o,
-    output reg[`RegAddrBus] rd_a_o,
-    output reg[`RegBus] rd_wd_o,
+    output reg[`REG_BUS_A] rd_a_o,
+    output reg[`REG_BUS_D] rd_wd_o,
 
     output reg[`AluOpBus] uop_o,    // used in the lsu, for determine it is a load or store
-    output reg[`RegBus] mem_a_o,   // the memory address to access
-    output reg[`RegBus] mem_wd_o,  // the data to write to the memory for the store instruction
+    output reg[`REG_BUS_D] mem_a_o,   // the memory address to access
+    output reg[`REG_BUS_D] mem_wd_o,  // the data to write to the memory for the store instruction
 
 	// the accumulated exception if there are some
     output reg[31:0] exception_o
@@ -98,7 +98,7 @@ module ex(
     wire[4:0] rs1 = ins_i[19:15];
 
     assign csr_we_o = csr_we_i;
-    assign csr_waddr_o = csr_addr_i;
+    assign csr_wa_o = csr_addr_i;
 
     assign rd_we_o = rd_we_i;
     assign rd_a_o = rd_wa_i;
@@ -107,37 +107,37 @@ module ex(
 
     assign exception_o = exception_i;
 
-    wire[`RegBus] pc_plus_4_w;
+    wire[`REG_BUS_D] pc_plus_4_w;
     assign pc_plus_4_w = pc_i + 4;    //for jar or jalr, the rd should be updated to pc + 4
 
-    wire[`RegBus] pc_add_imm_w;
+    wire[`REG_BUS_D] pc_add_imm_w;
     assign pc_add_imm_w = pc_i + imm_i;
 
-    wire[`RegBus] rs1_add_imm_w;
+    wire[`REG_BUS_D] rs1_add_imm_w;
     assign rs1_add_imm_w = rs1_d_i + imm_i;
 
-    wire[`RegBus] rs1_or_imm_w;
+    wire[`REG_BUS_D] rs1_or_imm_w;
     assign  rs1_or_imm_w = rs1_d_i | imm_i;
 
-    wire[`RegBus] rs1_and_imm_w;
+    wire[`REG_BUS_D] rs1_and_imm_w;
     assign  rs1_and_imm_w = rs1_d_i & imm_i;
 
-    wire[`RegBus] rs1_xor_imm_w;
+    wire[`REG_BUS_D] rs1_xor_imm_w;
     assign  rs1_xor_imm_w = rs1_d_i ^ imm_i;
 
-    wire[`RegBus] rs1_add_rs2_w;
+    wire[`REG_BUS_D] rs1_add_rs2_w;
     assign rs1_add_rs2_w = rs1_d_i + rs2_d_i;
 
-    wire[`RegBus] rs1_sub_rs2_w;
+    wire[`REG_BUS_D] rs1_sub_rs2_w;
     assign rs1_sub_rs2_w = rs1_d_i - rs2_d_i;
 
-    wire[`RegBus] rs1_and_rs2_w;
+    wire[`REG_BUS_D] rs1_and_rs2_w;
     assign  rs1_and_rs2_w = rs1_d_i & rs2_d_i;
 
-    wire[`RegBus] rs1_or_rs2_w;
+    wire[`REG_BUS_D] rs1_or_rs2_w;
     assign  rs1_or_rs2_w = rs1_d_i |rs2_d_i;
 
-    wire[`RegBus] rs1_xor_rs2_w;
+    wire[`REG_BUS_D] rs1_xor_rs2_w;
     assign  rs1_xor_rs2_w = rs1_d_i ^ rs2_d_i;
 
     /* ------ used in the be, bne, bge, blt ------*/
@@ -172,9 +172,9 @@ module ex(
     // (1) calcuate the memory address to acccess
     // (2) if it is a store instruction, the data to write was required as well
     always @ (*) begin
-        if (n_rst_i == `RstEnable) begin
-            mem_a_o = `ZeroWord;
-            mem_wd_o = `ZeroWord;
+        if (n_rst_i == `RST_EN) begin
+            mem_a_o = `ZERO_WORD;
+            mem_wd_o = `ZERO_WORD;
         end else begin
             case (uop_i)
                 /* ---------------------L-type instruction --------------*/
@@ -205,13 +205,13 @@ module ex(
         end // else
     end //always
 
-    reg[`RegBus] arithmetic_result_r;
-    reg[`RegBus] csr_result_r;
-    reg[`RegBus] div_result_r;
-    reg[`RegBus] jump_result_r;
-    reg[`RegBus] logic_result_r;
-    reg[`RegBus] mul_result_r;
-    reg[`RegBus] shift_result_r;
+    reg[`REG_BUS_D] arithmetic_result_r;
+    reg[`REG_BUS_D] csr_result_r;
+    reg[`REG_BUS_D] div_result_r;
+    reg[`REG_BUS_D] jump_result_r;
+    reg[`REG_BUS_D] logic_result_r;
+    reg[`REG_BUS_D] mul_result_r;
+    reg[`REG_BUS_D] shift_result_r;
 
     // handle csr instruction
     wire read_csr_enable;
@@ -220,8 +220,8 @@ module ex(
 
     // get the lastest csr value to update the rd
     always @ (*) begin
-        csr_result_r = `ZeroWord;
-        csr_raddr_o = `ZeroWord;
+        csr_result_r = `ZERO_WORD;
+        csr_raddr_o = `ZERO_WORD;
         if (read_csr_enable) begin
             // If rd=x0, then the instruction shall not read the CSR and shall not cause any
             // of the side effects that might occur on a CSR read.
@@ -240,40 +240,40 @@ module ex(
 
     // calculate the data to write to the csr
     always @ (*) begin
-        if (n_rst_i == `RstEnable) begin
-            csr_waddr_o = `ZeroWord;
-            csr_wdata_o = `ZeroWord;
+        if (n_rst_i == `RST_EN) begin
+            csr_wa_o = `ZERO_WORD;
+            csr_wd_o = `ZERO_WORD;
         end else begin
-            csr_wdata_o = `ZeroWord;
+            csr_wd_o = `ZERO_WORD;
             case (uop_i)
                 `UOP_CSRRW: begin
                     // csrrw rd,offset,rs1  :   t = CSRs[csr]; CSRs[csr] = x[rs1]; x[rd] = t
-                    csr_wdata_o = rs1_d_i;
+                    csr_wd_o = rs1_d_i;
                 end
 
                 `UOP_CSRRWI: begin
                     // csrrwi rd,offset,uimm  :  x[rd] = CSRs[csr]; CSRs[csr] = zimm
-                    csr_wdata_o = imm_i;
+                    csr_wd_o = imm_i;
                 end
 
                 `UOP_CSRRS: begin
                     // csrrs rd,offset,rs1  :   t = CSRs[csr]; CSRs[csr] = t | x[rs1]; x[rd] = t
-                    csr_wdata_o = rs1_d_i | csr_result_r;
+                    csr_wd_o = rs1_d_i | csr_result_r;
                 end
 
                 `UOP_CSRRSI: begin
                    // csrrsi rd,offset,uimm  :  t = CSRs[csr]; CSRs[csr] = t | zimm; x[rd] = t
-                    csr_wdata_o = imm_i | csr_result_r;
+                    csr_wd_o = imm_i | csr_result_r;
                 end
 
                 `UOP_CSRRC: begin
                     // csrrc rd,offset,rs1  :   t = CSRs[csr]; CSRs[csr] = t &∼x[rs1]; x[rd] = t
-                    csr_wdata_o = csr_result_r & (~rs1_d_i);
+                    csr_wd_o = csr_result_r & (~rs1_d_i);
                 end
 
                 `UOP_CSRRCI: begin
                     // csrrci rd,offset,uimm  :  t = CSRs[csr]; CSRs[csr] = t &∼zimm; x[rd] = t
-                    csr_wdata_o = csr_result_r & (~imm_i);
+                    csr_wd_o = csr_result_r & (~imm_i);
                 end
 
                 default: begin
@@ -285,32 +285,32 @@ module ex(
 
     // jump and branch instructions
     always @ (*) begin
-        if (n_rst_i == `RstEnable) begin
-            jump_result_r = `ZeroWord;
+        if (n_rst_i == `RST_EN) begin
+            jump_result_r = `ZERO_WORD;
 
             branch_request_o = 1'b0;
             branch_is_taken_o = 1'b0;
             branch_is_call_o = 1'b0;
             branch_is_ret_o = 1'b0;
             branch_is_jmp_o = 1'b0;
-            branch_target_o = `ZeroWord;
+            branch_target_o = `ZERO_WORD;
 
             branch_redirect_o = 1'b0;
-            branch_redirect_pc_o = `ZeroWord;;
+            branch_redirect_pc_o = `ZERO_WORD;;
             branch_tag_o = 1'b0;
 
         end else begin
-            jump_result_r = `ZeroWord;
+            jump_result_r = `ZERO_WORD;
 
             branch_request_o = 1'b0;
             branch_is_taken_o = 1'b0;
             branch_is_call_o = 1'b0;
             branch_is_ret_o = 1'b0;
             branch_is_jmp_o = 1'b0;
-            branch_target_o = `ZeroWord;
+            branch_target_o = `ZERO_WORD;
 
             branch_redirect_o = 1'b0;
-            branch_redirect_pc_o = `ZeroWord;;
+            branch_redirect_pc_o = `ZERO_WORD;;
             branch_tag_o = 1'b0;
             case (uop_i)
                 `UOP_JAL: begin
@@ -425,12 +425,12 @@ module ex(
                     end
                 end  // if (branch_is_taken_o == 1'b1) begin
             end  //  if ( (uop_i == `UOP_JAL) || (uop_i == `UOP_JALR) ||
-        end  // if (n_rst_i == `RstEnable) begin
+        end  // if (n_rst_i == `RST_EN) begin
     end //always
 
   //Logic
     always @ (*)
-      if (n_rst_i == `RstEnable) logic_result_r = `ZeroWord;
+      if (n_rst_i == `RST_EN) logic_result_r = `ZERO_WORD;
       else
         case (uop_i)
           `UOP_LUI: logic_result_r = imm_i;
@@ -445,12 +445,12 @@ module ex(
           `UOP_XOR: logic_result_r = rs1_xor_rs2_w;
           `UOP_SLT: logic_result_r = {32{(~rs1_ge_rs2_signed_w)}} & 32'h1;
           `UOP_SLTU: logic_result_r = {32{(~rs1_ge_rs2_unsigned_w)}} & 32'h1;
-          default: logic_result_r = `ZeroWord;
+          default: logic_result_r = `ZERO_WORD;
         endcase
 
   //Shift
     always @ (*)
-      if (n_rst_i == `RstEnable) shift_result_r = `ZeroWord;
+      if (n_rst_i == `RST_EN) shift_result_r = `ZERO_WORD;
       else
         case (uop_i)
           `UOP_SLLI: shift_result_r = rs1_d_i << imm_i;
@@ -460,22 +460,22 @@ module ex(
           `UOP_SRL: shift_result_r = rs1_d_i >> rs2_d_i[4:0];
         //算数右移，高位补符号位（右移1 位，算数除 2）
           `UOP_SRA: shift_result_r = (sr_shift_w & sr_shift_mask_w) | ({32{rs1_d_i[31]}} & (~sr_shift_mask_w));
-          default: shift_result_r = `ZeroWord;
+          default: shift_result_r = `ZERO_WORD;
         endcase
 
   //Arithmetic
     always @ (*)
-      if (n_rst_i == `RstEnable) arithmetic_result_r = `ZeroWord;
+      if (n_rst_i == `RST_EN) arithmetic_result_r = `ZERO_WORD;
       else
         case (uop_i)
           `UOP_ADDI: arithmetic_result_r = rs1_add_imm_w;
           `UOP_ADD: arithmetic_result_r = rs1_add_rs2_w;
           `UOP_SUB: arithmetic_result_r = rs1_sub_rs2_w;
-          default: arithmetic_result_r = `ZeroWord;
+          default: arithmetic_result_r = `ZERO_WORD;
         endcase
 
-    reg[`RegBus] mul_op1_r;
-    reg[`RegBus] mul_op2_r;
+    reg[`REG_BUS_D] mul_op1_r;
+    reg[`REG_BUS_D] mul_op2_r;
 
     wire[`DoubleRegBus] mul_result_w;
     wire[`DoubleRegBus] mul_result_invert_w;
@@ -483,8 +483,8 @@ module ex(
     assign mul_result_w = mul_op1_r * mul_op2_r;
     assign mul_result_invert_w = ~mul_result_w + 1;
 
-    reg[`RegBus] rs1_d_invert_r;
-    reg[`RegBus] rs2_d_invert_r;
+    reg[`REG_BUS_D] rs1_d_invert_r;
+    reg[`REG_BUS_D] rs2_d_invert_r;
 
     assign rs1_d_invert_r = ~rs1_d_i + 1;
     assign rs2_d_invert_r = ~rs2_d_i + 1;
@@ -499,7 +499,7 @@ module ex(
     end
 
     always @ (*)
-      if (n_rst_i == `RstEnable) mul_result_r = `ZeroWord;
+      if (n_rst_i == `RST_EN) mul_result_r = `ZERO_WORD;
       else
         case (uop_i)
           `UOP_MULT: mul_result_r = mul_result_w[31:0];
@@ -510,7 +510,7 @@ module ex(
                 default: mul_result_r = mul_result_invert_w[63:32];
               endcase
           `UOP_MULHSU: mul_result_r = rs1_d_i[31] ? mul_result_invert_w[63:32] : mul_result_w[63:32];
-          default: mul_result_r = `ZeroWord;
+          default: mul_result_r = `ZERO_WORD;
         endcase
 
     // stall the pipeline if needed
@@ -519,87 +519,87 @@ module ex(
 
     // division and rem instructions
     always @ (*) begin
-        if (n_rst_i == `RstEnable) begin
-            stallreq_for_div = `NoStop;
-            dividend_o = `ZeroWord;
-            divisor_o = `ZeroWord;
-            div_start_o = `DivStop;
+        if (n_rst_i == `RST_EN) begin
+            stallreq_for_div = `NO_STOP;
+            dividend_o = `ZERO_WORD;
+            divisor_o = `ZERO_WORD;
+            div_start_o = `DIV_STOP;
             div_signed_o = 1'b0;
         end else begin
-            stallreq_for_div = `NoStop;
-            dividend_o = `ZeroWord;
-            divisor_o = `ZeroWord;
-            div_start_o = `DivStop;
+            stallreq_for_div = `NO_STOP;
+            dividend_o = `ZERO_WORD;
+            divisor_o = `ZERO_WORD;
+            div_start_o = `DIV_STOP;
             div_signed_o = 1'b0;
             case (uop_i)
                 `UOP_DIV:        begin
                     // div rd,rs1,rs2  :   x[rd] = x[rs1] /s x[rs2]
-                    if (div_ready_i == `DivResultNotReady) begin
+                    if (div_ready_i == `DIV_RESULT_NOT_READY) begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
-                        div_start_o = `DivStart;
+                        div_start_o = `DIV_START;
                         div_signed_o = 1'b1;       // signed division
                         stallreq_for_div = `Stop;  // stop the pipeline
                     end else begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
-                        div_start_o = `DivStop;
+                        div_start_o = `DIV_STOP;
                         div_signed_o = 1'b1;
-                        stallreq_for_div = `NoStop;  // resume the pipeline
+                        stallreq_for_div = `NO_STOP;  // resume the pipeline
                         div_result_r = div_result_i[31:0]; // get the quotient
                     end
                 end
 
                `UOP_DIVU:       begin
                     // divu rd,rs1,rs2  :   x[rd] = x[rs1] /u x[rs2]
-                    if (div_ready_i == `DivResultNotReady) begin
+                    if (div_ready_i == `DIV_RESULT_NOT_READY) begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
-                        div_start_o = `DivStart;
+                        div_start_o = `DIV_START;
                         div_signed_o = 1'b0;        // unsigned division
                         stallreq_for_div = `Stop;
                     end else begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
-                        div_start_o = `DivStop;
+                        div_start_o = `DIV_STOP;
                         div_signed_o = 1'b0;
-                        stallreq_for_div = `NoStop;
+                        stallreq_for_div = `NO_STOP;
                         div_result_r = div_result_i[31:0];
                     end
                 end
 
                 `UOP_REM: begin
                     // rem rd,rs1,rs2  :    x[rd] = x[rs1] %s x[rs2]
-                    if (div_ready_i == `DivResultNotReady) begin
+                    if (div_ready_i == `DIV_RESULT_NOT_READY) begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
-                        div_start_o = `DivStart;
+                        div_start_o = `DIV_START;
                         div_signed_o = 1'b1;
                         stallreq_for_div = `Stop;
                     end else begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
-                        div_start_o = `DivStop;
+                        div_start_o = `DIV_STOP;
                         div_signed_o = 1'b1;
-                        stallreq_for_div = `NoStop;
+                        stallreq_for_div = `NO_STOP;
                         div_result_r = div_result_i[63:32]; // get the remainder
                     end
                 end
 
                 `UOP_REMU: begin
                     // remu rd,rs1,rs2  :   x[rd] = x[rs1] %u x[rs2]
-                   if (div_ready_i == `DivResultNotReady) begin
+                   if (div_ready_i == `DIV_RESULT_NOT_READY) begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
-                        div_start_o = `DivStart;
+                        div_start_o = `DIV_START;
                         div_signed_o = 1'b0;
                         stallreq_for_div = `Stop;
                     end else begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
-                        div_start_o = `DivStop;
+                        div_start_o = `DIV_STOP;
                         div_signed_o = 1'b0;
-                        stallreq_for_div = `NoStop;
+                        stallreq_for_div = `NO_STOP;
                         div_result_r = div_result_i[63:32];
                     end
                 end
@@ -622,7 +622,7 @@ module ex(
         `EXE_TYPE_MUL: rd_wd_o = mul_result_r;
         `EXE_TYPE_SHIFT: rd_wd_o = shift_result_r;
         `EXE_TYPE_CSR: rd_wd_o = csr_result_r;
-        default: rd_wd_o = `ZeroWord;
+        default: rd_wd_o = `ZERO_WORD;
       endcase
     end
 

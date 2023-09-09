@@ -33,62 +33,62 @@ module mem_wb(
     /*-- signals from mem -----*/
 	//GPR
     input wire rd_we_i,
-    input wire[`RegAddrBus] rd_wa_i,
-    input wire[`RegBus] rd_wd_i,
+    input wire[`REG_BUS_A] rd_wa_i,
+    input wire[`REG_BUS_D] rd_wd_i,
 
     //CSR
     input wire csr_we_i,
-    input wire[`RegBus] csr_waddr_i,
-    input wire[`RegBus] csr_wdata_i,
+    input wire[`REG_BUS_D] csr_wa_i,
+    input wire[`REG_BUS_D] csr_wd_i,
 
     /*-- signals passed to mem_wb stage -----*/
 	//GPR
     output reg rd_we_o,
-    output reg[`RegAddrBus] rd_a_o,
-    output reg[`RegBus] rd_wd_o,
+    output reg[`REG_BUS_A] rd_a_o,
+    output reg[`REG_BUS_D] rd_wd_o,
 
     //CSR
     output reg csr_we_o,
-    output reg[`RegBus] csr_waddr_o,
-    output reg[`RegBus] csr_wdata_o,
+    output reg[`REG_BUS_D] csr_wa_o,
+    output reg[`REG_BUS_D] csr_wd_o,
 
     output reg instret_incr_o
 );
 
     always @ (posedge clk_i) begin
-        if(n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RST_EN) begin
 		    // GPR
-            rd_we_o <= `WriteDisable;
-            rd_a_o <= `NOPRegAddress;
-            rd_wd_o <= `ZeroWord;
+            rd_we_o <= `WRITE_DISABLE;
+            rd_a_o <= `NOP_REG_A;
+            rd_wd_o <= `ZERO_WORD;
 
 			// CSR
-            csr_we_o <= `WriteDisable;
-            csr_waddr_o <= `ZeroWord;
-            csr_wdata_o <= `ZeroWord;
+            csr_we_o <= `WRITE_DISABLE;
+            csr_wa_o <= `ZERO_WORD;
+            csr_wd_o <= `ZERO_WORD;
 
             instret_incr_o  <= 1'b0;
-        end else if(flush_i == 1'b1 ) begin  //need to flush the pipeline
-            rd_we_o <= `WriteDisable;
-            rd_a_o <= `NOPRegAddress;
-            rd_wd_o <= `ZeroWord;
+        end else if (flush_i == 1'b1 ) begin  //need to flush the pipeline
+            rd_we_o <= `WRITE_DISABLE;
+            rd_a_o <= `NOP_REG_A;
+            rd_wd_o <= `ZERO_WORD;
 
-            csr_we_o <= `WriteDisable;
-            csr_waddr_o <= `ZeroWord;
-            csr_wdata_o <= `ZeroWord;
+            csr_we_o <= `WRITE_DISABLE;
+            csr_wa_o <= `ZERO_WORD;
+            csr_wd_o <= `ZERO_WORD;
 
             instret_incr_o <= 1'b0;
-        end else if(stall_i[4] == `Stop && stall_i[5] == `NoStop) begin  //stall this stage
-            rd_we_o <= `WriteDisable;
-            rd_a_o <= `NOPRegAddress;
-            rd_wd_o <= `ZeroWord;
+        end else if (stall_i[4] == `Stop && stall_i[5] == `NO_STOP) begin  //stall this stage
+            rd_we_o <= `WRITE_DISABLE;
+            rd_a_o <= `NOP_REG_A;
+            rd_wd_o <= `ZERO_WORD;
 
-            csr_we_o <= `WriteDisable;
-            csr_waddr_o <= `ZeroWord;
-            csr_wdata_o <= `ZeroWord;
+            csr_we_o <= `WRITE_DISABLE;
+            csr_wa_o <= `ZERO_WORD;
+            csr_wd_o <= `ZERO_WORD;
 
             instret_incr_o  <= 1'b0;
-        end else if(stall_i[4] == `NoStop) begin
+        end else if (stall_i[4] == `NO_STOP) begin
 		    // write the GPR
             rd_we_o <= rd_we_i;
             rd_a_o <= rd_wa_i;
@@ -96,8 +96,8 @@ module mem_wb(
 
 			// write the CSR
             csr_we_o <= csr_we_i;
-            csr_waddr_o <= csr_waddr_i;
-            csr_wdata_o <= csr_wdata_i;
+            csr_wa_o <= csr_wa_i;
+            csr_wd_o <= csr_wd_i;
             //update the retired instruction counter by adding one
             instret_incr_o  <= 1'b1;
         end  //if

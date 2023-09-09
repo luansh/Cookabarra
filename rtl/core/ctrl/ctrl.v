@@ -27,9 +27,9 @@ module ctrl(
     input wire clk_i,
     input wire n_rst_i,
 
-    input wire[`RegBus] exception_i,
-    input wire[`RegBus] pc_i,
-    input wire[`RegBus] ins_i,
+    input wire[`REG_BUS_D] exception_i,
+    input wire[`REG_BUS_D] pc_i,
+    input wire[`REG_BUS_D] ins_i,
 
     /* ----- stall request from other modules --------*/
     input wire stallreq_from_if_i,
@@ -47,8 +47,8 @@ module ctrl(
     input wire mip_timer_i,      // timer interrupt pending
     input wire mip_sw_i,         // sw interrupt pending
 
-    input wire[`RegBus] mtvec_i,          // the trap vector
-    input wire[`RegBus] epc_i,            // get the epc for the mret instruction
+    input wire[`REG_BUS_D] mtvec_i,          // the trap vector
+    input wire[`REG_BUS_D] epc_i,            // get the epc for the mret instruction
 
     /* ------------  signals from CSR  ---------------*/
     output reg ie_type_o,
@@ -56,10 +56,10 @@ module ctrl(
     output reg[3:0] trap_casue_o,
 
     output reg set_epc_o,
-    output reg[`RegBus] epc_o,
+    output reg[`REG_BUS_D] epc_o,
 
     output reg set_mtval_o,
-    output reg[`RegBus] mtval_o,
+    output reg[`REG_BUS_D] mtval_o,
 
     output reg mstatus_ie_clear_o,
     output reg mstatus_ie_set_o,
@@ -67,24 +67,24 @@ module ctrl(
     /* ---signals to other stages of the pipeline  ----*/
     output reg[5:0] stall_o,   // stall request to PC,IF_ID, ID_EX, EX_MEM, MEM_WB， one bit for one stage respectively
     output reg flush_o,   // flush the whole pipleline, exception or interrupt happens
-    output reg[`RegBus] new_pc_o   // notify the ifu to fetch the instruction from the new PC
+    output reg[`REG_BUS_D] new_pc_o   // notify the ifu to fetch the instruction from the new PC
 );
 
     /* --------------------- handle the stall request -------------------*/
     always @ (*) begin
-        if(n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RST_EN) begin
             stall_o = 6'b000000;
         // stall request from lsu: need to stop the ifu(0), IF_ID(1), ID_EXE(2), EXE_MEM(3), MEM_WB(4)
-        end else if(stallreq_from_mem_i == `Stop) begin
+        end else if (stallreq_from_mem_i == `Stop) begin
             stall_o = 6'b011111;
         // stall request from exu: stop the PC,IF_ID, ID_EXE, EXE_MEM
-        end else if(stallreq_from_ex_i == `Stop) begin
+        end else if (stallreq_from_ex_i == `Stop) begin
             stall_o = 6'b001111;
 		// stall request from id: stop PC,IF_ID, ID_EXE
-        end else if(stallreq_from_id_i == `Stop) begin
+        end else if (stallreq_from_id_i == `Stop) begin
             stall_o = 6'b000111;
 		// stall request from if: stop the PC,IF_ID, ID_EXE
-        end else if(stallreq_from_if_i == `Stop) begin
+        end else if (stallreq_from_if_i == `Stop) begin
             stall_o = 6'b000111;
         end else begin
             stall_o = 6'b000000;
@@ -136,9 +136,9 @@ module ctrl(
             end
 
             STATE_OPERATING: begin
-                if(trap_happened)
+                if (trap_happened)
                     next_state = STATE_TRAP_TAKEN;
-                else if(mret)
+                else if (mret)
                     next_state = STATE_TRAP_RETURN;
                 else
                     next_state = STATE_OPERATING;
@@ -159,7 +159,7 @@ module ctrl(
     end
 
     always @(posedge clk_i) begin
-        if(n_rst_i == `RstEnable)
+        if (n_rst_i == `RST_EN)
             curr_state <= STATE_RESET;
         else
             curr_state <= next_state;
@@ -173,9 +173,9 @@ module ctrl(
     assign mtvec_base = mtvec_i[31:2];
     assign mtvec_mode = mtvec_i[1:0];
 
-    reg[`RegBus] trap_mux_out;
-    wire [`RegBus] vec_mux_out;
-    wire [`RegBus] base_offset;
+    reg[`REG_BUS_D] trap_mux_out;
+    wire [`REG_BUS_D] vec_mux_out;
+    wire [`REG_BUS_D] base_offset;
 
     // mtvec = { base[maxlen-1:2], mode[1:0]}
     // The value in the BASE field must always be aligned on a 4-byte boundary, and the MODE setting may impose
@@ -192,7 +192,7 @@ module ctrl(
         case(curr_state)
             STATE_RESET: begin
                 flush_o = 1'b0;
-                new_pc_o = `REBOOT_ADDR;
+                new_pc_o = `REBOOT_ADDRESS;
                 set_epc_o = 1'b0;
                 set_cause_o = 1'b0;
                 mstatus_ie_clear_o = 1'b0;
@@ -201,7 +201,7 @@ module ctrl(
 
             STATE_OPERATING: begin
                 flush_o = 1'b0;
-                new_pc_o = `ZeroWord;
+                new_pc_o = `ZERO_WORD;
                 set_epc_o = 1'b0;
                 set_cause_o = 1'b0;
                 mstatus_ie_clear_o = 1'b0;
@@ -228,7 +228,7 @@ module ctrl(
 
             default: begin
                 flush_o = 1'b0;
-                new_pc_o = `ZeroWord;
+                new_pc_o = `ZERO_WORD;
                 set_epc_o = 1'b0;
                 set_cause_o = 1'b0;
                 mstatus_ie_clear_o = 1'b0;
@@ -241,54 +241,54 @@ module ctrl(
     /* update the mcause csr */
     always @(posedge clk_i)
     begin
-        if(n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RST_EN) begin
             trap_casue_o <= 4'b0;
             ie_type_o <= 1'b0;
             set_mtval_o <= 1'b0;
-            mtval_o <= `ZeroWord;
+            mtval_o <= `ZERO_WORD;
 
-        end else if(curr_state == STATE_OPERATING) begin
-            if(mstatus_ie_i & eip) begin
+        end else if (curr_state == STATE_OPERATING) begin
+            if (mstatus_ie_i & eip) begin
                 trap_casue_o <= 4'b1011; // M-mode external interrupt
                 ie_type_o <= 1'b1;
-            end else if(mstatus_ie_i & sip) begin
+            end else if (mstatus_ie_i & sip) begin
                 trap_casue_o <= 4'b0011; // M-mode software interrupt
                 ie_type_o <= 1'b1;
-            end else if(mstatus_ie_i & tip) begin
+            end else if (mstatus_ie_i & tip) begin
                 trap_casue_o <= 4'b0111; // M-mode timer interrupt
                 ie_type_o <= 1'b1;
 
-            end else if(misaligned_inst) begin
+            end else if (misaligned_inst) begin
                 trap_casue_o <= 4'b0000; // Instruction address misaligned, cause = 0
                 ie_type_o <= 1'b0;
                 set_mtval_o <= 1'b1;
                 mtval_o <= pc_i;
 
-            end else if(illegal_inst) begin
+            end else if (illegal_inst) begin
                 trap_casue_o <= 4'b0010; // Illegal instruction, cause = 2
                 ie_type_o <= 1'b0;
                 set_mtval_o <= 1'b1;
                 mtval_o <= ins_i;     //set to the instruction
 
-            end else if(ebreak) begin
+            end else if (ebreak) begin
                 trap_casue_o <= 4'b0011; // Breakpoint, cause =3
                 ie_type_o <= 1'b0;
                 set_mtval_o <= 1'b1;
                 mtval_o <= pc_i;
 
-            end else if(misaligned_store) begin
+            end else if (misaligned_store) begin
                 trap_casue_o <= 4'b0110; // Store address misaligned  //cause 6
                 ie_type_o <= 1'b0;
                 set_mtval_o <= 1'b1;
                 mtval_o <= pc_i;
 
-            end else if(misaligned_load) begin
+            end else if (misaligned_load) begin
                 trap_casue_o <= 4'b0100; // Load address misaligned  cause =4
                 ie_type_o <= 1'b0;
                 set_mtval_o <= 1'b1;
                 mtval_o <= pc_i;
 
-            end else if(ecall) begin
+            end else if (ecall) begin
                 trap_casue_o <= 4'b1011; // ecall from M-mode, cause = 11
                 ie_type_o <= 1'b0;
             end

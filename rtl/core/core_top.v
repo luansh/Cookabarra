@@ -6,17 +6,17 @@
 
     // signal to rom, to read the instruction
     output wire rom_ce_o,
-    output wire[`RegBus] rom_addr_o,
-    input  wire[`RegBus] rom_data_i,
+    output wire[`REG_BUS_D] rom_addr_o,
+    input  wire[`REG_BUS_D] rom_data_i,
 
     // signal to ram, to read/write the data
     output wire ram_ce_o,
     output wire[3:0] ram_sel_o,
-    output wire[`RegBus] ram_addr_o,
+    output wire[`REG_BUS_D] ram_addr_o,
     output wire ram_we_o,
-    output wire[`RegBus] ram_data_o,
+    output wire[`REG_BUS_D] ram_data_o,
     input  wire ram_data_rvalid,
-    input  wire[`RegBus] ram_data_i,
+    input  wire[`REG_BUS_D] ram_data_i,
 
     // interrupt signal
       input  wire irq_software_i,
@@ -27,10 +27,10 @@
     //------------ signal from ctrl unit  -----------
       wire ctrl_ie_type_o;
       wire ctrl_set_epc_o;
-      wire[`RegBus] ctrl_epc_o;
+      wire[`REG_BUS_D] ctrl_epc_o;
 
       wire ctrl_set_mtval_o;
-      wire[`RegBus] ctrl_mtval_o;
+      wire[`REG_BUS_D] ctrl_mtval_o;
 
       wire ctrl_set_cause_o;
       wire[3:0] ctrl_trap_casue_o;
@@ -40,7 +40,7 @@
 
     wire[5:0] ctrl_stall_o;
     wire ctrl_flush_o;
-    wire[`RegBus] ctrl_new_pc_o;
+    wire[`REG_BUS_D] ctrl_new_pc_o;
 
 
       //------- signals from if  ----
@@ -71,37 +71,37 @@
       //id --> reg
       wire id_rs1_re_o;
       wire id_rs2_re_o;
-      wire[`RegAddrBus] id_rs1_raddr_o;
-      wire[`RegAddrBus] id_rs2_raddr_o;
+      wire[`REG_BUS_A] id_rs1_raddr_o;
+      wire[`REG_BUS_A] id_rs2_raddr_o;
 
       //id --> ctrl
       wire id_stall_req_o;
 
       //id --> id_ex
-      wire[`RegBus] id_inst_o;
-    wire[`RegBus] id_imm_o;
+      wire[`REG_BUS_D] id_inst_o;
+    wire[`REG_BUS_D] id_imm_o;
     wire[`InstAddrBus] id_next_pc_o;
       wire id_next_taken_o;
       wire id_branch_slot_end_o;
 
     wire id_csr_we_o;
-    wire[`RegBus] id_csr_addr_o;
+    wire[`REG_BUS_D] id_csr_addr_o;
 
-    wire[`RegBus] id_rs1_data_o;
-    wire[`RegBus] id_rs2_data_o;
+    wire[`REG_BUS_D] id_rs1_data_o;
+    wire[`REG_BUS_D] id_rs2_data_o;
     wire id_rd_we_o;
-    wire[`RegAddrBus] id_rd_waddr_o;
+    wire[`REG_BUS_A] id_rd_waddr_o;
 
     wire[`AluSelBus] id_alusel_o;
     wire[`AluOpBus] id_uopcode_o;
 
-      wire[`RegBus] id_pc_o;
-    wire[`RegBus] id_excepttype_o;
+      wire[`REG_BUS_D] id_pc_o;
+    wire[`REG_BUS_D] id_excepttype_o;
 
       //-------signals from id_ex -------
     // id_ex --> ex
-      wire[`RegBus] ex_pc_i;
-      wire[`RegBus] ex_inst_i;
+      wire[`REG_BUS_D] ex_pc_i;
+      wire[`REG_BUS_D] ex_inst_i;
     wire[`InstAddrBus] ex_next_pc_i;
       wire ex_next_taken_i;
       wire ex_branch_slot_end_i;
@@ -109,21 +109,21 @@
     wire[`AluSelBus] ex_alusel_i;
     wire[`AluOpBus] ex_uop_i;
 
-    wire[`RegBus] ex_rs1_data_i;
-    wire[`RegBus] ex_rs2_data_i;
-    wire[`RegBus] ex_imm_i;
+    wire[`REG_BUS_D] ex_rs1_data_i;
+    wire[`REG_BUS_D] ex_rs2_data_i;
+    wire[`REG_BUS_D] ex_imm_i;
     wire ex_rd_we_i;
-    wire[`RegAddrBus] ex_rd_addr_i;
+    wire[`REG_BUS_A] ex_rd_addr_i;
 
     wire ex_csr_we_i;
-    wire[`RegBus] ex_csr_addr_i;
+    wire[`REG_BUS_D] ex_csr_addr_i;
 
-    wire[`RegBus] ex_excepttype_i;
+    wire[`REG_BUS_D] ex_excepttype_i;
 
       //-------signals from ex -------
       // ex --> div
-    wire[`RegBus] ex_dividend_o;
-    wire[`RegBus] ex_divisor_o;
+    wire[`REG_BUS_D] ex_dividend_o;
+    wire[`REG_BUS_D] ex_divisor_o;
     wire ex_div_start_o;
     wire ex_div_annul_o;
     wire ex_div_signed_o;
@@ -132,28 +132,28 @@
       wire ex_stall_req_o;
 
       // ex --> csr
-      wire[`RegBus] ex_csr_raddr_o;
+      wire[`REG_BUS_D] ex_csr_raddr_o;
 
     // ex --> ex_mem
-      wire[`RegBus] ex_pc_o;   //to branch prediction as well
-    wire[`RegBus] ex_inst_o;
+      wire[`REG_BUS_D] ex_pc_o;   //to branch prediction as well
+    wire[`REG_BUS_D] ex_inst_o;
 
       wire ex_branch_tag_o;
       wire ex_branch_slot_end_o;
 
     wire ex_csr_we_o;
-    wire[`RegBus] ex_csr_waddr_o;
-    wire[`RegBus] ex_csr_wdata_o;
+    wire[`REG_BUS_D] ex_csr_waddr_o;
+    wire[`REG_BUS_D] ex_csr_wdata_o;
 
     wire ex_rd_we_o;
-    wire[`RegAddrBus] ex_rd_addr_o;
-    wire[`RegBus] ex_rd_wdata_o;
+    wire[`REG_BUS_A] ex_rd_addr_o;
+    wire[`REG_BUS_D] ex_rd_wdata_o;
 
     wire[`AluOpBus] ex_uopcode_o;
-    wire[`RegBus] ex_mem_addr_o;
-    wire[`RegBus] ex_mem_wdata_o;
+    wire[`REG_BUS_D] ex_mem_addr_o;
+    wire[`REG_BUS_D] ex_mem_wdata_o;
 
-      wire[`RegBus] ex_excepttype_o;
+      wire[`REG_BUS_D] ex_excepttype_o;
 
       // ex --> branch prediction
     wire ex_branch_request_o;
@@ -161,53 +161,53 @@
     wire ex_branch_call_o;
     wire ex_branch_ret_o;
     wire ex_branch_jmp_o;
-    wire[`RegBus] ex_branch_target_o;
+    wire[`REG_BUS_D] ex_branch_target_o;
 
       wire ex_branch_redirect_o;   //miss predicted, redirect the pc
-    wire[`RegBus] ex_branch_redirect_pc_o;
+    wire[`REG_BUS_D] ex_branch_redirect_pc_o;
 
 
       //-------signals from ex_mem -------
     wire mem_rd_we_i;
-    wire[`RegAddrBus] mem_rd_addr_i;
-    wire[`RegBus] mem_rd_wd_i;
+    wire[`REG_BUS_A] mem_rd_addr_i;
+    wire[`REG_BUS_D] mem_rd_wd_i;
 
     wire[`AluOpBus] mem_uop_i;
-    wire[`RegBus] mem_mem_addr_i;
-    wire[`RegBus] mem_mem_wdata_i;
+    wire[`REG_BUS_D] mem_mem_addr_i;
+    wire[`REG_BUS_D] mem_mem_wdata_i;
 
     wire mem_csr_we_i;
-    wire[`RegBus] mem_csr_waddr_i;
-    wire[`RegBus] mem_csr_wdata_i;
+    wire[`REG_BUS_D] mem_csr_waddr_i;
+    wire[`REG_BUS_D] mem_csr_wdata_i;
 
-      wire[`RegBus] mem_excepttype_i;
-    wire[`RegBus] mem_pc_i;
-    wire[`RegBus] mem_inst_i;
+      wire[`REG_BUS_D] mem_excepttype_i;
+    wire[`REG_BUS_D] mem_pc_i;
+    wire[`REG_BUS_D] mem_inst_i;
 
 
       //-------signals from mem -----------
     wire mem_rd_we_o;
-    wire[`RegAddrBus] mem_rd_addr_o;
-    wire[`RegBus] mem_rd_wdata_o;
+    wire[`REG_BUS_A] mem_rd_addr_o;
+    wire[`REG_BUS_D] mem_rd_wdata_o;
 
     wire mem_csr_we_o;
-    wire[`RegBus] mem_csr_waddr_o;
-    wire[`RegBus] mem_csr_wdata_o;
+    wire[`REG_BUS_D] mem_csr_waddr_o;
+    wire[`REG_BUS_D] mem_csr_wdata_o;
 
       wire mem_stall_req_o;
-    wire[`RegBus] mem_excepttype_o;
-    wire[`RegBus] mem_pc_o;
-    wire[`RegBus] mem_inst_o;
+    wire[`REG_BUS_D] mem_excepttype_o;
+    wire[`REG_BUS_D] mem_pc_o;
+    wire[`REG_BUS_D] mem_inst_o;
 
 
       //----------- signals sourced from mem_wb ----
     wire wb_rd_we_i;
-    wire[`RegAddrBus] wb_rd_addr_i;
-    wire[`RegBus] wb_rd_wdata_i;
+    wire[`REG_BUS_A] wb_rd_addr_i;
+    wire[`REG_BUS_D] wb_rd_wdata_i;
 
     wire wb_csr_we_i;
-    wire[`RegBus] wb_csr_waddr_i;
-    wire[`RegBus] wb_csr_wdata_i;
+    wire[`REG_BUS_D] wb_csr_waddr_i;
+    wire[`REG_BUS_D] wb_csr_wdata_i;
 
       wire wb_instret_incr_i;
 
@@ -218,18 +218,18 @@
 
 
     //------------ signals from reg file -------------------
-      wire[`RegBus] reg_rs1_rdata_o;
-      wire[`RegBus] reg_rs2_rdata_o;
+      wire[`REG_BUS_D] reg_rs1_rdata_o;
+      wire[`REG_BUS_D] reg_rs2_rdata_o;
 
 
       //-------------------- signals from csr -----------------
-      wire[`RegBus] csr_rdata_o;
+      wire[`REG_BUS_D] csr_rdata_o;
 
-      wire[`RegBus] csr_mstatus_o;    // mstatus
-      wire[`RegBus] csr_mie_o;
-      wire[`RegBus] csr_mip_o;
-      wire[`RegBus] csr_mtvec_o;      // mtvec
-      wire[`RegBus] csr_mepc_o;       // mepc
+      wire[`REG_BUS_D] csr_mstatus_o;    // mstatus
+      wire[`REG_BUS_D] csr_mie_o;
+      wire[`REG_BUS_D] csr_mip_o;
+      wire[`REG_BUS_D] csr_mtvec_o;      // mtvec
+      wire[`REG_BUS_D] csr_mepc_o;       // mepc
 
       wire csr_mstatus_ie_o;
       wire csr_mie_external_o;
@@ -239,8 +239,8 @@
     wire csr_mip_timer_o;
       wire csr_mip_sw_o;
 
-      wire[`RegBus] csr_mtvec_o;
-    wire[`RegBus] csr_epc_o;
+      wire[`REG_BUS_D] csr_mtvec_o;
+    wire[`REG_BUS_D] csr_epc_o;
 
       //ifu instantiate
     ifu ifu0(
@@ -509,8 +509,8 @@
           .branch_slot_end_o(ex_branch_slot_end_o),
 
       .csr_we_o(ex_csr_we_o),
-      .csr_waddr_o(ex_csr_waddr_o),
-      .csr_wdata_o(ex_csr_wdata_o),
+      .csr_wa_o(ex_csr_waddr_o),
+      .csr_wd_o(ex_csr_wdata_o),
 
       .rd_we_o(ex_rd_we_o),    //foward the rd info to idu meanwhile
       .rd_a_o(ex_rd_addr_o),
@@ -558,12 +558,12 @@
       .rd_wd_i(ex_rd_wdata_o),
 
         .uop_i(ex_uopcode_o),
-      .mem_addr_i(ex_mem_addr_o),
-      .mem_wdata_i(ex_mem_wdata_o),
+      .mem_a_i(ex_mem_addr_o),
+      .mem_wd_i(ex_mem_wdata_o),
 
       .csr_we_i(ex_csr_we_o),
-      .csr_waddr_i(ex_csr_waddr_o),
-      .csr_wdata_i(ex_csr_wdata_o),
+      .csr_wa_i(ex_csr_waddr_o),
+      .csr_wd_i(ex_csr_wdata_o),
 
           .exception_i(ex_excepttype_o),
 
@@ -580,8 +580,8 @@
       .mem_wd_o(mem_mem_wdata_i),
 
       .csr_we_o(mem_csr_we_i),    //forward to ex meanwhile
-      .csr_waddr_o(mem_csr_waddr_i),
-      .csr_wdata_o(mem_csr_wdata_i),
+      .csr_wa_o(mem_csr_waddr_i),
+      .csr_wd_o(mem_csr_wdata_i),
 
       .exception_o(mem_excepttype_i),
       .pc_o(mem_pc_i),
@@ -602,8 +602,8 @@
       .rd_wd_i(mem_rd_wd_i),
 
           .uop_i(mem_uop_i),
-      .mem_addr_i(mem_mem_addr_i),
-      .mem_wdata_i(mem_mem_wdata_i),
+      .mem_a_i(mem_mem_addr_i),
+      .mem_wd_i(mem_mem_wdata_i),
 
       // read or write the memory
       .mem_a_o(ram_addr_o),
@@ -615,8 +615,8 @@
 
         // CSR write signals
       .csr_we_i(mem_csr_we_i),
-      .csr_waddr_i(mem_csr_waddr_i),
-      .csr_wdata_i(mem_csr_wdata_i),
+      .csr_wa_i(mem_csr_waddr_i),
+      .csr_wd_i(mem_csr_wdata_i),
 
           //回写阶段的指令是否要写CSR，用来检测数据相关
           .wb_csr_we_i(wb_csr_we_i),
@@ -632,8 +632,8 @@
 
           // CSR
       .csr_we_o(mem_csr_we_o),
-      .csr_waddr_o(mem_csr_waddr_o),
-      .csr_wdata_o(mem_csr_wdata_o),
+      .csr_wa_o(mem_csr_waddr_o),
+      .csr_wd_o(mem_csr_wdata_o),
 
           // stall req and execeptions
       .stall_req_o(mem_stall_req_o),
@@ -657,8 +657,8 @@
       .rd_wd_i(mem_rd_wdata_o),
 
       .csr_we_i(mem_csr_we_o),
-      .csr_waddr_i(mem_csr_waddr_o),
-      .csr_wdata_i(mem_csr_wdata_o),
+      .csr_wa_i(mem_csr_waddr_o),
+      .csr_wd_i(mem_csr_wdata_o),
 
       // pass down to write back stage, update the csr and gpr
       .rd_we_o(wb_rd_we_i),
@@ -666,8 +666,8 @@
       .rd_wd_o(wb_rd_wdata_i),
 
       .csr_we_o(wb_csr_we_i),
-      .csr_waddr_o(wb_csr_waddr_i),
-      .csr_wdata_o(wb_csr_wdata_i),
+      .csr_wa_o(wb_csr_waddr_i),
+      .csr_wd_o(wb_csr_wdata_i),
 
       .instret_incr_o(wb_instret_incr_i)
     );

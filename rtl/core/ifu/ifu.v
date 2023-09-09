@@ -6,24 +6,11 @@
 // Description: generate the pc for instruction fetching
 --------------------------------------------------------------------------*/
 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//-----------------------------------------------------------------
+  `include "defines.v"
 
-`include "defines.v"
-
-module ifu(
-    input   wire clk_i,
-    input   wire n_rst_i,
+  module ifu(
+    input wire clk_i,
+    input wire n_rst_i,
 
     /* ------- signals from the ctrl unit --------*/
     input wire[5:0] stall_i,
@@ -60,7 +47,7 @@ module ifu(
 
 
     always @ (posedge clk_i or negedge n_rst_i) begin
-        if (n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RST_EN) begin
             ce_o <= `ChipDisable;
         end else begin
             ce_o <= `ChipEnable;
@@ -69,14 +56,14 @@ module ifu(
 
     always @ (posedge clk_i) begin
         if (ce_o == `ChipDisable) begin  // delay one tap,
-            pc_o <= `REBOOT_ADDR;
+            pc_o <= `REBOOT_ADDRESS;
             branch_slot_end_o <= 1'b0;
         end else begin
-            if(flush_i == 1'b1) begin
+            if (flush_i == 1'b1) begin
                 pc_o <= new_pc_i;
                 branch_slot_end_o <= 1'b0;
-            end else if(stall_i[0] == `NoStop) begin
-                if(branch_redirect_i == `Branch) begin
+            end else if (stall_i[0] == `NO_STOP) begin
+                if (branch_redirect_i == `Branch) begin
                     pc_o <= branch_redirect_pc_i;  // fetch the instruction from the branch target address
                     branch_slot_end_o <= 1'b1;
                 end else begin

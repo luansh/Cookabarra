@@ -47,7 +47,7 @@ module ram(
 
     /*------------------ data port ----------------------*/
 	always @ (posedge clk_i) begin
-		if( (ce_i != `ChipDisable) && (we_i == `WriteEnable) )begin										
+		if ( (ce_i != `ChipDisable) && (we_i == `WriteEnable) )begin										
 			if (sel_i[3] == 1'b1) begin
 				mem[addr_i[`DataMemNumLog2+1:2]][31:24] <= data_i[31:24];
 			end 
@@ -68,18 +68,18 @@ module ram(
 	
 	always @ (*) begin
 		if (ce_i == `ChipDisable) begin
-			data_o = `ZeroWord;
-	    end else if(we_i == `WriteDisable) begin
+			data_o = `ZERO_WORD;
+	    end else if (we_i == `WRITE_DISABLE) begin
 		    data_o = mem[addr_i[`DataMemNumLog2+1:2]];
 		end else begin
-			data_o = `ZeroWord;
+			data_o = `ZERO_WORD;
 		end
 	end		
 
     /*------------------ instruction port ----------------------*/
     always @ (*) begin
         if (inst_ce_i == `ChipDisable) begin
-            ins_o = `NOP_INST;
+            ins_o = `NOP_INS;
         end else begin
             ins_o = mem[pc_i[`DataMemNumLog2+1:2]];  // the instruction address was aligned by 4 bytes
         end

@@ -32,14 +32,14 @@ module csr_file(
     input  wire irq_external_i,
 
     /* --- exu read csr -------------------*/
-    input wire[`RegBus] raddr_i,           // the register to read
-    output reg[`RegBus] rdata_o,           // ouput the register
+    input wire[`REG_BUS_D] raddr_i,           // the register to read
+    output reg[`REG_BUS_D] rdata_o,           // ouput the register
 
 
     /*------ wb module update the csr  --------*/
     input wire we_i,            // write enable
-    input wire[`RegBus] waddr_i,         // the register to write
-    input wire[`RegBus] wdata_i,         // the data to write
+    input wire[`REG_BUS_D] waddr_i,         // the register to write
+    input wire[`REG_BUS_D] wdata_i,         // the data to write
 
     input wire instret_incr_i,   // 0 or 1 indicate increase the counter of instret
 
@@ -49,10 +49,10 @@ module csr_file(
     input wire [3:0] trap_casue_i,
 
     input wire set_epc_i,
-    input wire[`RegBus] epc_i,
+    input wire[`REG_BUS_D] epc_i,
 
     output reg set_mtval_i,
-    output reg[`RegBus] mtval_i,
+    output reg[`REG_BUS_D] mtval_i,
 
     input wire mstatus_ie_clear_i,
     input wire mstatus_ie_set_i,
@@ -66,8 +66,8 @@ module csr_file(
     output wire mip_external_o,
     output wire mip_timer_o,
     output wire mip_sw_o,
-    output wire[`RegBus] mtvec_o,
-    output wire[`RegBus] epc_o
+    output wire[`REG_BUS_D] mtvec_o,
+    output wire[`REG_BUS_D] epc_o
 );
 
     // mvendorid
@@ -104,7 +104,7 @@ module csr_file(
     // the misa register has not been implemented
     wire [1:0] mxl; // machine XLEN
     wire [25:0] mextensions; // ISA extensions
-    wire [`RegBus] misa; // machine ISA register
+    wire [`REG_BUS_D] misa; // machine ISA register
     assign mxl = 2'b01;
     assign mextensions = 26'b00000000000001000100000000;  // i and m
     assign misa = {mxl, 4'b0, mextensions};
@@ -121,12 +121,12 @@ module csr_file(
     reg[`DoubleRegBus] minstret;
 
     always @ (posedge clk_i) begin
-        if (n_rst_i == `RstEnable) begin
-            mcycle <= {`ZeroWord, `ZeroWord};
-            minstret <= {`ZeroWord, `ZeroWord};
+        if (n_rst_i == `RST_EN) begin
+            mcycle <= {`ZERO_WORD, `ZERO_WORD};
+            minstret <= {`ZERO_WORD, `ZERO_WORD};
         end else begin
             mcycle <= mcycle + 64'd1;
-            if(instret_incr_i) begin
+            if (instret_incr_i) begin
                 minstret <= minstret + 64'd1;
             end
         end
@@ -137,23 +137,23 @@ module csr_file(
     //  FS(2), MPP(2), WPRI(2), SPP(1), MPIE(1), WPRI(1), SPIE(1), UPIE(1),MIE(1), WPRI(1), SIE(1), UIE(1)}
     // Global interrupt-enable bits, MIE, SIE, and UIE, are provided for each privilege mode.
     // xPIE holds the value of the interrupt-enable bit active prior to the trap, and xPP holds the previous privilege mode.
-    reg[`RegBus] mstatus;
+    reg[`REG_BUS_D] mstatus;
     reg mstatus_pie; // prior interrupt enable
     reg mstatus_ie;
     assign             mstatus_ie_o = mstatus_ie;
     assign mstatus = {19'b0, 2'b11, 3'b0, mstatus_pie, 3'b0 , mstatus_ie, 3'b0};
 
     always @(posedge clk_i) begin
-        if(n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RST_EN) begin
             mstatus_ie <= 1'b0;
             mstatus_pie <= 1'b1;
-        end else if( (waddr_i[11:0] == `CSR_MSTATUS_ADDR) && (we_i == `WriteEnable) ) begin
+        end else if ( (waddr_i[11:0] == `CSR_MSTATUS_ADDR) && (we_i == `WriteEnable) ) begin
             mstatus_ie <= wdata_i[3];
             mstatus_pie <= wdata_i[7];
-        end else if(mstatus_ie_clear_i == 1'b1) begin
+        end else if (mstatus_ie_clear_i == 1'b1) begin
             mstatus_pie <= mstatus_ie;
             mstatus_ie <= 1'b0;
-        end else if(mstatus_ie_set_i == 1'b1) begin
+        end else if (mstatus_ie_set_i == 1'b1) begin
             mstatus_ie <= mstatus_pie;
             mstatus_pie <= 1'b1;
         end
@@ -165,7 +165,7 @@ module csr_file(
     // MTIE, STIE, and UTIE for M-mode, S-mode, and U-mode timer interrupts respectively.
     // MSIE, SSIE, and USIE fields enable software interrupts in M-mode, S-mode software, and U-mode, respectively.
     // MEIE, SEIE, and UEIE fields enable external interrupts in M-mode, S-mode software, and U-mode, respectively.
-    reg[`RegBus] mie;
+    reg[`REG_BUS_D] mie;
     reg mie_external; // external interrupt enable
     reg mie_timer;    // timer interrupt enable
     reg mie_sw;       // software interrupt enable
@@ -177,11 +177,11 @@ module csr_file(
     assign mie = {20'b0, mie_external, 3'b0, mie_timer, 3'b0, mie_sw, 3'b0};
 
     always @(posedge clk_i) begin
-        if(n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RST_EN) begin
             mie_external <= 1'b0;
             mie_timer <= 1'b0;
             mie_sw <= 1'b0;
-        end else if((waddr_i[11:0] == `CSR_MIE_ADDR) && (we_i == `WriteEnable)) begin
+        end else if ((waddr_i[11:0] == `CSR_MIE_ADDR) && (we_i == `WriteEnable)) begin
             mie_external <= wdata_i[11];
             mie_timer <= wdata_i[7];
             mie_sw <= wdata_i[3];
@@ -199,13 +199,13 @@ module csr_file(
     // when mode =2'b01, Vectored mode, all synchronous exceptions into machine mode cause the pc to be set to the address in the BASE
     // field, whereas interrupts cause the pc to be set to the address in the BASE field plus four times the interrupt cause number.
 
-    reg[`RegBus] mtvec;
+    reg[`REG_BUS_D] mtvec;
     assign mtvec_o = mtvec;
 
     always @(posedge clk_i) begin
-        if(n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RST_EN) begin
             mtvec <= `MTVEC_RESET;;
-        end else if( (waddr_i[11:0] == `CSR_MTVEC_ADDR) && (we_i == `WriteEnable) ) begin
+        end else if ( (waddr_i[11:0] == `CSR_MTVEC_ADDR) && (we_i == `WriteEnable) ) begin
             mtvec <= wdata_i;
         end
     end
@@ -214,12 +214,12 @@ module csr_file(
     /*--------------------------------------------- mscratch ----------------------------------------*/
     // mscratch : Typically, it is used to hold a pointer to a machine-mode hart-local context space and swapped
     // with a user register upon entry to an M-mode trap handler.
-    reg[`RegBus] mscratch;
+    reg[`REG_BUS_D] mscratch;
 
     always @(posedge clk_i) begin
-        if(n_rst_i == `RstEnable)
-            mscratch <= `ZeroWord;
-        else if( (waddr_i[11:0] == `CSR_MSCRATCH_ADDR) && (we_i == `WriteEnable) )
+        if (n_rst_i == `RST_EN)
+            mscratch <= `ZERO_WORD;
+        else if ( (waddr_i[11:0] == `CSR_MSCRATCH_ADDR) && (we_i == `WriteEnable) )
             mscratch <= wdata_i;
     end
 
@@ -228,15 +228,15 @@ module csr_file(
     // that was interrupted or that encountered the exception.
     // The low bit of mepc (mepc[0]) is always zero.
     // On implementations that support only IALIGN=32, the two low bits (mepc[1:0]) are always zero.
-    reg[`RegBus] mepc;
+    reg[`REG_BUS_D] mepc;
 
     assign epc_o = mepc;
     always @(posedge clk_i) begin
-        if(n_rst_i == `RstEnable)
-            mepc <= `ZeroWord;
-        else if(set_epc_i)
+        if (n_rst_i == `RST_EN)
+            mepc <= `ZERO_WORD;
+        else if (set_epc_i)
             mepc <= {epc_i[31:2], 2'b00};
-        else if( (waddr_i[11:0] == `CSR_MEPC_ADDR) && (we_i == `WriteEnable) )
+        else if ( (waddr_i[11:0] == `CSR_MEPC_ADDR) && (we_i == `WriteEnable) )
             mepc <= {wdata_i[31:2], 2'b00};
     end
 
@@ -248,22 +248,22 @@ module csr_file(
     // The Interrupt bit in the mcause register is set if the trap was caused by an interrupt. The Exception
     // Code field contains a code identifying the last exception.
 
-    reg[`RegBus] mcause;
+    reg[`REG_BUS_D] mcause;
     reg [3:0] cause; // interrupt cause
     reg [26:0] cause_rem; // remaining bits of mcause register
     reg int_or_exc; // interrupt or exception signal
 
     assign mcause = {int_or_exc, cause_rem, cause};
     always @(posedge clk_i) begin
-        if(n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RST_EN) begin
             cause <= 4'b0000;
             cause_rem <= 27'b0;
             int_or_exc <= 1'b0;
-        end else if(set_cause_i) begin
+        end else if (set_cause_i) begin
             cause <= trap_casue_i;
             cause_rem <= 27'b0;
             int_or_exc <= ie_type_i;
-        end else if( (waddr_i[11:0] == `CSR_MCAUSE_ADDR) && (we_i == `WriteEnable) ) begin
+        end else if ( (waddr_i[11:0] == `CSR_MCAUSE_ADDR) && (we_i == `WriteEnable) ) begin
             cause <= wdata_i[3:0];
             cause_rem <= wdata_i[30:4];
             int_or_exc <= wdata_i[31];
@@ -273,7 +273,7 @@ module csr_file(
     /*--------------------------------------------- mip ----------------------------------------*/
     // mip: {WPRI[31:12], MEIP(1), WPRI(1), SEIP(1), UEIP(1), MTIP(1), WPRI(1), STIP(1), UTIP(1), MSIP(1), WPRI(1), SSIP(1), USIP(1)}
     // The MTIP, STIP, UTIP bits correspond to timer interrupt-pending bits for machine, supervisor, and user timer interrupts, respectively.
-    reg[`RegBus] mip;
+    reg[`REG_BUS_D] mip;
     reg mip_external; // external interrupt pending
     reg mip_timer; // timer interrupt pending
     reg mip_sw; // software interrupt pending
@@ -285,7 +285,7 @@ module csr_file(
     assign mip_sw_o = mip_sw;
 
     always @(posedge clk_i) begin
-        if(n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RST_EN) begin
             mip_external <= 1'b0;
             mip_timer <= 1'b0;
             mip_sw <= 1'b0;
@@ -303,15 +303,15 @@ module csr_file(
     // When a hardware breakpoint is triggered, or an instruction-fetch, load, or store address-misaligned,
     // access, or page-fault exception occurs, mtval is written with the faulting virtual address.
     // On an illegal instruction trap, mtval may be written with the first XLEN or ILEN bits of the faulting instruction
-    reg[`RegBus] mtval;
+    reg[`REG_BUS_D] mtval;
     wire MISALIGNED_EXCEPTION;  //todo
 
     always @(posedge clk_i)  begin
-        if(n_rst_i == `RstEnable)
+        if (n_rst_i == `RST_EN)
             mtval <= 32'b0;
-        else if(set_mtval_i) begin
+        else if (set_mtval_i) begin
             mtval <= mtval_i;
-        end else if( (waddr_i[11:0] == `CSR_MTVAL_ADDR) && (we_i == `WriteEnable) )
+        end else if ( (waddr_i[11:0] == `CSR_MTVAL_ADDR) && (we_i == `WriteEnable) )
             mtval <= wdata_i;
     end
 
@@ -345,7 +345,7 @@ module csr_file(
                 end
 
                 `CSR_MCYCLE_ADDR, `CSR_CYCLE_ADDR: begin
-                    rdata_o = mcycle[`RegBus];
+                    rdata_o = mcycle[`REG_BUS_D];
                 end
 
                 `CSR_MCYCLEH_ADDR, `CSR_CYCLEH_ADDR: begin
@@ -353,7 +353,7 @@ module csr_file(
                 end
 
                `CSR_MINSTRET_ADDR: begin
-                    rdata_o = minstret[`RegBus];
+                    rdata_o = minstret[`REG_BUS_D];
                 end
 
                 `CSR_MINSTRETH_ADDR: begin
@@ -389,7 +389,7 @@ module csr_file(
                 end
 
                 default: begin
-                    rdata_o = `ZeroWord;
+                    rdata_o = `ZERO_WORD;
                 end
             endcase // case (waddr_i[11:0])
         end //end else begin

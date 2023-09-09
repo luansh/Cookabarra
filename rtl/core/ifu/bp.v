@@ -46,7 +46,7 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
 
     integer i4;
     always @ (posedge clk_i or negedge  n_rst_i) begin
-        if (n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RST_EN) begin
             // initialize the bht
             for (i4 = 0; i4 < NUM_BHT_ENTRIES; i4 = i4 + 1) begin
                 bht_bim_list[i4] <= 2'b11;   //strongly taken (11), weakly taken(10), weakly not taken(01), strongly not taken(00)
@@ -55,7 +55,7 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
             if ( branch_request_i ) begin
                 /* $display("branch: pc=%h, take=%d, index=%h, sat=%d",
                           branch_source_i, branch_is_taken_i, bht_write_entry, bht_bim_list[bht_write_entry]); */
-                if( (branch_is_taken_i == 1'b1) && (bht_bim_list[bht_write_entry] < 2'd3) ) begin
+                if ( (branch_is_taken_i == 1'b1) && (bht_bim_list[bht_write_entry] < 2'd3) ) begin
                     bht_bim_list[bht_write_entry] <= bht_bim_list[bht_write_entry] + 2'd1;  //update the counter
                     /* $display("increase sat: pc=%h, index=%h, sat=%d",
                             branch_source_i, bht_write_entry, bht_bim_list[bht_write_entry]); */
@@ -63,9 +63,9 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
                     bht_bim_list[bht_write_entry] <= bht_bim_list[bht_write_entry] - 2'd1;
                     /* $display("decrease sat: pc=%h, index=%h, sat=%d",
                           branch_source_i, bht_write_entry, bht_bim_list[bht_write_entry]);  */
-                end // if( (branch_is_taken_i == 1'b1) && (bht_bim_list[bht_write_entry] < 2'd3) ) begin
+                end // if ( (branch_is_taken_i == 1'b1) && (bht_bim_list[bht_write_entry] < 2'd3) ) begin
             end //if ( branch_request_i ) begin
-        end //if (n_rst_i == `RstEnable) begin
+        end //if (n_rst_i == `RST_EN) begin
     end
 
     // ------lookup the bht, indexed by the bits[2+BHT_ENTRIES_WIDTH-1:2] --------
@@ -155,7 +155,7 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
 
     integer i2;
     always @ (posedge clk_i or negedge  n_rst_i) begin
-        if (n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RST_EN) begin
             for (i2 = 0; i2 < NUM_BTB_ENTRIES; i2 = i2 + 1) begin
                 /// init the btb
                 btb_is_valid_list[i2] <= 1'b0;
@@ -167,7 +167,7 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
             end // for (i2 = 0; i2 < NUM_BTB_ENTRIES; i2 = i2 + 1) begin
         end else begin
             if (branch_request_i && branch_is_taken_i) begin
-                if(btb_hit == 1'b1) begin
+                if (btb_hit == 1'b1) begin
                     /*
                     $display("update btb: matched index=%d, pc=%h, target=%h, ret=%d, call=%d, jmp=%d",
                               btb_write_entry, branch_source_i, branch_target_i,
@@ -189,9 +189,9 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
                     btb_is_call_list[btb_alloc_entry]<= branch_is_call_i;
                     btb_is_ret_list[btb_alloc_entry] <= branch_is_ret_i;
                     btb_is_jmp_list[btb_alloc_entry] <= branch_is_jmp_i;
-                end // if(btb_hit == 1'b1) begin
+                end // if (btb_hit == 1'b1) begin
             end // if (branch_request_i) begin
-        end // if (n_rst_i == `RstEnable) begin
+        end // if (n_rst_i == `RST_EN) begin
     end  //always @ (posedge clk_i or negedge  n_rst_i) begin
 
 
@@ -226,7 +226,7 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
     end
 
     always @ (posedge clk_i) begin  //or negedge n_rst_i
-        if (n_rst_i == `RstEnable)
+        if (n_rst_i == `RST_EN)
             ras_proven_curr_index <= {RAS_ENTRIES_WIDTH{1'b0}};
         else
             ras_proven_curr_index <= ras_proven_next_index;
@@ -264,7 +264,7 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
 
     integer i3;
     always @ (posedge clk_i) begin   // or negedge n_rst_i
-        if (n_rst_i == `RstEnable) begin
+        if (n_rst_i == `RST_EN) begin
             for (i3 = 0; i3 < NUM_RAS_ENTRIES; i3 = i3 + 1) begin
                 ras_list[i3] <= 32'h0;
             end
@@ -278,7 +278,7 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
                 ras_list[ras_speculative_next_index] <= pc_i + 4;
                 ras_speculative_curr_index <= ras_speculative_next_index;
                 // $display("ras: bpu push, curr_index=%d, target_pc=%h", ras_speculative_next_index, pc_i + 4);
-            end else if(branch_mispredict_i & branch_request_i & branch_is_ret_i) begin
+            end else if (branch_mispredict_i & branch_request_i & branch_is_ret_i) begin
                 ras_speculative_curr_index <= ras_speculative_next_index;
             end else if (ras_ret_matched && stall_i == 1'b0) begin
                 ras_speculative_curr_index <= ras_speculative_next_index;
@@ -328,7 +328,7 @@ module bp_allocate_entry #( parameter DEPTH = 32 )
     reg [ADDR_W-1:0] lfsr_q;
 
     always @ (posedge clk_i or negedge  n_rst_i) begin
-        if (n_rst_i == `RstEnable)
+        if (n_rst_i == `RST_EN)
             lfsr_q <= {ADDR_W{1'b0}};
         else if (alloc_i) begin
             if (lfsr_q == {ADDR_W{1'b1}}) begin
@@ -336,7 +336,7 @@ module bp_allocate_entry #( parameter DEPTH = 32 )
             end else begin
                 lfsr_q <= lfsr_q + 1;
             end  //if (lfsr_q == {ADDR_W{1'b1}}) begin
-        end  //if (n_rst_i == `RstEnable)
+        end  //if (n_rst_i == `RST_EN)
     end //always @ (posedge clk_i or negedge  n_rst_i) begin
 
     assign alloc_entry_o = lfsr_q[ADDR_W-1:0];

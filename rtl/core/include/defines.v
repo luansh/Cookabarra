@@ -19,14 +19,14 @@
 // limitations under the License.
 //-----------------------------------------------------------------
 
-`define RstEnable               1'b0   //reset by negative edge
+`define RST_EN               1'b0   //reset by negative edge
 `define RstDisable              1'b1
 
 `define ChipEnable              1'b1
 `define ChipDisable             1'b0
 
 `define WriteEnable             1'b1
-`define WriteDisable            1'b0
+`define WRITE_DISABLE            1'b0
 
 `define ReadEnable              1'b1
 `define ReadDisable             1'b0
@@ -38,7 +38,7 @@
   `define INS_INVALID 1'b0
 
 `define Stop                    1'b1
-`define NoStop                  1'b0
+`define NO_STOP                  1'b0
 
 `define Branch                  1'b1
 `define NotBranch               1'b0
@@ -52,8 +52,8 @@
 `define True_v                  1'b1
 `define False_v                 1'b0
 
-`define ZeroWord                32'h00000000
-`define NOP_INST                32'h00000013           //ADDI x0, x0, 0
+`define NOP_INS 32'h00000013//ADDI x0, x0, 0
+`define ZERO_WORD 32'd0
 
 `define InstAddrBus             31:0
 `define InstBus                 31:0
@@ -70,24 +70,24 @@
 `define ByteWidth               7:0
 
 /*----------------------------------- regfile ----------------------------------*/
-`define RegAddrBus              4:0
-`define RegBus                  31:0
-`define RegWidth                32
-`define DoubleRegWidth          64
+`define REG_BUS_A 4:0
+`define REG_BUS_D 31:0
+`define REG_WIDTH 32
+`define DOUBLE_REG_WIDTH 64
 `define DoubleRegBus            63:0
 `define RegNum                  32
-`define RegNumLog2              5
-`define NOPRegAddress              5'b00000
+`define REG_NUM_LOG2              5
+`define NOP_REG_A              5'b00000
 
 /*-------------------------------------- div -----------------------------------*/
-`define DivFree                 2'b00
-`define DivByZero               2'b01
-`define DivOn                   2'b10
-`define DivEnd                  2'b11
-`define DivResultReady          1'b1
-`define DivResultNotReady       1'b0
-`define DivStart                1'b1
-`define DivStop                 1'b0
+`define DIV_FREE 2'd0
+`define DIV_BY_ZERO 2'd1
+`define DIV_ON 2'd2
+`define DIV_END 2'd3
+`define DIV_RESULT_READY          1'b1
+`define DIV_RESULT_NOT_READY       1'b0
+`define DIV_START                1'b1
+`define DIV_STOP                 1'b0
 
 //https://zhuanlan.zhihu.com/p/261705919
 /*--------------------------------- instruction type ----------------------------*/
@@ -324,50 +324,50 @@
 
 
 /*-------------------------- CSR reg addr -------------------------*/
-`define  CSR_MVENDORID_ADDR       12'hF11
-`define  CSR_MARCHID_ADDR         12'hF12
-`define  CSR_MIMPID_ADDR          12'hF13
-`define  CSR_MHARTID_ADDR         12'hF14
+`define CSR_MVENDORID_ADDR       12'hF11
+`define CSR_MARCHID_ADDR         12'hF12
+`define CSR_MIMPID_ADDR          12'hF13
+`define CSR_MHARTID_ADDR         12'hF14
 
 /* ------ Machine trap setup ---------*/
-`define  CSR_MSTATUS_ADDR         12'h300
-`define  CSR_MISA_ADDR            12'h301
-`define  CSR_MIE_ADDR             12'h304
-`define  CSR_MTVEC_ADDR           12'h305
-`define  CSR_MCOUNTEREN_ADDR      12'h306
-`define  CSR_MCOUNTINHIBIT_ADDR   12'h320
+`define CSR_MSTATUS_ADDR         12'h300
+`define CSR_MISA_ADDR            12'h301
+`define CSR_MIE_ADDR             12'h304
+`define CSR_MTVEC_ADDR           12'h305
+`define CSR_MCOUNTEREN_ADDR      12'h306
+`define CSR_MCOUNTINHIBIT_ADDR   12'h320
 
 /* ------ Machine trap handling ------*/
-`define  CSR_MSCRATCH_ADDR        12'h340
-`define  CSR_MEPC_ADDR            12'h341
-`define  CSR_MCAUSE_ADDR          12'h342
-`define  CSR_MTVAL_ADDR           12'h343
-`define  CSR_MIP_ADDR             12'h344
+`define CSR_MSCRATCH_ADDR        12'h340
+`define CSR_MEPC_ADDR            12'h341
+`define CSR_MCAUSE_ADDR          12'h342
+`define CSR_MTVAL_ADDR           12'h343
+`define CSR_MIP_ADDR             12'h344
 
-`define  CSR_CYCLE_ADDR           12'hc00
-`define  CSR_CYCLEH_ADDR          12'hc80
-`define  CSR_MCYCLE_ADDR          12'hB00
-`define  CSR_MCYCLEH_ADDR         12'hB80
-`define  CSR_MINSTRET_ADDR        12'hB02
-`define  CSR_MINSTRETH_ADDR       12'hB82
+`define CSR_CYCLE_ADDR           12'hc00
+`define CSR_CYCLEH_ADDR          12'hc80
+`define CSR_MCYCLE_ADDR          12'hB00
+`define CSR_MCYCLEH_ADDR         12'hB80
+`define CSR_MINSTRET_ADDR        12'hB02
+`define CSR_MINSTRETH_ADDR       12'hB82
 
 /* -------- Debug trigger -----------*/
-`define  CSR_TSELECT_ADDR         12'h7A0
-`define  CSR_TDATA1_ADDR          12'h7A1
-`define  CSR_TDATA2_ADDR          12'h7A2
-`define  CSR_TDATA3_ADDR          12'h7A3
-`define  CSR_MCONTEXT_ADDR        12'h7A8
-`define  CSR_SCONTEXT_ADDR        12'h7AA
+`define CSR_TSELECT_ADDR         12'h7A0
+`define CSR_TDATA1_ADDR          12'h7A1
+`define CSR_TDATA2_ADDR          12'h7A2
+`define CSR_TDATA3_ADDR          12'h7A3
+`define CSR_MCONTEXT_ADDR        12'h7A8
+`define CSR_SCONTEXT_ADDR        12'h7AA
 
 /* -------- Debug/trace -------------*/
-`define  CSR_DCSR_ADDR            12'h7b0
-`define  CSR_DPC_ADDR             12'h7b1
+`define CSR_DCSR_ADDR            12'h7b0
+`define CSR_DPC_ADDR             12'h7b1
 
 /* ------------ Debug ----------------*/
-`define  CSR_DSCRATCH0_ADDR       12'h7b2
-`define  CSR_DSCRATCH1_ADDR       12'h7b3
+`define CSR_DSCRATCH0_ADDR       12'h7b2
+`define CSR_DSCRATCH1_ADDR       12'h7b3
 
 
 /* --------------config parameters -----------*/
-`define  REBOOT_ADDR              32'h80         //  32'h80 for c-test program, 32'h00000000: for isa test
-`define  MTVEC_RESET              32'h00000001
+`define REBOOT_ADDRESS 32'h00000080         //  32'h80 for c-test program, 32'h00000000: for isa test
+`define MTVEC_RESET 32'h00000001

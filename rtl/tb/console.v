@@ -67,7 +67,7 @@ module console #(
             if (be_i[0]) begin
               $fwrite(log_fd, "%c", wdata_i[7:0]);
               $display("%c", wdata_i[7:0]);
-              if(FlushOnChar) begin
+              if (FlushOnChar) begin
                 $fflush(log_fd);
               end
             end

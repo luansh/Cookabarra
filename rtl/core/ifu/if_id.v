@@ -52,25 +52,25 @@ module if_id(
 );
 
     always @ (posedge clk_i) begin
-        if (n_rst_i == `RstEnable) begin
-            pc_o <= `ZeroWord;
-            ins_o <= `NOP_INST;
+        if (n_rst_i == `RST_EN) begin
+            pc_o <= `ZERO_WORD;
+            ins_o <= `NOP_INS;
             branch_slot_end_o <= 1'b0;
         end else if (branch_redirect_i == 1'b1) begin
             pc_o <= pc_i;
-            ins_o <= `NOP_INST;
+            ins_o <= `NOP_INS;
             branch_slot_end_o <= 1'b0;
-        end else if(flush_i == 1'b1 ) begin
+        end else if (flush_i == 1'b1 ) begin
             pc_o <= pc_i;
-            ins_o <= `NOP_INST;
+            ins_o <= `NOP_INS;
             branch_slot_end_o <= 1'b0;
 		// stop the fetching but keep the decoder on going
-        end else if(stall_i[1] == `Stop && stall_i[2] == `NoStop) begin
+        end else if (stall_i[1] == `Stop && stall_i[2] == `NO_STOP) begin
             pc_o <= pc_i;
-            ins_o <= `NOP_INST;
+            ins_o <= `NOP_INS;
             branch_slot_end_o <= 1'b0;
         //pass the signals from ifu to decoder
-        end else if(stall_i[1] == `NoStop) begin
+        end else if (stall_i[1] == `NO_STOP) begin
             pc_o <= pc_i;
             ins_o <= ins_i;
             next_pc_o <= next_pc_i;

@@ -8,17 +8,17 @@
     input wire[`InstBus] ins_i,
     input wire branch_slot_end_i,
 
-    input wire[`RegBus] next_pc_i,
+    input wire[`REG_BUS_D] next_pc_i,
     input wire next_taken_i,
 
   //控制GPR 读取，以获得源操作数
     output reg rs1_re_o,
     output reg rs2_re_o,
-    output reg[`RegAddrBus] rs1_ra_o,
-    output reg[`RegAddrBus] rs2_ra_o,
+    output reg[`REG_BUS_A] rs1_ra_o,
+    output reg[`REG_BUS_A] rs2_ra_o,
   //GPR 响应上述读请求，返回的源操作数的值（组合逻辑，立即返回）
-    input wire[`RegBus] rs1_rd_i,
-    input wire[`RegBus] rs2_rd_i,
+    input wire[`REG_BUS_D] rs1_rd_i,
+    input wire[`REG_BUS_D] rs2_rd_i,
 
     /* ---------signals from exu -----------------*/
     input wire branch_redirect_i,
@@ -32,34 +32,34 @@
   //EX阶段得到rd最新值反馈至ID阶段，以进行rs的 Forward更新
     // the rd_w info fowarded from ex to determine the data dependance
     input wire ex_rd_we_i,//是否更新rd（Load指令时，LSU 阶段才能获得rd的值，EX阶段不更新rd）
-    input wire[`RegAddrBus] ex_rd_wa_i,
-    input wire[`RegBus] ex_rd_wd_i,
+    input wire[`REG_BUS_A] ex_rd_wa_i,
+    input wire[`REG_BUS_D] ex_rd_wd_i,
   //当前时刻，LSU 阶段执行Load的结果
   //当we_i有效时，Load访存读完成，rd准备写回 GPR
     input wire mem_rd_we_i,
-    input wire[`RegAddrBus] mem_rd_wa_i,
-    input wire[`RegBus] mem_rd_wd_i,
+    input wire[`REG_BUS_A] mem_rd_wa_i,
+    input wire[`REG_BUS_D] mem_rd_wd_i,
 
 
     /* ------- signals to the ctrl  ---------------*/
     output wire stall_req_o,
 
     /* ------- signals to the execution unit --------*/
-    output reg[`RegBus] pc_o,
-    output reg[`RegBus] ins_o,
-    output reg[`RegBus] next_pc_o,
+    output reg[`REG_BUS_D] pc_o,
+    output reg[`REG_BUS_D] ins_o,
+    output reg[`REG_BUS_D] next_pc_o,
     output reg next_taken_o,
     output reg branch_slot_end_o,
 
-    output reg[`RegBus] imm_o,
+    output reg[`REG_BUS_D] imm_o,
 
     output reg csr_we_o,
-    output reg[`RegBus] csr_addr_o,
+    output reg[`REG_BUS_D] csr_addr_o,
 
-    output reg[`RegBus] rs1_data_o,
-    output reg[`RegBus] rs2_data_o,
+    output reg[`REG_BUS_D] rs1_data_o,
+    output reg[`REG_BUS_D] rs2_data_o,
     output reg rd_we_o,
-    output reg[`RegAddrBus] rd_wa_o,
+    output reg[`REG_BUS_A] rd_wa_o,
 
     output reg[`AluSelBus] alusel_o,
     output reg[`AluOpBus] uop_o,
@@ -73,9 +73,9 @@
     wire[4:0] rs2_w = ins_i[24:20];
     wire[6:0] fun7 = ins_i[31:25];
 
-    reg[`RegBus] imm_r;
+    reg[`REG_BUS_D] imm_r;
     reg csr_we;
-    reg[`RegBus] csr_addr;
+    reg[`REG_BUS_D] csr_addr;
 
     reg ins_valid_r;
 
@@ -110,23 +110,23 @@
     assign exception_o = {28'b0, excepttype_illegal_inst, excepttype_ebreak, excepttype_ecall, excepttype_mret};
 
     always @ (*) begin
-      if (n_rst_i == `RstEnable) begin
+      if (n_rst_i == `RST_EN) begin
             //reset to default
-            ins_o = `NOP_INST;
+            ins_o = `NOP_INS;
             rs1_re_o = 1'b0;
             rs2_re_o = 1'b0;
-            rs1_ra_o = `NOPRegAddress;
-            rs2_ra_o = `NOPRegAddress;
+            rs1_ra_o = `NOP_REG_A;
+            rs2_ra_o = `NOP_REG_A;
 
-            imm_r = `ZeroWord;
+            imm_r = `ZERO_WORD;
 
-            csr_we = `WriteDisable;
-            csr_addr = `ZeroWord;
+            csr_we = `WRITE_DISABLE;
+            csr_addr = `ZERO_WORD;
 
-            rs1_data_o = `ZeroWord;
-            rs2_data_o = `ZeroWord;
+            rs1_data_o = `ZERO_WORD;
+            rs2_data_o = `ZERO_WORD;
 
-            {rd_we_o, rd_wa_o} = {`WriteDisable, `NOPRegAddress};
+            {rd_we_o, rd_wa_o} = {`WRITE_DISABLE, `NOP_REG_A};
 
             alusel_o = `EXE_TYPE_NOP;
             uop_o = `UOP_NOP;
@@ -141,17 +141,17 @@
         else if (branch_redirect_i)
         begin  // branch detected in the exe unit, replaced with a NOP
             // set the default
-            ins_o = `NOP_INST;
-            {rs1_re_o, rs1_data_o} = {1'b0, `ZeroWord};
-            {rs2_re_o, rs2_data_o} = {1'b0, `ZeroWord};
+            ins_o = `NOP_INS;
+            {rs1_re_o, rs1_data_o} = {1'b0, `ZERO_WORD};
+            {rs2_re_o, rs2_data_o} = {1'b0, `ZERO_WORD};
 
-            imm_r = `ZeroWord;
+            imm_r = `ZERO_WORD;
 
-            csr_we = `WriteDisable;
-            csr_addr = `ZeroWord;
+            csr_we = `WRITE_DISABLE;
+            csr_addr = `ZERO_WORD;
 
-            rd_we_o = `WriteDisable;
-            rd_wa_o = `NOPRegAddress;
+            rd_we_o = `WRITE_DISABLE;
+            rd_wa_o = `NOP_REG_A;
 
             alusel_o = `EXE_TYPE_NOP;
             uop_o = `UOP_NOP;
@@ -167,15 +167,15 @@
       begin
         ins_o = ins_i;
             // set the default
-        {rs1_re_o, rs1_data_o} = {1'b0, `ZeroWord};
-        {rs2_re_o, rs2_data_o} = {1'b0, `ZeroWord};
+        {rs1_re_o, rs1_data_o} = {1'b0, `ZERO_WORD};
+        {rs2_re_o, rs2_data_o} = {1'b0, `ZERO_WORD};
 
-            imm_r = `ZeroWord;
+            imm_r = `ZERO_WORD;
 
-            csr_we = `WriteDisable;
-            csr_addr = `ZeroWord;
+            csr_we = `WRITE_DISABLE;
+            csr_addr = `ZERO_WORD;
 
-        {rd_we_o, rd_wa_o} = {`WriteDisable, `NOPRegAddress};
+        {rd_we_o, rd_wa_o} = {`WRITE_DISABLE, `NOP_REG_A};
 
             alusel_o = `EXE_TYPE_NOP;
             uop_o = `UOP_NOP;
@@ -582,10 +582,10 @@
 /*==========================================================decoded end here ==========================================================*/
 
     always @ (*)
-      if (n_rst_i == `RstEnable) {rs1_data_o, rs1_load_depend} = {`ZeroWord, `NoStop};
+      if (n_rst_i == `RST_EN) {rs1_data_o, rs1_load_depend} = {`ZERO_WORD, `NO_STOP};
       else
       begin
-        {rs1_data_o, rs1_load_depend} = {`ZeroWord, `NoStop};
+        {rs1_data_o, rs1_load_depend} = {`ZERO_WORD, `NO_STOP};
         if (rs1_ra_o == 5'd0) rs1_data_o = 32'd0;
         else
         //前一条指令为Load
@@ -605,10 +605,10 @@
       end
 
     always @ (*)
-      if (n_rst_i == `RstEnable) {rs2_load_depend, rs2_data_o} = {`NoStop, `ZeroWord};
+      if (n_rst_i == `RST_EN) {rs2_load_depend, rs2_data_o} = {`NO_STOP, `ZERO_WORD};
       else
       begin
-        {rs2_load_depend, rs2_data_o} = {`NoStop, `ZeroWord};
+        {rs2_load_depend, rs2_data_o} = {`NO_STOP, `ZERO_WORD};
         if (rs2_ra_o == 5'd0) rs2_data_o = 32'd0;
         else
           if (pre_ins_is_load == 1'b1 && ex_rd_wa_i == rs2_ra_o && rs2_re_o == 1'b1 ) rs2_load_depend = `Stop;
