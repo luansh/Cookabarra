@@ -78,4 +78,5 @@ module if_id(
             branch_slot_end_o <= branch_slot_end_i;
         end
     end
-endmodule
+
+  endmodule

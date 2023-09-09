@@ -58,8 +58,9 @@
         if (ce_o == `ChipDisable) begin  // delay one tap,
             pc_o <= `REBOOT_ADDRESS;
             branch_slot_end_o <= 1'b0;
-        end else begin
-            if (flush_i == 1'b1) begin
+        end
+        else begin
+            if (flush_i) begin
                 pc_o <= new_pc_i;
                 branch_slot_end_o <= 1'b0;
             end else if (stall_i[0] == `NO_STOP) begin
@@ -70,7 +71,9 @@
                     pc_o <= next_pc_i;        // next line prediction  current_pc
                     branch_slot_end_o <= 1'b0;
                 end
-            end else begin
+            end
+            else
+            begin //IFU 暂停
                 // if stall[0] == `Stop，the pc value will be kept
                 pc_o <= pc_o;
                 branch_slot_end_o <= 1'b0;

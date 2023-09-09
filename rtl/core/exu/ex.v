@@ -82,12 +82,12 @@ module ex(
     output reg[`REG_BUS_D] rd_wd_o,
 
     output reg[`AluOpBus] uop_o,    // used in the lsu, for determine it is a load or store
-    output reg[`REG_BUS_D] mem_a_o,   // the memory address to access
-    output reg[`REG_BUS_D] mem_wd_o,  // the data to write to the memory for the store instruction
+    output reg[`REG_BUS_D] mem_a_o,
+    output reg[`REG_BUS_D] mem_wd_o,
 
 	// the accumulated exception if there are some
-    output reg[31:0] exception_o
-);
+    output reg[31:0] exception_o);
+
     reg stallreq_for_div;
 
     assign pc_o = pc_i;
@@ -95,7 +95,7 @@ module ex(
     assign branch_slot_end_o = branch_slot_end_i;
 
     // to identify call or ret
-    wire[4:0] rs1 = ins_i[19:15];
+    wire[4:0] rs1_w = ins_i[19:15];
 
     assign csr_we_o = csr_we_i;
     assign csr_wa_o = csr_addr_i;
@@ -179,20 +179,20 @@ module ex(
             case (uop_i)
                 /* ---------------------L-type instruction --------------*/
                 `UOP_LB, `UOP_LBU, `UOP_LH, `UOP_LHU, `UOP_LW:  begin
-                    // lb rd,offset(rs1)  :  x[rd] = sext(M[x[rs1] + sext(offset)][7:0])
-                    // lbu rd,offset(rs1)  :  x[rd] = M[x[rs1] + sext(offset)][7:0]
-                    // lh rd,offset(rs1)  :  x[rd] = sext(M[x[rs1] + sext(offset)][15:0])
-                    // lhu rs2,offset(rs1)  :  x[rd] = M[x[rs1] + sext(offset)][15:0]
-                    // lw rd,offset(rs1)  :  x[rd] = sext(M[x[rs1] + sext(offset)][31:0])
-//rs1+imm 作为所要加载数据的内存地址，输出到 LSU进行访存操作
+                    // lb rd,offset(rs1_w)  :  x[rd] = sext(M[x[rs1_w] + sext(offset)][7:0])
+                    // lbu rd,offset(rs1_w)  :  x[rd] = M[x[rs1_w] + sext(offset)][7:0]
+                    // lh rd,offset(rs1_w)  :  x[rd] = sext(M[x[rs1_w] + sext(offset)][15:0])
+                    // lhu rs2,offset(rs1_w)  :  x[rd] = M[x[rs1_w] + sext(offset)][15:0]
+                    // lw rd,offset(rs1_w)  :  x[rd] = sext(M[x[rs1_w] + sext(offset)][31:0])
+//rs1_w+imm 作为所要加载数据的内存地址，输出到 LSU进行访存操作
                     mem_a_o = rs1_add_imm_w;
                 end
 
                 /* ---------------------S-type instruction --------------*/
                 `UOP_SB, `UOP_SH, `UOP_SW:  begin
-                    // sb rs2,offset(rs1)  :   M[x[rs1] + sext(offset)] = x[rs2][7:0]
-                    // sh rs2,offset(rs1)  :   M[x[rs1] + sext(offset)] = x[rs2][15:0]
-                    // sw rs2,offset(rs1)  :   M[x[rs1] + sext(offset)] = x[rs2][31:0]
+                    // sb rs2,offset(rs1_w)  :   M[x[rs1_w] + sext(offset)] = x[rs2][7:0]
+                    // sh rs2,offset(rs1_w)  :   M[x[rs1_w] + sext(offset)] = x[rs2][15:0]
+                    // sw rs2,offset(rs1_w)  :   M[x[rs1_w] + sext(offset)] = x[rs2][31:0]
                     mem_a_o = rs1_add_imm_w;
 //rs2 中保存要存储到内存的数据值
                     mem_wd_o = rs2_d_i;
@@ -247,7 +247,7 @@ module ex(
             csr_wd_o = `ZERO_WORD;
             case (uop_i)
                 `UOP_CSRRW: begin
-                    // csrrw rd,offset,rs1  :   t = CSRs[csr]; CSRs[csr] = x[rs1]; x[rd] = t
+                    // csrrw rd,offset,rs1_w  :   t = CSRs[csr]; CSRs[csr] = x[rs1_w]; x[rd] = t
                     csr_wd_o = rs1_d_i;
                 end
 
@@ -257,7 +257,7 @@ module ex(
                 end
 
                 `UOP_CSRRS: begin
-                    // csrrs rd,offset,rs1  :   t = CSRs[csr]; CSRs[csr] = t | x[rs1]; x[rd] = t
+                    // csrrs rd,offset,rs1_w  :   t = CSRs[csr]; CSRs[csr] = t | x[rs1_w]; x[rd] = t
                     csr_wd_o = rs1_d_i | csr_result_r;
                 end
 
@@ -267,7 +267,7 @@ module ex(
                 end
 
                 `UOP_CSRRC: begin
-                    // csrrc rd,offset,rs1  :   t = CSRs[csr]; CSRs[csr] = t &∼x[rs1]; x[rd] = t
+                    // csrrc rd,offset,rs1_w  :   t = CSRs[csr]; CSRs[csr] = t &∼x[rs1_w]; x[rd] = t
                     csr_wd_o = csr_result_r & (~rs1_d_i);
                 end
 
@@ -285,148 +285,118 @@ module ex(
 
     // jump and branch instructions
     always @ (*) begin
-        if (n_rst_i == `RST_EN) begin
-            jump_result_r = `ZERO_WORD;
+      if (n_rst_i == `RST_EN)
+      begin
+        jump_result_r = `ZERO_WORD;
 
-            branch_request_o = 1'b0;
-            branch_is_taken_o = 1'b0;
-            branch_is_call_o = 1'b0;
-            branch_is_ret_o = 1'b0;
-            branch_is_jmp_o = 1'b0;
-            branch_target_o = `ZERO_WORD;
+        branch_request_o = 1'b0;
+        branch_is_taken_o = 1'b0;
+        branch_is_call_o = 1'b0;
+        branch_is_ret_o = 1'b0;
+        branch_is_jmp_o = 1'b0;
+        branch_target_o = `ZERO_WORD;
 
-            branch_redirect_o = 1'b0;
-            branch_redirect_pc_o = `ZERO_WORD;;
-            branch_tag_o = 1'b0;
+        branch_redirect_o = 1'b0;
+        branch_redirect_pc_o = `ZERO_WORD;;
+        branch_tag_o = 1'b0;
+      end
+      else
+      begin
+        jump_result_r = `ZERO_WORD;
 
-        end else begin
-            jump_result_r = `ZERO_WORD;
+        branch_request_o = 1'b0;
+        branch_is_taken_o = 1'b0;
+        branch_is_call_o = 1'b0;
+        branch_is_ret_o = 1'b0;
+        branch_is_jmp_o = 1'b0;
+        branch_target_o = `ZERO_WORD;
 
-            branch_request_o = 1'b0;
-            branch_is_taken_o = 1'b0;
-            branch_is_call_o = 1'b0;
-            branch_is_ret_o = 1'b0;
-            branch_is_jmp_o = 1'b0;
-            branch_target_o = `ZERO_WORD;
-
-            branch_redirect_o = 1'b0;
-            branch_redirect_pc_o = `ZERO_WORD;;
-            branch_tag_o = 1'b0;
-            case (uop_i)
-                `UOP_JAL: begin
-                    // jal rd,offset  :  x[rd] = pc+4; pc += sext(offset)
-                    jump_result_r = pc_plus_4_w;  //save to rd
-                    branch_target_o = pc_add_imm_w;
-                    branch_is_taken_o = 1'b1;
-
-                    /* A JAL instruction should push the return address onto a return-address stack (RAS) only when rd=x1/x5.*/
-                    if ( (rd_wa_i == 5'b00001) || (rd_wa_i == 5'b00101) ) begin
-                        branch_is_call_o = 1'b1;
-                    end else begin
-                        branch_is_jmp_o = 1'b1;
-                    end
-                end
-
-                `UOP_JALR: begin
-                    // jalr rd,rs1,offset  :   t =pc+4; pc=(x[rs1]+sext(imm))&∼1; x[rd]=t
-                    jump_result_r = pc_plus_4_w;
-                    branch_target_o = rs1_d_i + imm_i;
-                    branch_is_taken_o = 1'b1;
-
-                    /* JALR instructions should push/pop a RAS as shown in the Table
-                    ------------------------------------------------
-                       rd    |   rs1    | rs1=rd  |   RAS action
-                   (1) !link |   !link  | -       |   none
-                   (2) !link |   link   | -       |   pop
-                   (3) link  |   !link  | -       |   push
-                   (4) link  |   link   | 0       |   push and pop
-                   (5) link  |   link   | 1       |   push
-                    ------------------------------------------------ */
-                    if (rd_wa_i == 5'b00001 || rd_wa_i == 5'b00101) begin  //rd is linker reg
-                        if (rs1 == 5'b00001 || rs1 == 5'b00101) begin  //rs1 is linker reg as well
-                            if (rd_wa_i == rs1) begin     //(5)
-                                branch_is_call_o = 1'b1;
-                            end else begin
-                                branch_is_call_o = 1'b1;   //(4)
-                                branch_is_ret_o = 1'b1;
-                            end
-                        end else begin
-                            branch_is_call_o = 1'b1; //(3)
-                        end // if (rs1 == 5'b00001 || rs1 == 5'b00101) begin
-                    end else begin  //rd is not linker reg
-                        if (rs1 == 5'b00001 || rs1 == 5'b00101) begin  // rs1 is linker reg
-                            branch_is_ret_o = 1'b1; //(2)
-                        end else begin  //rs1 is not linker reg
-                            branch_is_jmp_o = 1'b1; // (1)
-                        end
-                    end //if (rd_wa_i == 5'b00001 || rd_wa_i == 5'b00101) begin
-               end
-
-                /* ---------------------B-Type instruction --------------*/
-                `UOP_BEQ: begin
-                    // beq rs1,rs2,offset  :   if (rs1 == rs2) pc += sext(imm)
-                    branch_target_o = pc_add_imm_w;
-                    branch_is_taken_o = rs1_eq_rs2_w;
-                end
-
-                `UOP_BNE: begin
-                   // bne rs1,rs2,offset  :   if (rs1 != rs2) pc += sext(offset)
-                    branch_target_o = pc_add_imm_w;
-                    branch_is_taken_o = (~rs1_eq_rs2_w);
-                end
-
-                `UOP_BGE: begin
-                    // bge rs1,rs2,offset  :   if (rs1 >=s rs2) pc += sext(offset)
-                    branch_target_o = pc_add_imm_w;
-                    branch_is_taken_o = (rs1_ge_rs2_signed_w);
-                end
-
-                `UOP_BGEU: begin
-                    // bgeu rs1,rs2,offset  :   if (rs1 >=u rs2) pc += sext(offset)
-                    branch_target_o = pc_add_imm_w;
-                    branch_is_taken_o = (rs1_ge_rs2_unsigned_w);
-                end
-
-                `UOP_BLT: begin
-                   // blt rs1,rs2,offset  :   if (rs1 <s rs2) pc += sext(offset)
-                    branch_target_o = pc_add_imm_w;
-                    branch_is_taken_o = (~rs1_ge_rs2_signed_w);
-                end
-
-                `UOP_BLTU: begin
-                    // bltu rs1,rs2,offset  :   if (rs1 >u rs2) pc += sext(offset)
-                    branch_target_o = pc_add_imm_w;
-                    branch_is_taken_o = (~rs1_ge_rs2_unsigned_w);
-                end
-
-                default: begin
-                end
-            endcase // case (uop_i)
-
-            if ( (uop_i == `UOP_JAL) || (uop_i == `UOP_JALR) || (uop_i == `UOP_BEQ) || (uop_i == `UOP_BNE) ||
-                (uop_i == `UOP_BGE) || (uop_i == `UOP_BGEU) || (uop_i == `UOP_BLT) || (uop_i == `UOP_BLTU) ) begin
-
-                branch_request_o = 1'b1;
-
-                if (branch_is_taken_o == 1'b1) begin   //taken
-                    if ( (next_taken_i == 1'b0) || (next_pc_i != branch_target_o) ) begin     //miss predicted taken or target
-                        branch_redirect_o = `Branch;
-                        branch_redirect_pc_o = branch_target_o;
-                        branch_tag_o = branch_redirect_o;  // indicate a branch started
-                        $display("miss predicted, pc=%h, next_take=%d, branch_taken=%d, next_pc=%h, branch_target=%h is_call=%d, is_ret=%d, is_jmp=%d",
-                        pc_i, next_taken_i, branch_is_taken_o, next_pc_i, branch_target_o, branch_is_call_o, branch_is_ret_o, branch_is_jmp_o);
-                    end
-                end else begin  //if (branch_is_taken_o == 1'b1) begin
-                    if ( next_taken_i == 1'b1 ) begin //miss predicted taken
-                        branch_redirect_o = `Branch;
-                        branch_redirect_pc_o = pc_i+4;
-                        branch_tag_o = branch_redirect_o;  // indicate a branch started
-                        $display("miss predicted, pc=%h, branch_taken=%d, next_take=%d, next_pc=%h", pc_i, branch_is_taken_o, next_taken_i, next_pc_i);
-                    end
-                end  // if (branch_is_taken_o == 1'b1) begin
-            end  //  if ( (uop_i == `UOP_JAL) || (uop_i == `UOP_JALR) ||
-        end  // if (n_rst_i == `RST_EN) begin
-    end //always
+        branch_redirect_o = 1'b0;
+        branch_redirect_pc_o = `ZERO_WORD;;
+        branch_tag_o = 1'b0;
+        case (uop_i)
+          `UOP_JAL:
+          begin
+            jump_result_r = pc_plus_4_w;  //save to rd
+//JAL 绝对跳转指令，产生跳转，跳转后的目标地址为当前PC值+imm
+            {branch_is_taken_o, branch_target_o} = {1'b1, pc_add_imm_w};
+/* A JAL instruction should push the return address onto a return-address stack (RAS) only when rd=x1/x5.*/
+//call伪指令有近跳转 (JAL)版本？
+            if ((rd_wa_i == 5'd1) || (rd_wa_i == 5'd5)) branch_is_call_o = 1'b1;
+            else branch_is_jmp_o = 1'b1;
+          end
+          `UOP_JALR: begin
+            jump_result_r = pc_plus_4_w;
+          //JALR为绝对跳转指令，产生跳转，跳转的地址为rs1 指向寄存器的值+imm
+            {branch_is_taken_o, branch_target_o} = {1'b1, rs1_d_i + imm_i};
+          //https://en.wikichip.org/wiki/risc-v/registers
+          //https://blog.csdn.net/Caramel_biscuit/article/details/127414919
+          //伪指令
+          //call imm:auipc x1, imm[31:12]/jarl x1, x1, imm[11:0]
+          //将imm[31:12]加载至x1中，跳转至x1+imm[11:0]指向的地址（即 imm），x1保存当前pc+4
+          //ret:jarl x0, x1, 0##跳转至x1寄存器的值指向的位置
+          //当rd为link时，将更新前的PC保存至rd，以可以跳转回对应地址继续执行，对应地址需要入栈保护
+          //当rs1 为link时，跳转至rs1 寄存器的值
+          /*
+            //JALR指令中对应字段值，与RAS 的Push/Pop行为对应关系
+            No rd    rs1   rs1=rd RAS      Description
+            01 !link !link -      None     普通跳转
+            02 !link link  -      Pop      ret 伪指令中的jarl x0, x1, 0
+            03 link  !link -      Push     call伪指令中的 auipc x1, imm
+            04 link  link  0      Push&Pop call/ret伪指令分别使用x1/5
+            05 link  link  1      Push     call伪指令中的jarl x1, x1, imm
+          */
+            if (rd_wa_i == 5'd1 || rd_wa_i == 5'd5)
+              if (rs1_w == 5'd1 || rs1_w == 5'd5) //rs1 is linker reg as well
+                if (rd_wa_i == rs1_w) branch_is_call_o = 1'b1;//05
+                else {branch_is_call_o, branch_is_ret_o} = 2'b11;//04
+              else branch_is_call_o = 1'b1; //03
+            else
+              if (rs1_w == 5'd1 || rs1_w == 5'd5) branch_is_ret_o = 1'b1; //02
+              else branch_is_jmp_o = 1'b1;//01
+          end
+        //rs1_w/2/中的源操作数相等，产生跳转
+          `UOP_BEQ: {branch_is_taken_o, branch_target_o} = {rs1_eq_rs2_w, pc_add_imm_w};
+        //rs1_w/2/中的源操作数不等，产生跳转
+          `UOP_BNE: {branch_is_taken_o, branch_target_o} = {~rs1_eq_rs2_w, pc_add_imm_w};
+        //rs1_w>=rs2，产生跳转
+          `UOP_BGE: {branch_is_taken_o, branch_target_o} = {rs1_ge_rs2_signed_w, pc_add_imm_w};
+        //rs1_w>=rs2，产生跳转
+          `UOP_BGEU: {branch_is_taken_o, branch_target_o} = {rs1_ge_rs2_unsigned_w, pc_add_imm_w};
+        // rs1_w<rs2，产生跳转
+          `UOP_BLT: {branch_is_taken_o, branch_target_o} = {~rs1_ge_rs2_signed_w, pc_add_imm_w};
+        // rs1_w<rs2，产生跳转
+          `UOP_BLTU: {branch_is_taken_o, branch_target_o} = {~rs1_ge_rs2_unsigned_w, pc_add_imm_w}; 
+          default:
+          begin
+          end
+        endcase
+        if (
+          (uop_i == `UOP_JAL) || (uop_i == `UOP_JALR) || 
+          (uop_i == `UOP_BEQ) || (uop_i == `UOP_BNE) || 
+          (uop_i == `UOP_BGE) || (uop_i == `UOP_BGEU) || 
+          (uop_i == `UOP_BLT) || (uop_i == `UOP_BLTU))
+        begin
+          branch_request_o = 1'b1;//当前指令为分支指令
+          if (branch_is_taken_o)//实际发生跳转
+            if ((~next_taken_i) || (next_pc_i != branch_target_o))//预测不发生跳转，预测失败
+            begin
+              branch_redirect_o = `Branch;
+              branch_redirect_pc_o = branch_target_o;
+              branch_tag_o = branch_redirect_o;  // indicate a branch started
+              $display("BP Miss(pc=%h, next_take=%d, branch_taken=%d, next_pc=%h, branch_target=%h is_call=%d, is_ret=%d, is_jmp=%d)", pc_i, next_taken_i, branch_is_taken_o, next_pc_i, branch_target_o, branch_is_call_o, branch_is_ret_o, branch_is_jmp_o);
+            end
+          else//实际未发生跳转
+            if (next_taken_i) //预测发生跳转，预测失败
+            begin
+              branch_redirect_o = `Branch;
+              branch_redirect_pc_o = pc_i + 4;
+              branch_tag_o = branch_redirect_o;  // indicate a branch started
+              $display("miss predicted, pc=%h, branch_taken=%d, next_take=%d, next_pc=%h", pc_i, branch_is_taken_o, next_taken_i, next_pc_i);
+            end
+        end
+      end
+    end
 
   //Logic
     always @ (*)
@@ -533,7 +503,7 @@ module ex(
             div_signed_o = 1'b0;
             case (uop_i)
                 `UOP_DIV:        begin
-                    // div rd,rs1,rs2  :   x[rd] = x[rs1] /s x[rs2]
+                    // div rd,rs1_w,rs2  :   x[rd] = x[rs1_w] /s x[rs2]
                     if (div_ready_i == `DIV_RESULT_NOT_READY) begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
@@ -551,7 +521,7 @@ module ex(
                 end
 
                `UOP_DIVU:       begin
-                    // divu rd,rs1,rs2  :   x[rd] = x[rs1] /u x[rs2]
+                    // divu rd,rs1_w,rs2  :   x[rd] = x[rs1_w] /u x[rs2]
                     if (div_ready_i == `DIV_RESULT_NOT_READY) begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
@@ -569,7 +539,7 @@ module ex(
                 end
 
                 `UOP_REM: begin
-                    // rem rd,rs1,rs2  :    x[rd] = x[rs1] %s x[rs2]
+                    // rem rd,rs1_w,rs2  :    x[rd] = x[rs1_w] %s x[rs2]
                     if (div_ready_i == `DIV_RESULT_NOT_READY) begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
@@ -587,7 +557,7 @@ module ex(
                 end
 
                 `UOP_REMU: begin
-                    // remu rd,rs1,rs2  :   x[rd] = x[rs1] %u x[rs2]
+                    // remu rd,rs1_w,rs2  :   x[rd] = x[rs1_w] %u x[rs2]
                    if (div_ready_i == `DIV_RESULT_NOT_READY) begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
