@@ -49,32 +49,16 @@
       end
     end
 
-    always @ (posedge clk_i) begin
-      if (ce_o == `ChipDisable) begin  // delay one tap,
-        pc_o <= `REBOOT_ADDRESS;
-        branch_slot_end_o <= 1'b0;
-      end
-      else begin
-        if (flush_i) begin
-          pc_o <= new_pc_i;
-          branch_slot_end_o <= 1'b0;
-        end
-        else if (stall_i[0] == `NO_STOP) begin
-          if (branch_redirect_i == `Branch) begin
-            pc_o <= branch_redirect_pc_i;  // fetch the instruction from the branch target address
-            branch_slot_end_o <= 1'b1;
-          end else begin
-            pc_o <= next_pc_i;    // next line prediction  current_pc
-            branch_slot_end_o <= 1'b0;
-          end
-        end
-        else
-        begin //IFU 暂停
-          // if stall[0] == `STOP，the pc value will be kept
-          pc_o <= pc_o;
-          branch_slot_end_o <= 1'b0;
-        end
-      end
-    end
+    always @ (posedge clk_i)
+      if (ce_o == `ChipDisable) {pc_o, branch_slot_end_o} <= {`REBOOT_ADDRESS, 1'b0};
+      else
+        if (flush_i) {pc_o, branch_slot_end_o} <= {new_pc_i, 1'b0};
+        else if (stall_i[0] == `NO_STOP)
+        //分支预测错误，读取重定向的正确地址？
+          if (branch_redirect_i == `Branch) {pc_o, branch_slot_end_o} <= {branch_redirect_pc_i, 1'b1};
+        //分支预测正确，使用当前PC即可
+          else {pc_o, branch_slot_end_o} <= {new_pc_i, 1'b0};
+      //IF暂停，PC保持不变
+        else {pc_o, branch_slot_end_o} <= {pc_o, 1'b0};
 
   endmodule
