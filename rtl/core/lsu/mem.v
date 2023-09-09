@@ -123,7 +123,7 @@ module mem(
             mem_we = `WRITE_DISABLE;
             mem_sel_o = 4'b0000;
             mem_data_o = `ZERO_WORD;
-            mem_ce_o = `ChipDisable;
+            mem_ce_o = `CHIP_DISABLE;
 
             //GPR
             rd_a_o = `NOP_REG_A;

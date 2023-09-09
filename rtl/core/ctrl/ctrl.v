@@ -53,9 +53,10 @@
 
     /* ---signals to other stages of the pipeline  ----*/
     output reg[5:0] stall_o,   // stall request to PC,IF_ID, ID_EX, EX_MEM, MEM_WB， one bit for one stage respectively
-    output reg flush_o,   // flush the whole pipleline, exception or interrupt happens
-    output reg[`REG_BUS_D] new_pc_o   // notify the ifu to fetch the instruction from the new PC
-  );
+   // flush the whole pipleline, exception or interrupt happens
+    output reg flush_o,
+   // notify the ifu to fetch the instruction from the new PC
+    output reg[`REG_BUS_D] new_pc_o);
 
   //0:IF/1:IF_ID/2:ID_EX/3:EX_MEM/4:MEM_WB
     always @ (*)
@@ -161,9 +162,8 @@
     assign vec_mux_out = mtvec_i[0] ? {mtvec_base, 2'b00} + base_offset : {mtvec_base, 2'b00};
     assign trap_mux_out = ie_type_o ? vec_mux_out : {mtvec_base, 2'b00};
 
-    // output generation
-    always @ (*)   begin
-      case(curr_state)
+    always @ (*)
+      case (curr_state)
         STATE_RESET: begin
           flush_o = 1'b0;
           new_pc_o = `REBOOT_ADDRESS;
@@ -209,8 +209,6 @@
           mstatus_ie_set_o = 1'b0;
         end
       endcase
-    end
-
 
     /* update the mcause csr */
     always @(posedge clk_i)

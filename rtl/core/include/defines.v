@@ -22,8 +22,8 @@
 `define RST_EN               1'b0   //reset by negative edge
 `define RstDisable              1'b1
 
-`define ChipEnable              1'b1
-`define ChipDisable             1'b0
+`define CHIP_ENABLE              1'b1
+`define CHIP_DISABLE             1'b0
 
 `define WriteEnable             1'b1
 `define WRITE_DISABLE            1'b0

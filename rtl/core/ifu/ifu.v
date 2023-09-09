@@ -19,7 +19,7 @@
     input reg[`INS_BUS_A] next_pc_i,//BP预测的下一个PC
     input reg next_taken_i, //下一个PC是否为发生分支后的结果
   //From EX
-    input wire branch_redirect_i,   //miss predicted, need to redirect the pc
+    input wire branch_redirect_i,
     input wire[`INS_BUS_A] branch_redirect_pc_i,
 
     /* ------- signals to inst_rom and decode unit --------*/
@@ -28,29 +28,23 @@
 
     /* ---stall the pipeline, waiting for the rom to response with instruction ----*/
     output wire stall_req_o,
-
-    /*-----the prediction info to exe unit---------------*/
-    output reg[`INS_BUS_A] next_pc_o,   // next pc predicted by bp
+  //To EX:来自BP的预测信息，输出至EX进行校验，产生重定向修正
+    output reg[`INS_BUS_A] next_pc_o,
     output reg next_taken_o,
-
     /*-----if miss predicted, redirected pc to branch target started from here*/
+  //分支预测失败，重定向分支，原分支槽结束
     output reg branch_slot_end_o);
 
     // if the rom can not response in the same cycle, need to set the stall_req_o
-    assign  stall_req_o = 0;
-    assign  next_pc_o = next_pc_i;
-    assign  next_taken_o = next_taken_i;
-
-    always @ (posedge clk_i or negedge n_rst_i) begin
-      if (n_rst_i == `RST_EN) begin
-        ce_o <= `ChipDisable;
-      end else begin
-        ce_o <= `ChipEnable;
-      end
-    end
+    assign stall_req_o = 1'b0;
+    assign next_pc_o = next_pc_i;
+    assign next_taken_o = next_taken_i;
 
     always @ (posedge clk_i)
-      if (ce_o == `ChipDisable) {pc_o, branch_slot_end_o} <= {`REBOOT_ADDRESS, 1'b0};
+      ce_o <= (n_rst_i == `RST_EN) ? `CHIP_DISABLE : `CHIP_ENABLE;
+
+    always @ (posedge clk_i)
+      if (ce_o == `CHIP_DISABLE) {pc_o, branch_slot_end_o} <= {`REBOOT_ADDRESS, 1'b0};
       else
         if (flush_i) {pc_o, branch_slot_end_o} <= {new_pc_i, 1'b0};
         else if (stall_i[0] == `NO_STOP)
