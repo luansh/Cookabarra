@@ -37,7 +37,7 @@
   `define INS_VALID 1'b1
   `define INS_INVALID 1'b0
 
-`define Stop                    1'b1
+`define STOP                    1'b1
 `define NO_STOP                  1'b0
 
 `define Branch                  1'b1
@@ -55,8 +55,8 @@
 `define NOP_INS 32'h00000013//ADDI x0, x0, 0
 `define ZERO_WORD 32'd0
 
-`define INS_BUS_A             31:0
-`define InstBus                 31:0
+`define INS_BUS_A 31:0
+`define INS_BUS_D 31:0
 
 /*----------------------------------- inst rom ---------------------------------*/
 `define InstMemNum              1048576

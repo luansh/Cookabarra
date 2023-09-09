@@ -44,7 +44,7 @@ module simple_system(
     //wires connected cpu fetch address and rom
     wire rom_ce;
     wire[`INS_BUS_A] inst_addr;
-    wire[`InstBus] inst;
+    wire[`INS_BUS_D] inst;
 
     // wire connected timer and cpu irq_timer 
     wire timer_irq_O;

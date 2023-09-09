@@ -5,7 +5,7 @@
 
     /* ------- signals from the if_id unit --------*/
     input wire[`INS_BUS_A] pc_i,
-    input wire[`InstBus] ins_i,
+    input wire[`INS_BUS_D] ins_i,
     input wire branch_slot_end_i,
 
     input wire[`REG_BUS_D] next_pc_i,
@@ -593,7 +593,7 @@
         //即rs1 要读取的地址已经被修改，只是该修改还在由慢速设备请求数据，未写回 GPR
         //需要暂停流水线，等待慢速设备返回数据
         //可以通过 Forward方式，在WB阶段，将返回的最新数据直接赋值给 rs1，无需写入再读出 GPR
-          if (pre_ins_is_load == 1'b1 && ex_rd_wa_i == rs1_ra_o && rs1_re_o == 1'b1) rs1_load_depend = `Stop;
+          if (pre_ins_is_load == 1'b1 && ex_rd_wa_i == rs1_ra_o && rs1_re_o == 1'b1) rs1_load_depend = `STOP;
           else
           //所要读取的 rs1寄存器，与EX阶段更新的rd寄存器相同
           //即rd中保存着 rs1的最新值，rs1 通过 Forward直接获取该值，无需写入再读出 GPR
@@ -611,7 +611,7 @@
         {rs2_load_depend, rs2_data_o} = {`NO_STOP, `ZERO_WORD};
         if (rs2_ra_o == 5'd0) rs2_data_o = 32'd0;
         else
-          if (pre_ins_is_load == 1'b1 && ex_rd_wa_i == rs2_ra_o && rs2_re_o == 1'b1 ) rs2_load_depend = `Stop;
+          if (pre_ins_is_load == 1'b1 && ex_rd_wa_i == rs2_ra_o && rs2_re_o == 1'b1 ) rs2_load_depend = `STOP;
           else
             if ((rs2_re_o == 1'b1) && (ex_rd_we_i == 1'b1) && (ex_rd_wa_i == rs2_ra_o)) rs2_data_o = ex_rd_wd_i;
             else if ((rs2_re_o == 1'b1) && (mem_rd_we_i == 1'b1) && (mem_rd_wa_i == rs2_ra_o)) rs2_data_o = mem_rd_wd_i;

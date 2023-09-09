@@ -323,6 +323,7 @@ module ex(
 /* A JAL instruction should push the return address onto a return-address stack (RAS) only when rd=x1/x5.*/
 //call伪指令有近跳转 (JAL)版本？
             if ((rd_wa_i == 5'd1) || (rd_wa_i == 5'd5)) branch_is_call_o = 1'b1;
+          //不是由call伪指令产生的普通JAL 指令
             else branch_is_jmp_o = 1'b1;
           end
           `UOP_JALR: begin
@@ -353,20 +354,16 @@ module ex(
               else branch_is_call_o = 1'b1; //03
             else
               if (rs1_w == 5'd1 || rs1_w == 5'd5) branch_is_ret_o = 1'b1; //02
+            //不是由call/ret产生的（普通的）JALR指令
               else branch_is_jmp_o = 1'b1;//01
           end
-        //rs1_w/2/中的源操作数相等，产生跳转
-          `UOP_BEQ: {branch_is_taken_o, branch_target_o} = {rs1_eq_rs2_w, pc_add_imm_w};
-        //rs1_w/2/中的源操作数不等，产生跳转
-          `UOP_BNE: {branch_is_taken_o, branch_target_o} = {~rs1_eq_rs2_w, pc_add_imm_w};
-        //rs1_w>=rs2，产生跳转
-          `UOP_BGE: {branch_is_taken_o, branch_target_o} = {rs1_ge_rs2_signed_w, pc_add_imm_w};
-        //rs1_w>=rs2，产生跳转
-          `UOP_BGEU: {branch_is_taken_o, branch_target_o} = {rs1_ge_rs2_unsigned_w, pc_add_imm_w};
-        // rs1_w<rs2，产生跳转
-          `UOP_BLT: {branch_is_taken_o, branch_target_o} = {~rs1_ge_rs2_signed_w, pc_add_imm_w};
-        // rs1_w<rs2，产生跳转
-          `UOP_BLTU: {branch_is_taken_o, branch_target_o} = {~rs1_ge_rs2_unsigned_w, pc_add_imm_w}; 
+        //分支指令，其is_call/ret/jmp/标志均为 0
+          `UOP_BEQ: {branch_is_taken_o, branch_target_o} = {rs1_eq_rs2_w, pc_add_imm_w};//rs1_w/2/中的源操作数相等，产生跳转
+          `UOP_BNE: {branch_is_taken_o, branch_target_o} = {~rs1_eq_rs2_w, pc_add_imm_w}; //rs1_w/2/中的源操作数不等，产生跳转
+          `UOP_BGE: {branch_is_taken_o, branch_target_o} = {rs1_ge_rs2_signed_w, pc_add_imm_w}; //rs1_w>=rs2，产生跳转
+          `UOP_BGEU: {branch_is_taken_o, branch_target_o} = {rs1_ge_rs2_unsigned_w, pc_add_imm_w};//rs1_w>=rs2，产生跳转
+          `UOP_BLT: {branch_is_taken_o, branch_target_o} = {~rs1_ge_rs2_signed_w, pc_add_imm_w};// rs1_w<rs2，产生跳转
+          `UOP_BLTU: {branch_is_taken_o, branch_target_o} = {~rs1_ge_rs2_unsigned_w, pc_add_imm_w}; // rs1_w<rs2，产生跳转
           default:
           begin
           end
@@ -379,7 +376,9 @@ module ex(
         begin
           branch_request_o = 1'b1;//当前指令为分支指令
           if (branch_is_taken_o)//实际发生跳转
-            if ((~next_taken_i) || (next_pc_i != branch_target_o))//预测不发生跳转，预测失败
+          //BP预测不发生跳转，或者BP预测的跳转地址与实际跳转地址不一致，预测失败
+          //分支需要重定向(redirect)至 branch_target_o，进行修正
+            if ((~next_taken_i) || (next_pc_i != branch_target_o))
             begin
               branch_redirect_o = `Branch;
               branch_redirect_pc_o = branch_target_o;
@@ -387,7 +386,8 @@ module ex(
               $display("BP Miss(pc=%h, next_take=%d, branch_taken=%d, next_pc=%h, branch_target=%h is_call=%d, is_ret=%d, is_jmp=%d)", pc_i, next_taken_i, branch_is_taken_o, next_pc_i, branch_target_o, branch_is_call_o, branch_is_ret_o, branch_is_jmp_o);
             end
           else//实际未发生跳转
-            if (next_taken_i) //预测发生跳转，预测失败
+          //BP预测发生跳转，预测失败
+            if (next_taken_i)
             begin
               branch_redirect_o = `Branch;
               branch_redirect_pc_o = pc_i + 4;
@@ -509,7 +509,7 @@ module ex(
                         divisor_o = rs2_d_i;
                         div_start_o = `DIV_START;
                         div_signed_o = 1'b1;       // signed division
-                        stallreq_for_div = `Stop;  // stop the pipeline
+                        stallreq_for_div = `STOP;  // stop the pipeline
                     end else begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
@@ -527,7 +527,7 @@ module ex(
                         divisor_o = rs2_d_i;
                         div_start_o = `DIV_START;
                         div_signed_o = 1'b0;        // unsigned division
-                        stallreq_for_div = `Stop;
+                        stallreq_for_div = `STOP;
                     end else begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
@@ -545,7 +545,7 @@ module ex(
                         divisor_o = rs2_d_i;
                         div_start_o = `DIV_START;
                         div_signed_o = 1'b1;
-                        stallreq_for_div = `Stop;
+                        stallreq_for_div = `STOP;
                     end else begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
@@ -563,7 +563,7 @@ module ex(
                         divisor_o = rs2_d_i;
                         div_start_o = `DIV_START;
                         div_signed_o = 1'b0;
-                        stallreq_for_div = `Stop;
+                        stallreq_for_div = `STOP;
                     end else begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;

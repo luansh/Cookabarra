@@ -113,7 +113,7 @@ module id_ex(
             csr_addr_o <= `ZERO_WORD;
 
             exception_o <= `ZERO_WORD;
-        end else if (stall_i[2] == `Stop && stall_i[3] == `NO_STOP) begin
+        end else if (stall_i[2] == `STOP && stall_i[3] == `NO_STOP) begin
             pc_o <= `ZERO_WORD;
             ins_o <= `NOP_INS;
             branch_slot_end_o <= 1'b0;

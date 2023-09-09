@@ -83,7 +83,7 @@
             branch_tag <= 1'b0;
             branch_pc <= `NOP_INS;
         // stall current stage
-        end else if (stall_i[3] == `Stop && stall_i[4] == `NO_STOP) begin
+        end else if (stall_i[3] == `STOP && stall_i[4] == `NO_STOP) begin
             rd_a_o <= `NOP_REG_A;
             rd_we_o <= `WRITE_DISABLE;
             rd_wd_o <= `ZERO_WORD;

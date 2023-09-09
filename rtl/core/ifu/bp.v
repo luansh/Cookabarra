@@ -25,7 +25,8 @@
 
     // output signals to fetch unit
     output reg[`INS_BUS_A] next_pc_o,    // next pc predicted by this module
-    output reg next_taken_o);  // next pc is a branch take or not, forward to execute via fetch module
+  // next pc is a branch take or not, forward to execute via fetch module
+    output reg next_taken_o);
 
     localparam BHT_ENTRIES_WIDTH = $clog2(NUM_BHT_ENTRIES);
     localparam BTB_ENTRIES_WIDTH = $clog2(NUM_BTB_ENTRIES);
@@ -285,6 +286,7 @@
     // the next_pc predicted as below:
     assign next_pc_o = ras_ret_matched ? ras_pred_pc : ( btb_is_matched_r & (bht_predict_taken_w | btb_is_jmp_r | btb_is_call_r) ) ? btb_target_pc_r : pc_i + 4;
     // taken or not_taken was predicted as below:
+  //存在 BTB项，
     assign next_taken_o = (btb_is_matched_r & (btb_is_call_r | btb_is_ret_r | bht_predict_taken_w | btb_is_jmp_r)) ? 1'b1 : 1'b0;
 
   endmodule

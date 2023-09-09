@@ -36,12 +36,12 @@ module ram(
 	// instrution port
     input wire inst_ce_i,
     input wire[`INS_BUS_A] pc_i,
-    output reg[`InstBus] ins_o	
+    output reg[`INS_BUS_D] ins_o	
 );
     localparam reg[31:0] CHAR_OUT_ADDR = 32'h00020000;
     localparam reg[31:0] SIM_CTRL_ADDR = 32'h00020002;
 
-    reg[`InstBus] mem[0:`InstMemNum-1];
+    reg[`INS_BUS_D] mem[0:`InstMemNum-1];
 
     assign rvalid_o = ce_i & (~we_i);
 
@@ -98,7 +98,7 @@ module ram(
     // Returns 1 (true) for success, 0 (false) for errors.
     export "DPI-C" function simutil_set_mem;
 
-    function int simutil_set_mem(input int index, input bit [`InstBus] val);
+    function int simutil_set_mem(input int index, input bit [`INS_BUS_D] val);
         if (index >= `InstMemNum) begin
             return 0;
         end

@@ -1,82 +1,42 @@
-/*-------------------------------------------------------------------------
-// Module:  if_id
-// File:    if_id.v
-// Author:  shawn Liu
-// E-mail:  shawn110285@gmail.com
 // Description: fetch instruction from the instruction rom
---------------------------------------------------------------------------*/
 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//-----------------------------------------------------------------
+  `include "defines.v"
 
-`include "defines.v"
-
-module if_id(
-
+  module if_id(
     input wire clk_i,
     input wire n_rst_i,
-
-    /* ------- signals from the ctrl unit --------*/
+  //From CTRL
     input wire[5:0] stall_i,
     input wire flush_i,
-
-    /* ------- signals from the ifu  -------------*/
+  //From IF
     input wire[`INS_BUS_A] pc_i,
     input wire[`INS_BUS_A] next_pc_i,
     input wire next_taken_i,
-	input wire branch_slot_end_i,
-
-    /* ------- signals from the inst_rom  --------*/
-    input wire[`InstBus] ins_i, //the instruction
-
-    /* ---------signals from exu -----------------*/
+    input wire branch_slot_end_i,
+  //From Instruct ROM
+    input wire[`INS_BUS_D] ins_i,
+  //From EX
     input wire branch_redirect_i,
-
-	/* ------- signals to the decode -------------*/
+  //To ID
     output reg[`INS_BUS_A] pc_o,
-    output reg[`InstBus] ins_o,
+    output reg[`INS_BUS_D] ins_o,
     output reg[`INS_BUS_A] next_pc_o,
     output reg next_taken_o,
+    output reg branch_slot_end_o);
 
-	output reg branch_slot_end_o
-);
-
-    always @ (posedge clk_i) begin
-        if (n_rst_i == `RST_EN) begin
-            pc_o <= `ZERO_WORD;
-            ins_o <= `NOP_INS;
-            branch_slot_end_o <= 1'b0;
-        end else if (branch_redirect_i == 1'b1) begin
-            pc_o <= pc_i;
-            ins_o <= `NOP_INS;
-            branch_slot_end_o <= 1'b0;
-        end else if (flush_i == 1'b1 ) begin
-            pc_o <= pc_i;
-            ins_o <= `NOP_INS;
-            branch_slot_end_o <= 1'b0;
-		// stop the fetching but keep the decoder on going
-        end else if (stall_i[1] == `Stop && stall_i[2] == `NO_STOP) begin
-            pc_o <= pc_i;
-            ins_o <= `NOP_INS;
-            branch_slot_end_o <= 1'b0;
-        //pass the signals from ifu to decoder
-        end else if (stall_i[1] == `NO_STOP) begin
-            pc_o <= pc_i;
-            ins_o <= ins_i;
-            next_pc_o <= next_pc_i;
-            next_taken_o <= next_taken_i;
-            branch_slot_end_o <= branch_slot_end_i;
-        end
-    end
+    always @ (posedge clk_i)
+      if (n_rst_i == `RST_EN) {pc_o, ins_o, branch_slot_end_o} <= {`ZERO_WORD, `NOP_INS, 1'b0};
+    //通过分支重定向纠正预测失败？
+      else if (branch_redirect_i == 1'b1) {pc_o, ins_o, branch_slot_end_o} <= {pc_i, `NOP_INS, 1'b0};
+    //停止取指，ID阶段继续工作
+      else if (flush_i == 1'b1) {pc_o, ins_o, branch_slot_end_o} <= {pc_i, `NOP_INS, 1'b0};
+    //IF阶段暂停，ID阶段继续
+      else if (stall_i[1] == `STOP && stall_i[2] == `NO_STOP) {pc_o, ins_o, branch_slot_end_o} <= {pc_i, `NOP_INS, 1'b0};
+    //IF阶段不暂停
+      else if (stall_i[1] == `NO_STOP)
+      begin
+        {pc_o, ins_o, branch_slot_end_o} <= {pc_i, ins_i, branch_slot_end_i};
+        {next_pc_o, next_taken_o} <= {next_pc_i, next_taken_i};
+      end
 
   endmodule

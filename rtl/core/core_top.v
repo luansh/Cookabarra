@@ -61,7 +61,7 @@
 
       //-------signals from if_id ----
     wire[`INS_BUS_A] id_pc_i;
-    wire[`InstBus] id_inst_i;
+    wire[`INS_BUS_D] id_inst_i;
     wire[`INS_BUS_A] id_next_pc_i;
       wire id_next_taken_i;
       wire id_branch_slot_end_i;

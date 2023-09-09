@@ -78,7 +78,7 @@ module mem_wb(
             csr_wd_o <= `ZERO_WORD;
 
             instret_incr_o <= 1'b0;
-        end else if (stall_i[4] == `Stop && stall_i[5] == `NO_STOP) begin  //stall this stage
+        end else if (stall_i[4] == `STOP && stall_i[5] == `NO_STOP) begin  //stall this stage
             rd_we_o <= `WRITE_DISABLE;
             rd_a_o <= `NOP_REG_A;
             rd_wd_o <= `ZERO_WORD;
