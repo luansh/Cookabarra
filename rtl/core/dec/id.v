@@ -4,7 +4,7 @@
     input wire n_rst_i,
 
     /* ------- signals from the if_id unit --------*/
-    input wire[`InstAddrBus] pc_i,
+    input wire[`INS_BUS_A] pc_i,
     input wire[`InstBus] ins_i,
     input wire branch_slot_end_i,
 

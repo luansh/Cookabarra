@@ -34,8 +34,8 @@ module ram(
 	output reg[`DataBus]		  data_o,
 	
 	// instrution port
-    input  wire inst_ce_i,
-    input  wire[`InstAddrBus] pc_i,
+    input wire inst_ce_i,
+    input wire[`INS_BUS_A] pc_i,
     output reg[`InstBus] ins_o	
 );
     localparam reg[31:0] CHAR_OUT_ADDR = 32'h00020000;

@@ -24,12 +24,12 @@
 
 module simple_system(
 
-    input  wire clk_i,
-    input  wire n_rst_i,
+    input wire clk_i,
+    input wire n_rst_i,
 
-    input  wire jtag_TCK,     // JTAG TCK
-    input  wire jtag_TMS,     // JTAG TMS
-    input  wire jtag_TDI,     // JTAG TDI
+    input wire jtag_TCK,     // JTAG TCK
+    input wire jtag_TMS,     // JTAG TMS
+    input wire jtag_TDI,     // JTAG TDI
     output wire jtag_TDO      // JTAG TDO    
 );
 
@@ -43,7 +43,7 @@ module simple_system(
 
     //wires connected cpu fetch address and rom
     wire rom_ce;
-    wire[`InstAddrBus] inst_addr;
+    wire[`INS_BUS_A] inst_addr;
     wire[`InstBus] inst;
 
     // wire connected timer and cpu irq_timer 

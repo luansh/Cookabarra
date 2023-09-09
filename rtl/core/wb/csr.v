@@ -27,9 +27,9 @@ module csr_file(
     input wire n_rst_i,
 
     /* --- interrupt signals from clint or plic--------*/
-    input  wire irq_software_i,
-    input  wire irq_timer_i,
-    input  wire irq_external_i,
+    input wire irq_software_i,
+    input wire irq_timer_i,
+    input wire irq_external_i,
 
     /* --- exu read csr -------------------*/
     input wire[`REG_BUS_D] raddr_i,           // the register to read

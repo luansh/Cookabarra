@@ -31,8 +31,8 @@ module if_id(
     input wire flush_i,
 
     /* ------- signals from the ifu  -------------*/
-    input wire[`InstAddrBus] pc_i,
-    input wire[`InstAddrBus] next_pc_i,
+    input wire[`INS_BUS_A] pc_i,
+    input wire[`INS_BUS_A] next_pc_i,
     input wire next_taken_i,
 	input wire branch_slot_end_i,
 
@@ -43,9 +43,9 @@ module if_id(
     input wire branch_redirect_i,
 
 	/* ------- signals to the decode -------------*/
-    output reg[`InstAddrBus] pc_o,
+    output reg[`INS_BUS_A] pc_o,
     output reg[`InstBus] ins_o,
-    output reg[`InstAddrBus] next_pc_o,
+    output reg[`INS_BUS_A] next_pc_o,
     output reg next_taken_o,
 
 	output reg branch_slot_end_o

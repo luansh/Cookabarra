@@ -55,7 +55,7 @@
 `define NOP_INS 32'h00000013//ADDI x0, x0, 0
 `define ZERO_WORD 32'd0
 
-`define InstAddrBus             31:0
+`define INS_BUS_A             31:0
 `define InstBus                 31:0
 
 /*----------------------------------- inst rom ---------------------------------*/

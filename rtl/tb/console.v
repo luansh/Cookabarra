@@ -25,11 +25,11 @@ module console #(
   input wire clk_i,
   input wire rst_ni,
 
-  input  wire req_i,
-  input  wire we_i,
-  input  wire[3:0] be_i,
-  input  wire[31:0] addr_i,
-  input  wire[31:0] wdata_i,
+  input wire req_i,
+  input wire we_i,
+  input wire[3:0] be_i,
+  input wire[31:0] addr_i,
+  input wire[31:0] wdata_i,
   output reg rvalid_o,
   output reg[31:0] rdata_o
 );

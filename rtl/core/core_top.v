@@ -1,13 +1,13 @@
   `include "defines.v"
 
   module core_top(
-    input  wire clk_i,
-    input  wire n_rst_i,
+    input wire clk_i,
+    input wire n_rst_i,
 
     // signal to rom, to read the instruction
     output wire rom_ce_o,
     output wire[`REG_BUS_D] rom_addr_o,
-    input  wire[`REG_BUS_D] rom_data_i,
+    input wire[`REG_BUS_D] rom_data_i,
 
     // signal to ram, to read/write the data
     output wire ram_ce_o,
@@ -15,13 +15,13 @@
     output wire[`REG_BUS_D] ram_addr_o,
     output wire ram_we_o,
     output wire[`REG_BUS_D] ram_data_o,
-    input  wire ram_data_rvalid,
-    input  wire[`REG_BUS_D] ram_data_i,
+    input wire ram_data_rvalid,
+    input wire[`REG_BUS_D] ram_data_i,
 
     // interrupt signal
-      input  wire irq_software_i,
-      input  wire irq_timer_i,
-      input  wire irq_external_i
+      input wire irq_software_i,
+      input wire irq_timer_i,
+      input wire irq_external_i
   );
 
     //------------ signal from ctrl unit  -----------
@@ -44,25 +44,25 @@
 
 
       //------- signals from if  ----
-    wire[`InstAddrBus] if_pc_o;
+    wire[`INS_BUS_A] if_pc_o;
       assign rom_addr_o = if_pc_o;
 
       wire if_stall_req_o;
-    wire[`InstAddrBus] if_next_pc_o;
+    wire[`INS_BUS_A] if_next_pc_o;
       wire if_next_taken_o;
     wire if_branch_slot_end_o;
 
-      //wire[`InstAddrBus] if_next_pc_o;
+      //wire[`INS_BUS_A] if_next_pc_o;
     //wire[1:0] if_next_taken_o;
 
       //------signals from branch prediction ---
-      wire[`InstAddrBus] bp_next_pc_o;
+      wire[`INS_BUS_A] bp_next_pc_o;
     wire bp_next_taken_o;
 
       //-------signals from if_id ----
-    wire[`InstAddrBus] id_pc_i;
+    wire[`INS_BUS_A] id_pc_i;
     wire[`InstBus] id_inst_i;
-    wire[`InstAddrBus] id_next_pc_i;
+    wire[`INS_BUS_A] id_next_pc_i;
       wire id_next_taken_i;
       wire id_branch_slot_end_i;
 
@@ -80,7 +80,7 @@
       //id --> id_ex
       wire[`REG_BUS_D] id_inst_o;
     wire[`REG_BUS_D] id_imm_o;
-    wire[`InstAddrBus] id_next_pc_o;
+    wire[`INS_BUS_A] id_next_pc_o;
       wire id_next_taken_o;
       wire id_branch_slot_end_o;
 
@@ -102,7 +102,7 @@
     // id_ex --> ex
       wire[`REG_BUS_D] ex_pc_i;
       wire[`REG_BUS_D] ex_inst_i;
-    wire[`InstAddrBus] ex_next_pc_i;
+    wire[`INS_BUS_A] ex_next_pc_i;
       wire ex_next_taken_i;
       wire ex_branch_slot_end_i;
 

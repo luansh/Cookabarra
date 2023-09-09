@@ -24,13 +24,13 @@ module bus #(
   input wire rst_ni,
 
   // Hosts (masters)
-  input  wire host_req_i    [NrHosts],
+  input wire host_req_i    [NrHosts],
   output reg host_gnt_o    [NrHosts],
 
-  input  wire[AddressWidth-1:0] host_addr_i   [NrHosts],
-  input  wire host_we_i     [NrHosts],
-  input  wire[DataWidth/8-1:0] host_be_i     [NrHosts],
-  input  wire[DataWidth-1:0] host_wdata_i  [NrHosts],
+  input wire[AddressWidth-1:0] host_addr_i   [NrHosts],
+  input wire host_we_i     [NrHosts],
+  input wire[DataWidth/8-1:0] host_be_i     [NrHosts],
+  input wire[DataWidth-1:0] host_wdata_i  [NrHosts],
   output reg host_rvalid_o [NrHosts],
   output reg[DataWidth-1:0] host_rdata_o  [NrHosts],
   output reg host_err_o    [NrHosts],
@@ -42,9 +42,9 @@ module bus #(
   output reg device_we_o     [NrDevices],
   output reg[DataWidth/8-1:0] device_be_o     [NrDevices],
   output reg[DataWidth-1:0] device_wdata_o  [NrDevices],
-  input  wire device_rvalid_i [NrDevices],
-  input  wire[DataWidth-1:0] device_rdata_i  [NrDevices],
-  input  wire device_err_i    [NrDevices],
+  input wire device_rvalid_i [NrDevices],
+  input wire[DataWidth-1:0] device_rdata_i  [NrDevices],
+  input wire device_err_i    [NrDevices],
 
   // Device address map
   input wire[AddressWidth-1:0] cfg_device_addr_base [NrDevices],
