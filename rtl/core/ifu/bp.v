@@ -1,14 +1,10 @@
 //https://zhuanlan.zhihu.com/p/648594488
-/*-------------------------------------------------------------------------
-// Description: branch prediction(bht/btb/ras)
---------------------------------------------------------------------------*/
+  `include "defines.v"
 
-`include "defines.v"
-
-module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
-                            parameter NUM_BTB_ENTRIES  = 64,
-                            parameter NUM_BHT_ENTRIES  = 64)
-(
+  module branch_prediction #(
+    parameter NUM_RAS_ENTRIES = 8,
+    parameter NUM_BTB_ENTRIES = 64,
+    parameter NUM_BHT_ENTRIES = 64) (
     input wire clk_i,
     input wire n_rst_i,
     // input signals from execution unit
@@ -29,8 +25,7 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
 
     // output signals to fetch unit
     output reg[`INS_BUS_A] next_pc_o,    // next pc predicted by this module
-    output reg next_taken_o  // next pc is a branch take or not, forward to execute via fetch module
-);
+    output reg next_taken_o);  // next pc is a branch take or not, forward to execute via fetch module
 
     localparam BHT_ENTRIES_WIDTH = $clog2(NUM_BHT_ENTRIES);
     localparam BTB_ENTRIES_WIDTH = $clog2(NUM_BTB_ENTRIES);
@@ -44,40 +39,40 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
     // ------update the bht, indexed by the bits[2+BHT_ENTRIES_WIDTH-1:2] --------
     wire[BHT_ENTRIES_WIDTH-1:0] bht_write_entry = branch_source_i[2+BHT_ENTRIES_WIDTH-1:2];
 
-    integer i4;
-    always @ (posedge clk_i or negedge  n_rst_i) begin
-        if (n_rst_i == `RST_EN) begin
-            // initialize the bht
-            for (i4 = 0; i4 < NUM_BHT_ENTRIES; i4 = i4 + 1) begin
-                bht_bim_list_r[i4] <= 2'b11;   //strongly taken (11), weakly taken(10), weakly not taken(01), strongly not taken(00)
-            end
-        end else begin
-            if ( branch_request_i ) begin
-                /* $display("branch: pc=%h, take=%d, index=%h, sat=%d",
-                          branch_source_i, branch_is_taken_i, bht_write_entry, bht_bim_list_r[bht_write_entry]); */
-                if ( (branch_is_taken_i == 1'b1) && (bht_bim_list_r[bht_write_entry] < 2'd3) ) begin
-                    bht_bim_list_r[bht_write_entry] <= bht_bim_list_r[bht_write_entry] + 2'd1;  //update the counter
-                    /* $display("increase sat: pc=%h, index=%h, sat=%d",
-                            branch_source_i, bht_write_entry, bht_bim_list_r[bht_write_entry]); */
-                end else if ( (branch_is_taken_i  == 1'b0) && (bht_bim_list_r[bht_write_entry] > 2'd0) ) begin
-                    bht_bim_list_r[bht_write_entry] <= bht_bim_list_r[bht_write_entry] - 2'd1;
-                    /* $display("decrease sat: pc=%h, index=%h, sat=%d",
-                          branch_source_i, bht_write_entry, bht_bim_list_r[bht_write_entry]);  */
-                end // if ( (branch_is_taken_i == 1'b1) && (bht_bim_list_r[bht_write_entry] < 2'd3) ) begin
-            end //if ( branch_request_i ) begin
-        end //if (n_rst_i == `RST_EN) begin
-    end
+    integer bims;
+  //BHT 为由BIM 构成的List
+    always @ (posedge clk_i or negedge  n_rst_i)
+      if (n_rst_i == `RST_EN)
+        for (bims = 0; bims < NUM_BHT_ENTRIES; bims = bims + 1)
+        //2'b00:Strongly Not Taken
+        //2'b01:Weakly Not Taken
+        //2'b10:Weakly Taken
+        //2'b11:Strongly Taken
+          bht_bim_list_r[bims] <= 2'b11;
+      else
+        if (branch_request_i)
+        //分支请求发生转移，BIM 值未上饱和
+          if ((branch_is_taken_i == 1'b1) && (bht_bim_list_r[bht_write_entry] < 2'd3)) bht_bim_list_r[bht_write_entry] <= bht_bim_list_r[bht_write_entry] + 2'd1;
+        //分支请求未发生转移，BIM 值未下饱和
+          else if ((branch_is_taken_i == 1'b0) && (bht_bim_list_r[bht_write_entry] > 2'd0)) bht_bim_list_r[bht_write_entry] <= bht_bim_list_r[bht_write_entry] - 2'd1;
 
     // ------lookup the bht, indexed by the bits[2+BHT_ENTRIES_WIDTH-1:2] --------
-    wire[BHT_ENTRIES_WIDTH-1:0] bht_read_entry = pc_i[2+BHT_ENTRIES_WIDTH-1:2];
-    wire bht_predict_taken = (bht_bim_list_r[bht_read_entry] >= 2'd2);       // is the bht predicted as a taken?
+    wire[BHT_ENTRIES_WIDTH-1:0] bht_read_entry_w = pc_i[2+BHT_ENTRIES_WIDTH-1:2];
+    wire bht_predict_taken_w = (bht_bim_list_r[bht_read_entry_w] >= 2'd2);       // is the bht predicted as a taken?
 
-    //-----------------------------------------------------------------
-    // BTB (valid, source_pc, call, ret, jmp, target_pc)
+  /*
+    struct BTB {
+      valid: bool,
+      is_call: bool,
+      is_ret: bool,
+      is_jmp: bool,
+      source_pc: uint32_t,//当前PC
+      target_pc: uint32_t,//跳转目的PC
+    }
+  */
     //  (1) if the entry is a "call" or a "jmp",  select the target_pc as the next_pc
     //  (2) if the entry is a "ret",  select the RAS as the next_pc
     //  (3) otherwise, resort to the BHT(BIM) to select target_pc or pc_i+4 as the next_pc
-    //-----------------------------------------------------------------
     reg btb_is_valid_list_r[NUM_BTB_ENTRIES-1:0];
     reg btb_is_call_list_r[NUM_BTB_ENTRIES-1:0];
     reg btb_is_ret_list_r[NUM_BTB_ENTRIES-1:0];
@@ -85,48 +80,41 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
     reg [`INS_BUS_A] btb_source_pc_list_r[NUM_BTB_ENTRIES-1:0];
     reg [`INS_BUS_A] btb_target_pc_list_r[NUM_BTB_ENTRIES-1:0];
 
-    // ------------ process of looking up the btb based on pc ----------------
-    reg btb_is_matched;
-    reg btb_is_call;
-    reg btb_is_ret;
-    reg btb_is_jmp;
-    reg [`INS_BUS_A] btb_target_pc;
+  //BTB 查找（预测） ------------ process of looking up the btb based on pc ----------------
+    reg btb_is_matched_r;
+    reg btb_is_call_r;
+    reg btb_is_ret_r;
+    reg btb_is_jmp_r;
+    reg [`INS_BUS_A] btb_target_pc_r;
 
-    reg[BTB_ENTRIES_WIDTH-1:0] btb_rd_entry;
-    integer i0;
+    reg[BTB_ENTRIES_WIDTH-1:0] btb_rd_entry_r;
+    integer query;
 
-    always @ ( * ) begin
-        btb_is_matched = 1'b0;
-        btb_is_call = 1'b0;
-        btb_is_ret = 1'b0;
-        btb_is_jmp = 1'b0;
-        btb_target_pc = pc_i + 32'd4;  //if no btb matched, used btb_target_pc as the default value
-        btb_rd_entry = {BTB_ENTRIES_WIDTH{1'b0}};  //not matched
-
-        for (i0 = 0; i0 < NUM_BTB_ENTRIES; i0 = i0 + 1) begin
-            if ( btb_source_pc_list_r[i0] == pc_i && btb_is_valid_list_r[i0] ) begin    //matched pc
-                btb_is_matched   = 1'b1;
-                btb_is_call = btb_is_call_list_r[i0];
-                btb_is_ret  = btb_is_ret_list_r[i0];
-                btb_is_jmp  = btb_is_jmp_list_r[i0];
-                btb_target_pc = btb_target_pc_list_r[i0];
-                /* verilator lint_off WIDTH */
-                btb_rd_entry   = i0;
-                /* verilator lint_on WIDTH */
-
-            /* $display("got btb: matched index=%d, pc=%h, target=%h, ret=%d, call=%d, jmp=%d, next_taken=%h",
-                         btb_rd_entry, pc_i, btb_target_pc,
-                         btb_is_ret, btb_is_call, btb_is_jmp, bht_predict_taken);  */
-
-            end  //if (btb_source_pc_list_r[i0] == pc_i) begin
-        end  //  for (i0 = 0; i0 < NUM_BTB_ENTRIES; i0 = i0 + 1) begin
-    end // always @ ( * ) begin
+    always @ (*)
+    begin
+      btb_is_matched_r = 1'b0;
+      btb_is_call_r = 1'b0;
+      btb_is_ret_r = 1'b0;
+      btb_is_jmp_r = 1'b0;
+      btb_target_pc_r = pc_i + 32'd4; //if no btb matched, used btb_target_pc_r as the default value
+      btb_rd_entry_r = {BTB_ENTRIES_WIDTH{1'b0}};  //not matched
+      for (query = 0; query < NUM_BTB_ENTRIES; query = query + 1)
+      //BTB 列表中包括一有效项，其源PC与当前输入的PC相同
+        if (btb_source_pc_list_r[query] == pc_i && btb_is_valid_list_r[query])
+        begin
+          btb_is_matched_r = 1'b1;
+          {btb_is_call_r, btb_is_ret_r, btb_is_jmp_r, btb_target_pc_r} = {btb_is_call_list_r[query], btb_is_ret_list_r[query], btb_is_jmp_list_r[query], btb_target_pc_list_r[query]};
+          /* verilator lint_off WIDTH */
+          btb_rd_entry_r = query; //查询（读）匹配项的序号
+          /* verilator lint_on WIDTH */
+        end
+    end
 
     // further check ras matched or not, if yes, get the next pc from the RAS
-    wire ras_call_matched = (btb_is_matched & btb_is_call);
-    wire ras_ret_matched  = (btb_is_matched & btb_is_ret);
+    wire ras_call_matched_w = (btb_is_matched_r & btb_is_call_r);
+    wire ras_ret_matched  = (btb_is_matched_r & btb_is_ret_r);
 
-    // --------------------  process of updating the btb ----------------------------
+  //更新 BTB
   // the btb entry to be updated
     reg[BTB_ENTRIES_WIDTH-1:0] btb_write_entry_r;
   // allocate a new entry to store the branch target
@@ -134,7 +122,7 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
 
     reg btb_hit_r;
     reg btb_alloc_req;
-    integer  i1;
+    integer i1;
 
     always @ (*)
     begin
@@ -143,67 +131,53 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
       btb_alloc_req  = 1'b0;
 
       // Misprediction - learn / update branch details
+    //发生分支，并且分支转移
       if (branch_request_i && branch_is_taken_i)
       begin
         for (i1 = 0; i1 < NUM_BTB_ENTRIES; i1 = i1 + 1)
-        begin
+        //BTB 列表中包括一有效项，其PC与当前分支操作的PC相同
           if (btb_source_pc_list_r[i1] == branch_source_i && btb_is_valid_list_r[i1])
           begin
             btb_hit_r = 1'b1;
             /* verilator lint_off WIDTH */
             btb_write_entry_r = i1;
             /* verilator lint_on WIDTH */
-          end  // if (btb_source_pc_list_r[i1] == branch_source_i) begin
-        end  // for (i1 = 0; i1 < NUM_BTB_ENTRIES; i1 = i1 + 1) begin
-        btb_alloc_req = ~btb_hit_r;
-      end  //if (branch_request_i) begin
-    end //always @ ( * ) begin
+          end
+        btb_alloc_req = ~btb_hit_r; //若无匹配项，则分配一个 BTB
+      end
+    end
 
-    integer btb_entry;
+    integer update;
     always @ (posedge clk_i or negedge n_rst_i)
-    begin
       if (n_rst_i == `RST_EN)
-        for (btb_entry = 0; btb_entry < NUM_BTB_ENTRIES; btb_entry = btb_entry + 1)
+        for (update = 0; update < NUM_BTB_ENTRIES; update = update + 1)
         begin
-          /// init the btb
-          btb_is_valid_list_r[btb_entry] <= 1'b0;
-          btb_is_call_list_r[btb_entry] <= 1'b0;
-          btb_is_ret_list_r[btb_entry] <= 1'b0;
-          btb_is_jmp_list_r[btb_entry] <= 1'b0;
-          btb_source_pc_list_r[btb_entry] <= 32'd0;
-          btb_target_pc_list_r[btb_entry] <= 32'd0;
+          btb_is_valid_list_r[update] <= 1'b0;
+          btb_is_call_list_r[update] <= 1'b0;
+          btb_is_ret_list_r[update] <= 1'b0;
+          btb_is_jmp_list_r[update] <= 1'b0;
+          btb_source_pc_list_r[update] <= 32'd0;
+          btb_target_pc_list_r[update] <= 32'd0;
         end
       else
-      begin
-          if (branch_request_i && branch_is_taken_i)
+        if (branch_request_i && branch_is_taken_i)
+          if (btb_hit_r)//更新命中 BTB的各字段值
           begin
-              if (btb_hit_r) begin
-                  /*
-                  $display("update btb: matched index=%d, pc=%h, target=%h, ret=%d, call=%d, jmp=%d",
-                            btb_write_entry_r, branch_source_i, branch_target_i,
-                            branch_is_ret_i, branch_is_call_i, branch_is_jmp_i); */
-                  btb_source_pc_list_r[btb_write_entry_r] <= branch_source_i;
-                  btb_target_pc_list_r[btb_write_entry_r] <= branch_target_i;
-                  btb_is_call_list_r[btb_write_entry_r] <= branch_is_call_i;
-                  btb_is_ret_list_r[btb_write_entry_r] <= branch_is_ret_i;
-                  btb_is_jmp_list_r[btb_write_entry_r] <= branch_is_jmp_i;
-              end else begin  // Miss - allocate entry
-                  /*
-                  $display("update btb: allocated index=%d, pc=%h, target=%h, ret=%d, call=%d, jmp=%d",
-                            btb_alloc_entry_w, branch_source_i, branch_target_i,
-                            branch_is_ret_i, branch_is_call_i, branch_is_jmp_i); */
-
-                  btb_is_valid_list_r[btb_alloc_entry_w] <= 1'b1;
-                  btb_source_pc_list_r[btb_alloc_entry_w] <= branch_source_i;
-                  btb_target_pc_list_r[btb_alloc_entry_w] <= branch_target_i;
-                  btb_is_call_list_r[btb_alloc_entry_w]<= branch_is_call_i;
-                  btb_is_ret_list_r[btb_alloc_entry_w] <= branch_is_ret_i;
-                  btb_is_jmp_list_r[btb_alloc_entry_w] <= branch_is_jmp_i;
-              end // if (btb_hit_r == 1'b1) begin
-          end // if (branch_request_i) begin
-      end // if (n_rst_i == `RST_EN) begin
-    end  //always @ (posedge clk_i or negedge  n_rst_i) begin
-
+            btb_is_call_list_r[btb_write_entry_r] <= branch_is_call_i;
+            btb_is_ret_list_r[btb_write_entry_r] <= branch_is_ret_i;
+            btb_is_jmp_list_r[btb_write_entry_r] <= branch_is_jmp_i;
+            btb_source_pc_list_r[btb_write_entry_r] <= branch_source_i;
+            btb_target_pc_list_r[btb_write_entry_r] <= branch_target_i;
+          end
+          else//分配 BTB
+          begin
+            btb_is_valid_list_r[btb_alloc_entry_w] <= 1'b1;
+            btb_is_call_list_r[btb_alloc_entry_w]<= branch_is_call_i;
+            btb_is_ret_list_r[btb_alloc_entry_w] <= branch_is_ret_i;
+            btb_is_jmp_list_r[btb_alloc_entry_w] <= branch_is_jmp_i;
+            btb_source_pc_list_r[btb_alloc_entry_w] <= branch_source_i;
+            btb_target_pc_list_r[btb_alloc_entry_w] <= branch_target_i;
+          end
 
     //-----------------------------------------------------------------
     // Return Address Stack
@@ -262,7 +236,7 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
             ras_speculative_next_index = ras_proven_curr_index - 1;
             // $display("ras[ret]: copy from authenticated ras, next_index=%d, target_pc=%h", ras_speculative_next_index, branch_target_i);
         // Speculative call / returns
-        end else if (ras_call_matched && stall_i == 1'b0) begin
+        end else if (ras_call_matched_w && stall_i == 1'b0) begin
             ras_speculative_next_index = ras_speculative_curr_index + 1;
             // $display("ras: bpu push, next_index=%d, pc=%h", ras_speculative_next_index, pc_i);
         end else if (ras_ret_matched && stall_i == 1'b0) begin
@@ -284,7 +258,7 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
                 ras_list[ras_speculative_next_index] <= branch_source_i + 4;
                 ras_speculative_curr_index <= ras_speculative_next_index;
                 // $display("ras: exu push, curr_index=%d, target_pc=%h", ras_speculative_next_index, branch_source_i + 4);
-            end else if (ras_call_matched && stall_i == 1'b0) begin
+            end else if (ras_call_matched_w && stall_i == 1'b0) begin
                 ras_list[ras_speculative_next_index] <= pc_i + 4;
                 ras_speculative_curr_index <= ras_speculative_next_index;
                 // $display("ras: bpu push, curr_index=%d, target_pc=%h", ras_speculative_next_index, pc_i + 4);
@@ -309,9 +283,9 @@ module branch_prediction #( parameter NUM_RAS_ENTRIES  = 8,
     // Outputs
 
     // the next_pc predicted as below:
-    assign next_pc_o = ras_ret_matched ? ras_pred_pc : ( btb_is_matched & (bht_predict_taken | btb_is_jmp | btb_is_call) ) ? btb_target_pc : pc_i + 4;
+    assign next_pc_o = ras_ret_matched ? ras_pred_pc : ( btb_is_matched_r & (bht_predict_taken_w | btb_is_jmp_r | btb_is_call_r) ) ? btb_target_pc_r : pc_i + 4;
     // taken or not_taken was predicted as below:
-    assign next_taken_o = (btb_is_matched & (btb_is_call | btb_is_ret | bht_predict_taken | btb_is_jmp)) ? 1'b1 : 1'b0;
+    assign next_taken_o = (btb_is_matched_r & (btb_is_call_r | btb_is_ret_r | bht_predict_taken_w | btb_is_jmp_r)) ? 1'b1 : 1'b0;
 
   endmodule
 
