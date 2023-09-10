@@ -58,7 +58,7 @@ module bus #(
   logic [NumBitsDeviceSel-1:0] device_sel_req, device_sel_resp;
 
   // Master select prio arbiter
-  always @ ( * ) begin
+  always @ (*) begin
     host_sel_req = '0;
     for (integer host = NrHosts - 1; host >= 0; host = host - 1) begin
       if (host_req_i[host]) begin
@@ -68,7 +68,7 @@ module bus #(
   end
 
   // Device select
-  always @ ( * ) begin
+  always @ (*) begin
     device_sel_req = '0;
     for (integer device = 0; device < NrDevices; device = device + 1) begin
       if ((host_addr_i[host_sel_req] & cfg_device_addr_mask[device]) == cfg_device_addr_base[device]) begin
@@ -88,7 +88,7 @@ module bus #(
      end
   end
 
-  always @ ( * ) begin
+  always @ (*) begin
     for (integer device = 0; device < NrDevices; device = device + 1) begin
       if (NumBitsDeviceSel'(device) == device_sel_req) begin
         device_req_o[device] = host_req_i[host_sel_req];
@@ -106,7 +106,7 @@ module bus #(
     end
   end
 
-  always @ ( * ) begin
+  always @ (*) begin
     for (integer host = 0; host < NrHosts; host = host + 1) begin
       host_gnt_o[host] = 1'b0;
       if (NumBitsHostSel'(host) == host_sel_resp) begin

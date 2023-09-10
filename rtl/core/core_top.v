@@ -274,7 +274,7 @@
     );
 
 
-      branch_prediction bp0(
+    branch_prediction bp0(
       .clk_i(clk_i),
       .n_rst_i(n_rst_i),
 

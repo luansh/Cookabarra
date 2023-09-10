@@ -116,7 +116,7 @@ module timer #(
   assign timer_intr_o = interrupt_q;
 
   // Read data
-  always @ ( * ) begin
+  always @ (*) begin
     rdata_d = 'b0;
     error_d = 1'b0;
     case (timer_addr_i[ADDR_OFFSET-1:0])
