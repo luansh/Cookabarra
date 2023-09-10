@@ -40,7 +40,7 @@
     /* ------------  signals from CSR  ---------------*/
     output reg ie_type_o,
     output reg set_cause_o,
-    output reg[3:0] trap_casue_o,
+    output reg[3:0] trap_cause_o,
 
     output reg set_epc_o,
     output reg[`REG_BUS_D] epc_o,
@@ -69,14 +69,14 @@
 
     /* --------------------- handle the the interrupt and exceptions -------------------*/
     // state registers
-    reg [3:0] curr_state;
-    reg [3:0] next_state;
+    reg [3:0] cur_state_r;
+    reg [3:0] next_state_r;
 
     // machine states
-    parameter STATE_RESET     = 4'b0001;
-    parameter STATE_OPERATING   = 4'b0010;
-    parameter STATE_TRAP_TAKEN  = 4'b0100;
-    parameter STATE_TRAP_RETURN   = 4'b1000;
+    parameter STATE_RESET = 4'b0001;
+    parameter STATE_OPERATING = 4'b0010;
+    parameter STATE_TRAP_TAKEN = 4'b0100;
+    parameter STATE_TRAP_RETURN = 4'b1000;
 
     //exception_i ={25'b0 ,misaligned_load, misaligned_store, illegal_inst, misaligned_inst, ebreak, ecall, mret}
     wire mret;
@@ -104,53 +104,31 @@
     wire trap_happened;
     assign trap_happened = (mstatus_ie_i & ip) | ecall | misaligned_inst | illegal_inst | misaligned_store | misaligned_load;
 
-    always @ (*)   begin
-      case(curr_state)
-        STATE_RESET: begin
-          next_state = STATE_OPERATING;
-        end
-
-        STATE_OPERATING: begin
-          if (trap_happened)
-            next_state = STATE_TRAP_TAKEN;
-          else if (mret)
-            next_state = STATE_TRAP_RETURN;
-          else
-            next_state = STATE_OPERATING;
-        end
-
-        STATE_TRAP_TAKEN: begin
-          next_state = STATE_OPERATING;
-        end
-
-        STATE_TRAP_RETURN: begin
-          next_state = STATE_OPERATING;
-        end
-
-        default: begin
-          next_state = STATE_OPERATING;
-        end
+    always @ (*)
+      case (cur_state_r)
+        STATE_RESET: next_state_r = STATE_OPERATING;
+        STATE_OPERATING:
+          if (trap_happened) next_state_r = STATE_TRAP_TAKEN;
+          else if (mret) next_state_r = STATE_TRAP_RETURN;
+          else next_state_r = STATE_OPERATING;
+        STATE_TRAP_TAKEN: next_state_r = STATE_OPERATING;
+        STATE_TRAP_RETURN: next_state_r = STATE_OPERATING;
+        default: next_state_r = STATE_OPERATING;
       endcase
-    end
 
-    always @(posedge clk_i) begin
-      if (n_rst_i == `RST_EN)
-        curr_state <= STATE_RESET;
-      else
-        curr_state <= next_state;
-    end
+    always @(posedge clk_i)
+      cur_state_r <= (n_rst_i == `RST_EN) ? STATE_RESET : next_state_r;
 
     assign epc_o = pc_i;
 
-    reg [1:0] mtvec_mode; // machine trap mode
-    reg [29:0] mtvec_base; // machine trap base address
+    reg [29:0] mtvec_base_r; // machine trap base address
+    reg [1:0] mtvec_mode_r; // machine trap mode
 
-    assign mtvec_base = mtvec_i[31:2];
-    assign mtvec_mode = mtvec_i[1:0];
+    assign {mtvec_base_r, mtvec_mode_r} = mtvec_i;
 
-    reg[`REG_BUS_D] trap_mux_out;
-    wire [`REG_BUS_D] vec_mux_out;
-    wire [`REG_BUS_D] base_offset;
+    reg[`REG_BUS_D] trap_mux_out_r;
+    wire [`REG_BUS_D] vec_mux_out_w;
+    wire [`REG_BUS_D] base_offset_w;
 
     // mtvec = { base[maxlen-1:2], mode[1:0]}
     // The value in the BASE field must always be aligned on a 4-byte boundary, and the MODE setting may impose
@@ -158,13 +136,16 @@
     // when mode =2'b00, direct mode, When MODE=Direct, all traps into machine mode cause the pc to be set to the address in the BASE field.
     // when mode =2'b01, Vectored mode, all synchronous exceptions into machine mode cause the pc to be set to the address in the BASE
     // field, whereas interrupts cause the pc to be set to the address in the BASE field plus four times the interrupt cause number.
-    assign base_offset = {26'b0, trap_casue_o, 2'b0};  // trap_casue_o * 4
-    assign vec_mux_out = mtvec_i[0] ? {mtvec_base, 2'b00} + base_offset : {mtvec_base, 2'b00};
-    assign trap_mux_out = ie_type_o ? vec_mux_out : {mtvec_base, 2'b00};
+
+  //mtvec 最低位为 1，对于中断，使用向量地址模式（每种中断对应一个向量地址）
+    assign base_offset_w = {26'd0, trap_cause_o, 2'd0};
+    assign vec_mux_out_w = mtvec_i[0] ? {mtvec_base_r, 2'd0} + base_offset_w : {mtvec_base_r, 2'd0};
+    assign trap_mux_out_r = ie_type_o ? vec_mux_out_w : {mtvec_base_r, 2'd0};
 
     always @ (*)
-      case (curr_state)
-        STATE_RESET: begin
+      case (cur_state_r)
+        STATE_RESET:
+        begin
           flush_o = 1'b0;
           new_pc_o = `REBOOT_ADDRESS;
           set_epc_o = 1'b0;
@@ -172,8 +153,8 @@
           mstatus_ie_clear_o = 1'b0;
           mstatus_ie_set_o = 1'b0;
         end
-
-        STATE_OPERATING: begin
+        STATE_OPERATING:
+        begin
           flush_o = 1'b0;
           new_pc_o = `ZERO_WORD;
           set_epc_o = 1'b0;
@@ -181,17 +162,18 @@
           mstatus_ie_clear_o = 1'b0;
           mstatus_ie_set_o = 1'b0;
         end
-
-        STATE_TRAP_TAKEN: begin
+        STATE_TRAP_TAKEN:
+        begin
           flush_o = 1'b1;
-          new_pc_o = trap_mux_out;     // jump to the trap handler
+     // jump to the trap handler
+          new_pc_o = trap_mux_out_r;
           set_epc_o = 1'b1;        // update the epc csr
           set_cause_o = 1'b1;      // update the mcause csr
           mstatus_ie_clear_o = 1'b1;   // disable the mie bit in the mstatus
           mstatus_ie_set_o = 1'b0;
         end
-
-        STATE_TRAP_RETURN: begin
+        STATE_TRAP_RETURN:
+        begin
           flush_o = 1'b1;
           new_pc_o = epc_i;
           set_epc_o = 1'b0;
@@ -199,8 +181,8 @@
           mstatus_ie_clear_o = 1'b0;
           mstatus_ie_set_o = 1'b1;    //enable the mie
         end
-
-        default: begin
+        default:
+        begin
           flush_o = 1'b0;
           new_pc_o = `ZERO_WORD;
           set_epc_o = 1'b0;
@@ -212,59 +194,45 @@
 
     /* update the mcause csr */
     always @(posedge clk_i)
-    begin
-      if (n_rst_i == `RST_EN) begin
-        trap_casue_o <= 4'b0;
-        ie_type_o <= 1'b0;
-        set_mtval_o <= 1'b0;
-        mtval_o <= `ZERO_WORD;
-
-      end else if (curr_state == STATE_OPERATING) begin
-        if (mstatus_ie_i & eip) begin
-          trap_casue_o <= 4'b1011; // M-mode external interrupt
-          ie_type_o <= 1'b1;
-        end else if (mstatus_ie_i & sip) begin
-          trap_casue_o <= 4'b0011; // M-mode software interrupt
-          ie_type_o <= 1'b1;
-        end else if (mstatus_ie_i & tip) begin
-          trap_casue_o <= 4'b0111; // M-mode timer interrupt
-          ie_type_o <= 1'b1;
-
-        end else if (misaligned_inst) begin
-          trap_casue_o <= 4'b0000; // Instruction address misaligned, cause = 0
-          ie_type_o <= 1'b0;
-          set_mtval_o <= 1'b1;
-          mtval_o <= pc_i;
-
-        end else if (illegal_inst) begin
-          trap_casue_o <= 4'b0010; // Illegal instruction, cause = 2
-          ie_type_o <= 1'b0;
-          set_mtval_o <= 1'b1;
-          mtval_o <= ins_i;   //set to the instruction
-
-        end else if (ebreak) begin
-          trap_casue_o <= 4'b0011; // Breakpoint, cause =3
-          ie_type_o <= 1'b0;
-          set_mtval_o <= 1'b1;
-          mtval_o <= pc_i;
-
-        end else if (misaligned_store) begin
-          trap_casue_o <= 4'b0110; // Store address misaligned  //cause 6
-          ie_type_o <= 1'b0;
-          set_mtval_o <= 1'b1;
-          mtval_o <= pc_i;
-
-        end else if (misaligned_load) begin
-          trap_casue_o <= 4'b0100; // Load address misaligned  cause =4
-          ie_type_o <= 1'b0;
-          set_mtval_o <= 1'b1;
-          mtval_o <= pc_i;
-
-        end else if (ecall) begin
-          trap_casue_o <= 4'b1011; // ecall from M-mode, cause = 11
-          ie_type_o <= 1'b0;
-        end
+      if (n_rst_i == `RST_EN)
+      begin
+        {ie_type_o, trap_cause_o} <= {1'b0, 4'b0};
+        {set_mtval_o, mtval_o} <= {1'b0, `ZERO_WORD};
       end
-    end
+      else if (cur_state_r == STATE_OPERATING)
+ // M-mode external interrupt
+        if (mstatus_ie_i & eip) {ie_type_o, trap_cause_o} <= {1'b1, 4'b1011};
+// M-mode software interrupt
+        else if (mstatus_ie_i & sip) {ie_type_o, trap_cause_o} <= {1'b1, 4'b0011};
+ // M-mode timer interrupt
+        else if (mstatus_ie_i & tip) {ie_type_o, trap_cause_o} <= {1'b1, 4'b0111};
+ // Instruction address misaligned, cause = 0
+        else if (misaligned_inst)
+        begin
+          {ie_type_o, trap_cause_o} <= {1'b0, 4'b0000};
+          {set_mtval_o, mtval_o} <= {1'b1, pc_i};
+        end
+// Illegal instruction, cause = 2
+        else if (illegal_inst)
+        begin
+          {ie_type_o, trap_cause_o} <= {1'b0, 4'b0010};
+          {set_mtval_o, mtval_o} <= {1'b1, ins_i};//非法指令的具体值
+        end
+        else if (ebreak)
+        begin
+          {ie_type_o, trap_cause_o} <= {1'b0, 4'b0011};
+          {set_mtval_o, mtval_o} <= {1'b1, pc_i};
+        end
+        else if (misaligned_store)
+        begin
+          {ie_type_o, trap_cause_o} <= {1'b0, 4'b0110};
+          {set_mtval_o, mtval_o} <= {1'b1, pc_i};
+        end
+        else if (misaligned_load)
+        begin
+          {ie_type_o, trap_cause_o} <= {1'b0, 4'b0100};
+          {set_mtval_o, mtval_o} <= {1'b1, pc_i};
+        end
+        else if (ecall) {ie_type_o, trap_cause_o} <= {1'b0, 4'b1011};
 
   endmodule

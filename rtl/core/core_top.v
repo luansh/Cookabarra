@@ -703,7 +703,7 @@
           // to csr
           .ie_type_o(ctrl_ie_type_o),
           .set_cause_o(ctrl_set_cause_o),
-          .trap_casue_o(ctrl_trap_casue_o),
+          .trap_cause_o(ctrl_trap_casue_o),
 
           .set_epc_o(ctrl_set_epc_o),
           .epc_o(ctrl_epc_o),

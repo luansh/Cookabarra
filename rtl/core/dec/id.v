@@ -86,7 +86,7 @@
     reg excepttype_mret;
     reg excepttype_ecall;
     reg excepttype_ebreak;
-    reg excepttype_illegal_inst;
+    reg excepttype_illegal_ins_r;
 
     assign stall_req_o = rs1_load_depend | rs2_load_depend;
 
@@ -107,7 +107,7 @@
     assign rs2_ra_o = rs2_w;
 
     //exception ={ misaligned_load, misaligned_store, illegal_inst, misaligned_inst,  ebreak, ecall,  mret}
-    assign exception_o = {28'b0, excepttype_illegal_inst, excepttype_ebreak, excepttype_ecall, excepttype_mret};
+    assign exception_o = {28'd0, excepttype_illegal_ins_r, excepttype_ebreak, excepttype_ecall, excepttype_mret};
 
     always @ (*) begin
       if (n_rst_i == `RST_EN) begin
@@ -134,7 +134,7 @@
             excepttype_ecall = `False_v;
             excepttype_mret = `False_v;
             excepttype_ebreak = `False_v;
-            excepttype_illegal_inst = `False_v;
+            excepttype_illegal_ins_r = `False_v;
 
             ins_valid_r = `INS_VALID;
         end
@@ -159,7 +159,7 @@
             excepttype_ecall = `False_v;
             excepttype_mret = `False_v;
             excepttype_ebreak = `False_v;
-            excepttype_illegal_inst = `False_v;
+            excepttype_illegal_ins_r = `False_v;
 
             ins_valid_r = `INS_VALID;
         end
@@ -183,7 +183,7 @@
             excepttype_ecall = `False_v;
             excepttype_mret = `False_v;
             excepttype_ebreak = `False_v;
-            excepttype_illegal_inst = `False_v;
+            excepttype_illegal_ins_r = `False_v;
 
             ins_valid_r = `INS_INVALID;
 
@@ -454,9 +454,10 @@
                         end
 
                         /*----------csr special instruction, ecall, ebreak, eret, mret, sret, wfi, sfence.wma -------------*/
-                        `INS_CSR_SPECIAL: begin
-                            if ((fun7==7'b0000000) &&  (rs2_w == 5'b00000))  begin // INS_ECALL:
-
+                        `INS_CSR_SPECIAL:
+                        begin
+                            if ((fun7 == 7'b0000000) &&  (rs2_w == 5'd0))
+                            begin // INS_ECALL:
                                 // {00000, 00, rs2_w(00000), rs1_w(00000), fun3(000), rd_w(00000), opcode_w = 7b'1110011 }
                                 // Make a request to the supporting execution environment.
                                 // When executed in U-mode, S-mode, or M-mode, it generates an
@@ -464,18 +465,15 @@
                                 // exception, or environment-call-from-M-mode exception, respectively, and
                                 // performs no other operation.
                                 // ecall  :   RaiseException(EnvironmentCall)
-                                alusel_o = `EXE_TYPE_NOP;
-                                uop_o = `UOP_ECALL;
-                                excepttype_ecall= `True_v;
+                                {alusel_o, uop_o, excepttype_ecall} = {`EXE_TYPE_NOP, `UOP_ECALL, `True_v};
                             end
 
-                            if ( (fun7==7'b0011000) && (rs2_w == 5'b00010)) begin   //INS_MRET
+                            if ((fun7 == 7'b0011000) && (rs2_w == 5'd2))
+                            begin   //INS_MRET
                                 // {00110, 00, rs2_w(00010), rs1_w(00000), fun3(000), rd_w(00000), opcode_w = 7b'1110011 }
                                 // Return from traps in M-mode, and MRET copies MPIE into MIE, then sets MPIE.
                                 // mret  :   ExceptionReturn(Machine)
-                                alusel_o = `EXE_TYPE_NOP;
-                                uop_o = `UOP_MRET;
-                                excepttype_mret = `True_v;
+                              {alusel_o, uop_o, excepttype_mret} = {`EXE_TYPE_NOP, `UOP_MRET, `True_v};
                             end
 
 /*

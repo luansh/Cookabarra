@@ -10,11 +10,9 @@
 
 `include "defines.v"
 
-module mem(
-
+  module mem(
     input wire n_rst_i,
-
-    /*-- signals from exu-----*/
+  //From EX
     input wire[`REG_BUS_D] exception_i,       // exception type
     input wire[`REG_BUS_D] pc_i,       // the pc when exception happened
     input wire[`REG_BUS_D] ins_i,            // the instruction caused the exception
@@ -64,32 +62,25 @@ module mem(
     reg mem_we;
     reg mem_re;
 
-    reg addr_align_halfword;
-    reg addr_align_word;
+    reg align_halfword_r;
+    reg align_word_r;
 
-    reg load_operation;
-    reg store_operation;
+    reg load_operation_r;
+    reg store_operation_r;
 
-    reg load_addr_align_exception;
-    reg store_addr_align_exception;
+    reg load_align_exception_r;
+    reg store_align_exception_r;
 
-    assign load_operation = ( (uop_i == `UOP_LH) || (uop_i == `UOP_LHU) ||(uop_i == `UOP_LW) ) ? 1'b1 : 1'b0;
+    assign load_operation_r = ((uop_i == `UOP_LH) || (uop_i == `UOP_LHU) || (uop_i == `UOP_LW)) ? 1'b1 : 1'b0;
+    assign store_operation_r = ((uop_i == `UOP_SH) ||(uop_i == `UOP_SW)) ? 1'b1 : 1'b0;
+  //由于以下二者的uop 是互斥的，二者最多有一个为真，其反即为异常
+    assign align_halfword_r = (((uop_i == `UOP_LH) || (uop_i == `UOP_LHU) || (uop_i == `UOP_SH)) && (~mem_a_i[0])) ? 1'b1 : 1'b0;
+    assign align_word_r = (((uop_i == `UOP_LW) || (uop_i == `UOP_SW)) && (mem_a_i[1:0] == 2'd0)) ? 1'b1 : 1'b0;
 
-    assign store_operation = ( (uop_i == `UOP_SH) ||(uop_i == `UOP_SW) ) ? 1'b1 : 1'b0;
+    assign load_align_exception_r = (~(align_halfword_r || align_word_r)) & load_operation_r;
+    assign store_align_exception_r = (~(align_halfword_r || align_word_r)) & store_operation_r;
 
-
-    assign addr_align_halfword =(   ( (uop_i == `UOP_SH) || (uop_i == `UOP_LH) || (uop_i == `UOP_LHU) )
-                                 && (mem_a_i[0] == 1'b0) ) ? 1'b1 : 1'b0;
-
-    assign addr_align_word =(   ( (uop_i == `UOP_SW) || (uop_i == `UOP_LW) )
-                             && (mem_a_i[1:0] == 2'b00 ) ) ? 1'b1 : 1'b0;
-
-    assign load_addr_align_exception = (~ (addr_align_halfword || addr_align_word)) & load_operation;
-    assign store_addr_align_exception = (~ (addr_align_halfword || addr_align_word)) & store_operation;
-
-    // to ctrl module
-    //exception ={ misaligned_load, misaligned_store, illegal_inst, misaligned_inst, ebreak, ecall, mret}
-    assign exception_o = {25'b0, load_addr_align_exception, store_addr_align_exception, exception_i[4:0]};
+    assign exception_o = {25'd0, load_align_exception_r, store_align_exception_r, exception_i[4:0]};
 
     // to the next stage
     assign pc_o = pc_i;

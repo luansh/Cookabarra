@@ -1,15 +1,13 @@
 `include "defines.v"
 
-module ex(
-
+  module ex(
     input wire n_rst_i,
-
-    /* ------- signals from the decoder unit --------*/
+  //From ID
     input wire[`REG_BUS_D] pc_i,
     input wire[`REG_BUS_D] ins_i,
 
     input wire[`REG_BUS_D] next_pc_i,
-	input wire next_taken_i,
+  	input wire next_taken_i,
     input wire branch_slot_end_i,
 
     input wire[`AluSelBus] alusel_i,
