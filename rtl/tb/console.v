@@ -29,9 +29,9 @@ module console #(
   input wire we_i,
   input wire[3:0] be_i,
   input wire[31:0] addr_i,
-  input wire[31:0] wdata_i,
+  input wire[31:0] wd_i,
   output reg rvalid_o,
-  output reg[31:0] rdata_o
+  output reg[31:0] rd_o
 );
 
   localparam reg[7:0] CHAR_OUT_ADDR = 8'h0;
@@ -65,8 +65,8 @@ module console #(
 
           CHAR_OUT_ADDR: begin
             if (be_i[0]) begin
-              $fwrite(log_fd, "%c", wdata_i[7:0]);
-              $display("%c", wdata_i[7:0]);
+              $fwrite(log_fd, "%c", wd_i[7:0]);
+              $display("%c", wd_i[7:0]);
               if (FlushOnChar) begin
                 $fflush(log_fd);
               end
@@ -74,7 +74,7 @@ module console #(
           end
 
           SIM_CTRL_ADDR: begin
-            if ((be_i[0] & wdata_i[0]) && (sim_finish == 'b0)) begin
+            if ((be_i[0] & wd_i[0]) && (sim_finish == 'b0)) begin
               $display("Terminating simulation by software request.");
               sim_finish <= 3'b001;
             end
@@ -96,5 +96,5 @@ module console #(
     end
   end
 
-  assign rdata_o = '0;
+  assign rd_o = '0;
 endmodule

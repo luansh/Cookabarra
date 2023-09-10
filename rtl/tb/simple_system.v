@@ -143,9 +143,9 @@ module simple_system(
         .we_i      (device_we[`DEV_CONSOLE]),
         .be_i      (device_be[`DEV_CONSOLE]),
         .addr_i    (device_addr[`DEV_CONSOLE]),
-        .wdata_i   (device_wdata[`DEV_CONSOLE]),
+        .wd_i   (device_wdata[`DEV_CONSOLE]),
         .rvalid_o  (device_rvalid[`DEV_CONSOLE]),
-        .rdata_o   (device_rdata[`DEV_CONSOLE])
+        .rd_o   (device_rdata[`DEV_CONSOLE])
         );
 
     timer #(

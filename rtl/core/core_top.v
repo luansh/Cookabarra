@@ -732,13 +732,13 @@
       .irq_external_i(irq_external_i),
 
           // read csr
-      .raddr_i(ex_csr_raddr_o),
-      .rdata_o(csr_rdata_o),
+      .ra_i(ex_csr_raddr_o),
+      .rd_o(csr_rdata_o),
 
           //write csr
       .we_i(wb_csr_we_i),
-      .waddr_i(wb_csr_waddr_i),
-      .wdata_i(wb_csr_wdata_i),
+      .wa_i(wb_csr_waddr_i),
+      .wd_i(wb_csr_wdata_i),
 
           .instret_incr_i(wb_instret_incr_i),
 

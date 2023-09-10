@@ -32,14 +32,14 @@ module csr_file(
     input wire irq_external_i,
 
     /* --- exu read csr -------------------*/
-    input wire[`REG_BUS_D] raddr_i,           // the register to read
-    output reg[`REG_BUS_D] rdata_o,           // ouput the register
+    input wire[`REG_BUS_D] ra_i,           // the register to read
+    output reg[`REG_BUS_D] rd_o,           // ouput the register
 
 
     /*------ wb module update the csr  --------*/
     input wire we_i,            // write enable
-    input wire[`REG_BUS_D] waddr_i,         // the register to write
-    input wire[`REG_BUS_D] wdata_i,         // the data to write
+    input wire[`REG_BUS_D] wa_i,         // the register to write
+    input wire[`REG_BUS_D] wd_i,         // the data to write
 
     input wire instret_incr_i,   // 0 or 1 indicate increase the counter of instret
 
@@ -147,9 +147,9 @@ module csr_file(
         if (n_rst_i == `RST_EN) begin
             mstatus_ie <= 1'b0;
             mstatus_pie <= 1'b1;
-        end else if ( (waddr_i[11:0] == `CSR_MSTATUS_ADDR) && (we_i == `WriteEnable) ) begin
-            mstatus_ie <= wdata_i[3];
-            mstatus_pie <= wdata_i[7];
+        end else if ( (wa_i[11:0] == `CSR_MSTATUS_ADDR) && (we_i == `WriteEnable) ) begin
+            mstatus_ie <= wd_i[3];
+            mstatus_pie <= wd_i[7];
         end else if (mstatus_ie_clear_i == 1'b1) begin
             mstatus_pie <= mstatus_ie;
             mstatus_ie <= 1'b0;
@@ -181,10 +181,10 @@ module csr_file(
             mie_external <= 1'b0;
             mie_timer <= 1'b0;
             mie_sw <= 1'b0;
-        end else if ((waddr_i[11:0] == `CSR_MIE_ADDR) && (we_i == `WriteEnable)) begin
-            mie_external <= wdata_i[11];
-            mie_timer <= wdata_i[7];
-            mie_sw <= wdata_i[3];
+        end else if ((wa_i[11:0] == `CSR_MIE_ADDR) && (we_i == `WriteEnable)) begin
+            mie_external <= wd_i[11];
+            mie_timer <= wd_i[7];
+            mie_sw <= wd_i[3];
         end
     end
 
@@ -202,43 +202,32 @@ module csr_file(
     reg[`REG_BUS_D] mtvec;
     assign mtvec_o = mtvec;
 
-    always @(posedge clk_i) begin
-        if (n_rst_i == `RST_EN) begin
-            mtvec <= `MTVEC_RESET;;
-        end else if ( (waddr_i[11:0] == `CSR_MTVEC_ADDR) && (we_i == `WriteEnable) ) begin
-            mtvec <= wdata_i;
-        end
-    end
-
+  //设置 mtvec
+    always @(posedge clk_i)
+      if (n_rst_i == `RST_EN) mtvec <= `MTVEC_RESET;
+      else if ((wa_i[11:0] == `CSR_MTVEC_ADDR) && (we_i == `WriteEnable)) mtvec <= wd_i;
 
     /*--------------------------------------------- mscratch ----------------------------------------*/
     // mscratch : Typically, it is used to hold a pointer to a machine-mode hart-local context space and swapped
     // with a user register upon entry to an M-mode trap handler.
     reg[`REG_BUS_D] mscratch;
 
-    always @(posedge clk_i) begin
-        if (n_rst_i == `RST_EN)
-            mscratch <= `ZERO_WORD;
-        else if ( (waddr_i[11:0] == `CSR_MSCRATCH_ADDR) && (we_i == `WriteEnable) )
-            mscratch <= wdata_i;
-    end
+    always @(posedge clk_i)
+      if (n_rst_i == `RST_EN) mscratch <= `ZERO_WORD;
+      else if ((wa_i[11:0] == `CSR_MSCRATCH_ADDR) && (we_i == `WriteEnable)) mscratch <= wd_i;
 
-    /*--------------------------------------------- mepc ----------------------------------------*/
-    // When a trap is taken into M-mode, mepc is written with the virtual address of the instruction
+    /*--------------------------------------------- mepc_r ----------------------------------------*/
+    // When a trap is taken into M-mode, mepc_r is written with the virtual address of the instruction
     // that was interrupted or that encountered the exception.
-    // The low bit of mepc (mepc[0]) is always zero.
-    // On implementations that support only IALIGN=32, the two low bits (mepc[1:0]) are always zero.
-    reg[`REG_BUS_D] mepc;
+    // The low bit of mepc_r (mepc_r[0]) is always zero.
+    // On implementations that support only IALIGN=32, the two low bits (mepc_r[1:0]) are always zero.
+    reg[`REG_BUS_D] mepc_r;
 
-    assign epc_o = mepc;
-    always @(posedge clk_i) begin
-        if (n_rst_i == `RST_EN)
-            mepc <= `ZERO_WORD;
-        else if (set_epc_i)
-            mepc <= {epc_i[31:2], 2'b00};
-        else if ( (waddr_i[11:0] == `CSR_MEPC_ADDR) && (we_i == `WriteEnable) )
-            mepc <= {wdata_i[31:2], 2'b00};
-    end
+    assign epc_o = mepc_r;
+    always @(posedge clk_i)
+      if (n_rst_i == `RST_EN) mepc_r <= `ZERO_WORD;
+      else if (set_epc_i) mepc_r <= {epc_i[31:2], 2'd0};
+      else if ((wa_i[11:0] == `CSR_MEPC_ADDR) && (we_i == `WriteEnable)) mepc_r <= {wd_i[31:2], 2'd0};
 
 
     /*--------------------------------------------- mcause ----------------------------------------*/
@@ -263,10 +252,10 @@ module csr_file(
             cause <= trap_casue_i;
             cause_rem <= 27'b0;
             int_or_exc <= ie_type_i;
-        end else if ( (waddr_i[11:0] == `CSR_MCAUSE_ADDR) && (we_i == `WriteEnable) ) begin
-            cause <= wdata_i[3:0];
-            cause_rem <= wdata_i[30:4];
-            int_or_exc <= wdata_i[31];
+        end else if ( (wa_i[11:0] == `CSR_MCAUSE_ADDR) && (we_i == `WriteEnable) ) begin
+            cause <= wd_i[3:0];
+            cause_rem <= wd_i[30:4];
+            int_or_exc <= wd_i[31];
         end
     end
 
@@ -306,92 +295,34 @@ module csr_file(
     reg[`REG_BUS_D] mtval;
     wire MISALIGNED_EXCEPTION;  //todo
 
-    always @(posedge clk_i)  begin
-        if (n_rst_i == `RST_EN)
-            mtval <= 32'b0;
-        else if (set_mtval_i) begin
-            mtval <= mtval_i;
-        end else if ( (waddr_i[11:0] == `CSR_MTVAL_ADDR) && (we_i == `WriteEnable) )
-            mtval <= wdata_i;
-    end
-
-
+    always @(posedge clk_i)
+      if (n_rst_i == `RST_EN) mtval <= 32'd0;
+      else if (set_mtval_i) mtval <= mtval_i;
+      else if ((wa_i[11:0] == `CSR_MTVAL_ADDR) && (we_i == `WriteEnable)) mtval <= wd_i;
 
     /* ----------------------- read csr --------------------------------------*/
-    always @ (*) begin
+    always @ (*)
         // bypass the write port to the read port
-        if ((waddr_i[11:0] == raddr_i[11:0]) && (we_i == `WriteEnable)) begin
-            rdata_o = wdata_i;
-        end else begin
-            case (raddr_i[11:0])
-                `CSR_MVENDORID_ADDR: begin
-                    rdata_o = CSR_MVENDORID_VALUE;
-                end
+      if ((wa_i[11:0] == ra_i[11:0]) && (we_i == `WriteEnable)) rd_o = wd_i;
+      else
+        case (ra_i[11:0])
+          `CSR_MVENDORID_ADDR: rd_o = CSR_MVENDORID_VALUE;
+          `CSR_MARCHID_ADDR: rd_o = CSR_MARCHID_VALUE;
+          `CSR_MIMPID_ADDR: rd_o = CSR_MIMPID_VALUE;
+          `CSR_MHARTID_ADDR: rd_o = CSR_MHARTID;
+          `CSR_MISA_ADDR: rd_o = misa;
+          `CSR_MCYCLE_ADDR, `CSR_CYCLE_ADDR: rd_o = mcycle[`REG_BUS_D];
+          `CSR_MCYCLEH_ADDR, `CSR_CYCLEH_ADDR: rd_o = mcycle[63:32];
+          `CSR_MINSTRET_ADDR: rd_o = minstret[`REG_BUS_D];
+          `CSR_MINSTRETH_ADDR: rd_o = minstret[63:32];
+          `CSR_MSTATUS_ADDR: rd_o = mstatus;
+          `CSR_MIE_ADDR: rd_o = mie;
+          `CSR_MTVEC_ADDR: rd_o = mtvec;
+          `CSR_MSCRATCH_ADDR: rd_o = mscratch;
+          `CSR_MEPC_ADDR: rd_o = mepc_r;
+          `CSR_MCAUSE_ADDR: rd_o = mcause;
+          `CSR_MIP_ADDR: rd_o = mip;
+          default: rd_o = `ZERO_WORD;
+        endcase
 
-                `CSR_MARCHID_ADDR: begin
-                    rdata_o = CSR_MARCHID_VALUE;
-                end
-
-                `CSR_MIMPID_ADDR: begin
-                    rdata_o = CSR_MIMPID_VALUE;
-                end
-
-                `CSR_MHARTID_ADDR: begin
-                    rdata_o = CSR_MHARTID;
-                end
-
-                `CSR_MISA_ADDR: begin
-                    rdata_o = misa;
-                end
-
-                `CSR_MCYCLE_ADDR, `CSR_CYCLE_ADDR: begin
-                    rdata_o = mcycle[`REG_BUS_D];
-                end
-
-                `CSR_MCYCLEH_ADDR, `CSR_CYCLEH_ADDR: begin
-                    rdata_o = mcycle[63:32];
-                end
-
-               `CSR_MINSTRET_ADDR: begin
-                    rdata_o = minstret[`REG_BUS_D];
-                end
-
-                `CSR_MINSTRETH_ADDR: begin
-                    rdata_o = minstret[63:32];
-                end
-
-                `CSR_MSTATUS_ADDR: begin
-                    rdata_o = mstatus;
-                end
-
-                `CSR_MIE_ADDR: begin
-                    rdata_o = mie;
-                end
-
-                `CSR_MTVEC_ADDR: begin
-                    rdata_o = mtvec;
-                end
-
-                `CSR_MSCRATCH_ADDR: begin
-                    rdata_o = mscratch;
-                end
-
-                `CSR_MEPC_ADDR: begin
-                    rdata_o = mepc;
-                end
-
-                `CSR_MCAUSE_ADDR: begin
-                    rdata_o = mcause;
-                end
-
-                `CSR_MIP_ADDR: begin
-                    rdata_o = mip;
-                end
-
-                default: begin
-                    rdata_o = `ZERO_WORD;
-                end
-            endcase // case (waddr_i[11:0])
-        end //end else begin
-    end //always @ (*) begin
-endmodule
+  endmodule
