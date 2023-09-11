@@ -147,7 +147,7 @@
         STATE_RESET:
         begin
           flush_o = 1'b0;
-          new_pc_o = `REBOOT_ADDRESS;
+          new_pc_o = `REBOOT_A;
           set_epc_o = 1'b0;
           set_cause_o = 1'b0;
           mstatus_ie_clear_o = 1'b0;

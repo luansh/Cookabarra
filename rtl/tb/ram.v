@@ -38,8 +38,8 @@ module ram(
     input wire[`INS_BUS_A] pc_i,
     output reg[`INS_BUS_D] ins_o	
 );
-    localparam reg[31:0] CHAR_OUT_ADDR = 32'h00020000;
-    localparam reg[31:0] SIM_CTRL_ADDR = 32'h00020002;
+    localparam reg[31:0] CHAR_OUT_A = 32'h00020000;
+    localparam reg[31:0] SIM_CTRL_A = 32'h00020002;
 
     reg[`INS_BUS_D] mem[0:`InstMemNum-1];
 
@@ -47,7 +47,7 @@ module ram(
 
     /*------------------ data port ----------------------*/
 	always @ (posedge clk_i) begin
-		if ( (ce_i != `CHIP_DISABLE) && (we_i == `WriteEnable) )begin										
+		if ( (ce_i != `CHIP_DISABLE) && (we_i == `WRITE_ENABLE) )begin										
 			if (sel_i[3] == 1'b1) begin
 				mem[addr_i[`DataMemNumLog2+1:2]][31:24] <= data_i[31:24];
 			end 

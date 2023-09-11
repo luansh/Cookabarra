@@ -213,7 +213,7 @@
 
 
       //------------ signals from div -----------------------
-    wire[`DoubleRegBus] div_result_o;
+    wire[`REG_BUS_DOUBLE] div_result_o;
     wire div_ready_o;
 
 
@@ -740,7 +740,7 @@
       .wa_i(wb_csr_waddr_i),
       .wd_i(wb_csr_wdata_i),
 
-          .instret_incr_i(wb_instret_incr_i),
+          .ins_ret_inc_i(wb_instret_incr_i),
 
           //from control
           .ie_type_i(ctrl_ie_type_o),

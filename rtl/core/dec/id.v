@@ -193,20 +193,20 @@
           //由指令中解析 imm、rd地址，将imm 赋值给rd地址
           //由于 imm就绪，we有效，可立即写入（EX在下一周期执行写操作）
             imm_r = {ins_i[31:12], 12'd0};
-            {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
+            {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_LOGIC, `UOP_LUI};
           end
           `INS_OPCODE_AUIPC:
           begin
             imm_r = {ins_i[31:12], 12'd0};
-            {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
+            {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_LOGIC, `UOP_AUIPC};
           end
           `INS_OPCODE_JAL:
           begin
           //跳转+-1M
             imm_r = {{12{ins_i[31]}}, ins_i[19:12], ins_i[20], ins_i[30:21], 1'b0};
-            {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
+            {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_BRANCH, `UOP_JAL};
           end
           `INS_OPCODE_JALR:
@@ -214,7 +214,7 @@
             imm_r = {{20{ins_i[31]}}, ins_i[31:20]};
           //读取rs1 中的值，作为pc的基址
             rs1_re_o = 1'b1;
-            {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
+            {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_BRANCH, `UOP_JALR};
           end
           `INS_OPCODE_BRANCH:
@@ -246,7 +246,7 @@
           begin
             imm_r = {{20{ins_i[31]}}, ins_i[31:20]};
             rs1_re_o = 1'b1;
-            {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
+            {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             {ins_valid_r, alusel_o} = {`INS_VALID, `EXE_TYPE_LOAD_STORE};
             case (fun3)
               `INS_LB: uop_o = `UOP_LB;
@@ -282,7 +282,7 @@
           begin
             imm_r = {{20{ins_i[31]}}, ins_i[31:20]};
             rs1_re_o = 1'b1;
-            {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
+            {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             ins_valid_r = `INS_VALID;
             case (fun3)
               `INS_ADDI: {alusel_o, uop_o} = {`EXE_TYPE_ARITHMETIC, `UOP_ADDI};
@@ -318,7 +318,7 @@
           `INS_OPCODE_REG:
           begin
             {rs1_re_o, rs2_re_o} = 2'b11;
-            {rd_we_o, rd_wa_o} = {`WriteEnable, rd_w};
+            {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             ins_valid_r = `INS_VALID;
             if ((fun7 == 7'b0000000) || (fun7 == 7'b0100000))
               case (fun3)
@@ -380,8 +380,8 @@
                             // csrrw rd_w,offset,rs1_w  :   t = CSRs[csr]; CSRs[csr] = x[rs1_w]; x[rd_w] = t
                             rs1_re_o = 1'b1;
                             // rs2_w is not required
-                            rd_we_o = `WriteEnable;
-                            csr_we = `WriteEnable;
+                            rd_we_o = `WRITE_ENABLE;
+                            csr_we = `WRITE_ENABLE;
 
                             alusel_o = `EXE_TYPE_CSR;
                             uop_o = `UOP_CSRRW;
@@ -393,8 +393,8 @@
                             // csrrwi rd_w,offset,uimm  :  x[rd_w] = CSRs[csr]; CSRs[csr] = zimm
                             //zero-extending a 5-bit unsigned immediate (uimm[4:0]) to  an XLEN-bit value
                             // no rs required
-                            rd_we_o = `WriteEnable;
-                            csr_we = `WriteEnable;
+                            rd_we_o = `WRITE_ENABLE;
+                            csr_we = `WRITE_ENABLE;
 
                             alusel_o = `EXE_TYPE_CSR;
                             uop_o = `UOP_CSRRWI;
@@ -406,8 +406,8 @@
                             // csrrs rd_w,offset,rs1_w  :   t = CSRs[csr]; CSRs[csr] = t | x[rs1_w]; x[rd_w] = t
                             rs1_re_o = 1'b1;
                             // rs2_w is not required
-                            rd_we_o = `WriteEnable;
-                            csr_we = `WriteEnable;
+                            rd_we_o = `WRITE_ENABLE;
+                            csr_we = `WRITE_ENABLE;
 
                             alusel_o = `EXE_TYPE_CSR;
                             uop_o = `UOP_CSRRS;
@@ -420,8 +420,8 @@
 
                             //zero-extending a 5-bit unsigned immediate (uimm[4:0]) to  an XLEN-bit value
                             // no rs required
-                            rd_we_o = `WriteEnable;
-                            csr_we = `WriteEnable;
+                            rd_we_o = `WRITE_ENABLE;
+                            csr_we = `WRITE_ENABLE;
 
                             alusel_o = `EXE_TYPE_CSR;
                             uop_o = `UOP_CSRRSI;
@@ -433,8 +433,8 @@
                             // csrrc rd_w,offset,rs1_w  :   t = CSRs[csr]; CSRs[csr] = t &∼x[rs1_w]; x[rd_w] = t
                             rs1_re_o = 1'b1;
                             // rs2_w is not required
-                            rd_we_o = `WriteEnable;
-                            csr_we = `WriteEnable;
+                            rd_we_o = `WRITE_ENABLE;
+                            csr_we = `WRITE_ENABLE;
 
                             alusel_o = `EXE_TYPE_CSR;
                             uop_o = `UOP_CSRRC;
@@ -446,8 +446,8 @@
                             // csrrci rd_w,offset,uimm  :  t = CSRs[csr]; CSRs[csr] = t &∼zimm; x[rd_w] = t
                             //zero-extending a 5-bit unsigned immediate (uimm[4:0]) to  an XLEN-bit value
                             // no rs required
-                            rd_we_o = `WriteEnable;
-                            csr_we = `WriteEnable;
+                            rd_we_o = `WRITE_ENABLE;
+                            csr_we = `WRITE_ENABLE;
 
                             uop_o = `UOP_CSRRCI;
                             alusel_o = `EXE_TYPE_CSR;

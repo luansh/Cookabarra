@@ -34,8 +34,8 @@ module console #(
   output reg[31:0] rd_o
 );
 
-  localparam reg[7:0] CHAR_OUT_ADDR = 8'h0;
-  localparam reg[7:0] SIM_CTRL_ADDR = 8'h2;
+  localparam reg[7:0] CHAR_OUT_A = 8'h0;
+  localparam reg[7:0] SIM_CTRL_A = 8'h2;
 
   reg [7:0] ctrl_addr;
   reg [2:0] sim_finish = 3'b000;
@@ -63,7 +63,7 @@ module console #(
       if (req_i & we_i) begin
         case (ctrl_addr)
 
-          CHAR_OUT_ADDR: begin
+          CHAR_OUT_A: begin
             if (be_i[0]) begin
               $fwrite(log_fd, "%c", wd_i[7:0]);
               $display("%c", wd_i[7:0]);
@@ -73,7 +73,7 @@ module console #(
             end
           end
 
-          SIM_CTRL_ADDR: begin
+          SIM_CTRL_A: begin
             if ((be_i[0] & wd_i[0]) && (sim_finish == 'b0)) begin
               $display("Terminating simulation by software request.");
               sim_finish <= 3'b001;

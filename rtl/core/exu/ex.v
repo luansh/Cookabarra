@@ -32,7 +32,7 @@
     // output reg div_annul_o,   // not used at the moment
     output reg div_signed_o,
 
-    input wire[`DoubleRegBus] div_result_i,   // the result of the division,the low 32 bits are the quotient, the higher 32 bits are the remainder
+    input wire[`REG_BUS_DOUBLE] div_result_i,   // the result of the division,the low 32 bits are the quotient, the higher 32 bits are the remainder
     input wire div_ready_i,    //the divison result is ready
 
     /* ------- signals to the ctrl unit --------*/
@@ -227,10 +227,10 @@
             csr_raddr_o = csr_addr_i;
             csr_result_r = csr_rdata_i;
             // check the data dependance, if mem stage is updating the csr, use the lastest value
-            if ( mem_csr_we_i == `WriteEnable && mem_csr_waddr_i == csr_addr_i) begin
+            if ( mem_csr_we_i == `WRITE_ENABLE && mem_csr_waddr_i == csr_addr_i) begin
                 csr_result_r = mem_csr_wdata_i;
             // check the data dependance, if wb stage is updating the csr, use the lastest value
-            end else if ( wb_csr_we_i == `WriteEnable && wb_csr_waddr_i == csr_addr_i) begin
+            end else if ( wb_csr_we_i == `WRITE_ENABLE && wb_csr_waddr_i == csr_addr_i) begin
                 csr_result_r = wb_csr_wdata_i;
             end
         end
@@ -445,8 +445,8 @@
     reg[`REG_BUS_D] mul_op1_r;
     reg[`REG_BUS_D] mul_op2_r;
 
-    wire[`DoubleRegBus] mul_result_w;
-    wire[`DoubleRegBus] mul_result_invert_w;
+    wire[`REG_BUS_DOUBLE] mul_result_w;
+    wire[`REG_BUS_DOUBLE] mul_result_invert_w;
 
     assign mul_result_w = mul_op1_r * mul_op2_r;
     assign mul_result_invert_w = ~mul_result_w + 1;

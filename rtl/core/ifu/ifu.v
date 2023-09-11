@@ -44,7 +44,7 @@
       ce_o <= (n_rst_i == `RST_EN) ? `CHIP_DISABLE : `CHIP_ENABLE;
 
     always @ (posedge clk_i)
-      if (ce_o == `CHIP_DISABLE) {pc_o, branch_slot_end_o} <= {`REBOOT_ADDRESS, 1'b0};
+      if (ce_o == `CHIP_DISABLE) {pc_o, branch_slot_end_o} <= {`REBOOT_A, 1'b0};
       else
         if (flush_i) {pc_o, branch_slot_end_o} <= {new_pc_i, 1'b0};
         else if (stall_i[0] == `NO_STOP)

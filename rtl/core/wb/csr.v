@@ -1,28 +1,6 @@
-/*-------------------------------------------------------------------------
-// Module:  csr
-// File:    csr.v
-// Author:  shawn Liu
-// E-mail:  shawn110285@gmail.com
-// Description: csr (control and status register)
---------------------------------------------------------------------------*/
+  `include "defines.v"
 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//-----------------------------------------------------------------
-
-`include "defines.v"
-
-module csr_file(
-
+  module csr_file(
     input wire clk_i,
     input wire n_rst_i,
 
@@ -41,9 +19,9 @@ module csr_file(
     input wire[`REG_BUS_D] wa_i,         // the register to write
     input wire[`REG_BUS_D] wd_i,         // the data to write
 
-    input wire instret_incr_i,   // 0 or 1 indicate increase the counter of instret
+    input wire ins_ret_inc_i,   // 0 or 1 indicate increase the counter of instret
 
-    /* ---- ctrl update epc, mcause, mtval, global ie ----*/
+    /* ---- ctrl update epc, mcause_r, mtval, global ie ----*/
     input wire ie_type_i,          // interrupt or exception
     input wire set_cause_i,
     input wire [3:0] trap_casue_i,
@@ -67,13 +45,9 @@ module csr_file(
     output wire mip_timer_o,
     output wire mip_sw_o,
     output wire[`REG_BUS_D] mtvec_o,
-    output wire[`REG_BUS_D] epc_o
-);
+    output wire[`REG_BUS_D] epc_o);
 
-    // mvendorid
-    // The mvendorid CSR is a 32-bit read-only register providing the JEDEC manufacturer ID of the
-    // provider of the core. This register must be readable in any implementation, but a value of 0 can be
-    // returned to indicate the field is not implemented or that this is a non-commercial implementation.
+  // mvendorid
     localparam CSR_MVENDORID_VALUE  = 32'b0;
 
     // Architecture ID
@@ -87,14 +61,14 @@ module csr_file(
     // The mimpid CSR provides a unique encoding of the version of the processor implementation. This
     // register must be readable in any implementation, but a value of 0 can be returned to indicate that
     // the field is not implemented.
-    localparam  CSR_MIMPID_VALUE = 32'b0;
+    localparam CSR_MIMPID_VALUE = 32'd0;
 
     // hardid
     // The mhartid CSR is an MXLEN-bit read-only register containing the integer ID of the hardware
     // thread running the code. This register must be readable in any implementation. Hart IDs might
     // not necessarily be numbered contiguously in a multiprocessor system, but at least one hart must
     // have a hart ID of zero.
-    localparam CSR_MHARTID = 32'b0;
+    localparam CSR_MHARTID = 32'd0;
 
 
 
@@ -109,28 +83,16 @@ module csr_file(
     assign mextensions = 26'b00000000000001000100000000;  // i and m
     assign misa = {mxl, 4'b0, mextensions};
 
+    reg[`REG_BUS_DOUBLE] mcycle_r;//开机后，运行的机器周期数目
+    reg[`REG_BUS_DOUBLE] minsret_r; //开机后，HART完成的数目
 
-    /*--------------------------------------------- mcycle ------------------------------------------*/
-    // mcycle : counts the number of clock cycles executed by the processor core on which the hart is running.
-    // 64-bit precision on all RV32 and RV64 systems.
-    reg[`DoubleRegBus] mcycle;   //server as cycle as well
-
-    /*--------------------------------------------- minstret ----------------------------------------*/
-    // minstret:  counts the number of instructions the hart has retired.
-    // 64-bit precision on all RV32 and RV64 systems.
-    reg[`DoubleRegBus] minstret;
-
-    always @ (posedge clk_i) begin
-        if (n_rst_i == `RST_EN) begin
-            mcycle <= {`ZERO_WORD, `ZERO_WORD};
-            minstret <= {`ZERO_WORD, `ZERO_WORD};
-        end else begin
-            mcycle <= mcycle + 64'd1;
-            if (instret_incr_i) begin
-                minstret <= minstret + 64'd1;
-            end
-        end
-    end
+    always @ (posedge clk_i)
+      if (n_rst_i == `RST_EN) {mcycle_r, minsret_r} <= {{`ZERO_WORD, `ZERO_WORD}, {`ZERO_WORD, `ZERO_WORD}};
+      else
+      begin
+        mcycle_r <= mcycle_r + 64'd1;
+        if (ins_ret_inc_i) minsret_r <= minsret_r + 64'd1;
+      end
 
     /*--------------------------------------------- mstatus ----------------------------------------*/
     // {SD(1), WPRI(8), TSR(1), TW(1), TVM(1), MXR(1), SUM(1), MPRV(1), XS(2),
@@ -140,14 +102,14 @@ module csr_file(
     reg[`REG_BUS_D] mstatus;
     reg mstatus_pie; // prior interrupt enable
     reg mstatus_ie;
-    assign             mstatus_ie_o = mstatus_ie;
+    assign mstatus_ie_o = mstatus_ie;
     assign mstatus = {19'b0, 2'b11, 3'b0, mstatus_pie, 3'b0 , mstatus_ie, 3'b0};
 
     always @(posedge clk_i) begin
         if (n_rst_i == `RST_EN) begin
             mstatus_ie <= 1'b0;
             mstatus_pie <= 1'b1;
-        end else if ( (wa_i[11:0] == `CSR_MSTATUS_ADDR) && (we_i == `WriteEnable) ) begin
+        end else if ( (wa_i[11:0] == `CSR_MSTATUS_A) && (we_i == `WRITE_ENABLE) ) begin
             mstatus_ie <= wd_i[3];
             mstatus_pie <= wd_i[7];
         end else if (mstatus_ie_clear_i == 1'b1) begin
@@ -181,7 +143,7 @@ module csr_file(
             mie_external <= 1'b0;
             mie_timer <= 1'b0;
             mie_sw <= 1'b0;
-        end else if ((wa_i[11:0] == `CSR_MIE_ADDR) && (we_i == `WriteEnable)) begin
+        end else if ((wa_i[11:0] == `CSR_MIE_A) && (we_i == `WRITE_ENABLE)) begin
             mie_external <= wd_i[11];
             mie_timer <= wd_i[7];
             mie_sw <= wd_i[3];
@@ -195,9 +157,9 @@ module csr_file(
     // mtvec = { base[maxlen-1:2], mode[1:0]}
     // The value in the BASE field must always be aligned on a 4-byte boundary, and the MODE setting may impose
     // additional alignment constraints on the value in the BASE field.
-    // when mode =2'b00, direct mode, When MODE=Direct, all traps into machine mode cause the pc to be set to the address in the BASE field.
-    // when mode =2'b01, Vectored mode, all synchronous exceptions into machine mode cause the pc to be set to the address in the BASE
-    // field, whereas interrupts cause the pc to be set to the address in the BASE field plus four times the interrupt cause number.
+    // when mode =2'b00, direct mode, When MODE=Direct, all traps into machine mode cause_r the pc to be set to the address in the BASE field.
+    // when mode =2'b01, Vectored mode, all synchronous exceptions into machine mode cause_r the pc to be set to the address in the BASE
+    // field, whereas interrupts cause_r the pc to be set to the address in the BASE field plus four times the interrupt cause_r number.
 
     reg[`REG_BUS_D] mtvec;
     assign mtvec_o = mtvec;
@@ -205,7 +167,7 @@ module csr_file(
   //设置 mtvec
     always @(posedge clk_i)
       if (n_rst_i == `RST_EN) mtvec <= `MTVEC_RESET;
-      else if ((wa_i[11:0] == `CSR_MTVEC_ADDR) && (we_i == `WriteEnable)) mtvec <= wd_i;
+      else if ((wa_i[11:0] == `CSR_MTVEC_A) && (we_i == `WRITE_ENABLE)) mtvec <= wd_i;
 
     /*--------------------------------------------- mscratch ----------------------------------------*/
     // mscratch : Typically, it is used to hold a pointer to a machine-mode hart-local context space and swapped
@@ -214,50 +176,28 @@ module csr_file(
 
     always @(posedge clk_i)
       if (n_rst_i == `RST_EN) mscratch <= `ZERO_WORD;
-      else if ((wa_i[11:0] == `CSR_MSCRATCH_ADDR) && (we_i == `WriteEnable)) mscratch <= wd_i;
-
-    /*--------------------------------------------- mepc_r ----------------------------------------*/
-    // When a trap is taken into M-mode, mepc_r is written with the virtual address of the instruction
-    // that was interrupted or that encountered the exception.
-    // The low bit of mepc_r (mepc_r[0]) is always zero.
-    // On implementations that support only IALIGN=32, the two low bits (mepc_r[1:0]) are always zero.
+      else if ((wa_i[11:0] == `CSR_MSCRATCH_A) && (we_i == `WRITE_ENABLE)) mscratch <= wd_i;
+  // EPC
     reg[`REG_BUS_D] mepc_r;
 
     assign epc_o = mepc_r;
     always @(posedge clk_i)
       if (n_rst_i == `RST_EN) mepc_r <= `ZERO_WORD;
+    //中断或者异常发生时，硬件自动设置 epc，保存发生异常的VA地址
       else if (set_epc_i) mepc_r <= {epc_i[31:2], 2'd0};
-      else if ((wa_i[11:0] == `CSR_MEPC_ADDR) && (we_i == `WriteEnable)) mepc_r <= {wd_i[31:2], 2'd0};
+    //程序指令设置 epc
+      else if ((wa_i[11:0] == `CSR_MEPC_A) && (we_i == `WRITE_ENABLE)) mepc_r <= {wd_i[31:2], 2'd0};
+  //MCAUSE
+    reg[`REG_BUS_D] mcause_r;
+    reg [3:0] cause_r;
+    reg [26:0] cause_rem_r;
+    reg int_or_exc_r;
 
-
-    /*--------------------------------------------- mcause ----------------------------------------*/
-    // When a trap is taken into M-mode, mcause is written with a code indicating the event that caused the trap.
-    // Otherwise, mcause is never written by the implementation, though it may be explicitly written by software.
-    // mcause = {interupt[31:30], Exception code }
-    // The Interrupt bit in the mcause register is set if the trap was caused by an interrupt. The Exception
-    // Code field contains a code identifying the last exception.
-
-    reg[`REG_BUS_D] mcause;
-    reg [3:0] cause; // interrupt cause
-    reg [26:0] cause_rem; // remaining bits of mcause register
-    reg int_or_exc; // interrupt or exception signal
-
-    assign mcause = {int_or_exc, cause_rem, cause};
-    always @(posedge clk_i) begin
-        if (n_rst_i == `RST_EN) begin
-            cause <= 4'b0000;
-            cause_rem <= 27'b0;
-            int_or_exc <= 1'b0;
-        end else if (set_cause_i) begin
-            cause <= trap_casue_i;
-            cause_rem <= 27'b0;
-            int_or_exc <= ie_type_i;
-        end else if ( (wa_i[11:0] == `CSR_MCAUSE_ADDR) && (we_i == `WriteEnable) ) begin
-            cause <= wd_i[3:0];
-            cause_rem <= wd_i[30:4];
-            int_or_exc <= wd_i[31];
-        end
-    end
+    assign mcause_r = {int_or_exc_r, cause_rem_r, cause_r}; //MSB:中断或者异常，LSBs: mcause
+    always @(posedge clk_i)
+      if (n_rst_i == `RST_EN) {int_or_exc_r, cause_rem_r, cause_r} <= {1'b0, 27'd0, 4'b0000};
+      else if (set_cause_i) {int_or_exc_r, cause_rem_r, cause_r} <= {ie_type_i, 27'd0, trap_casue_i};
+      else if ((wa_i[11:0] == `CSR_MCAUSE_A) && (we_i == `WRITE_ENABLE)) {int_or_exc_r, cause_rem_r, cause_r} <= wd_i;
 
     /*--------------------------------------------- mip ----------------------------------------*/
     // mip: {WPRI[31:12], MEIP(1), WPRI(1), SEIP(1), UEIP(1), MTIP(1), WPRI(1), STIP(1), UTIP(1), MSIP(1), WPRI(1), SSIP(1), USIP(1)}
@@ -293,35 +233,33 @@ module csr_file(
     // access, or page-fault exception occurs, mtval is written with the faulting virtual address.
     // On an illegal instruction trap, mtval may be written with the first XLEN or ILEN bits of the faulting instruction
     reg[`REG_BUS_D] mtval;
-    wire MISALIGNED_EXCEPTION;  //todo
+  //wire misalign_exception_w;
 
     always @(posedge clk_i)
       if (n_rst_i == `RST_EN) mtval <= 32'd0;
       else if (set_mtval_i) mtval <= mtval_i;
-      else if ((wa_i[11:0] == `CSR_MTVAL_ADDR) && (we_i == `WriteEnable)) mtval <= wd_i;
+      else if ((wa_i[11:0] == `CSR_MTVAL_A) && (we_i == `WRITE_ENABLE)) mtval <= wd_i;
 
-    /* ----------------------- read csr --------------------------------------*/
     always @ (*)
-        // bypass the write port to the read port
-      if ((wa_i[11:0] == ra_i[11:0]) && (we_i == `WriteEnable)) rd_o = wd_i;
+      if ((wa_i[11:0] == ra_i[11:0]) && (we_i == `WRITE_ENABLE)) rd_o = wd_i;
       else
         case (ra_i[11:0])
-          `CSR_MVENDORID_ADDR: rd_o = CSR_MVENDORID_VALUE;
-          `CSR_MARCHID_ADDR: rd_o = CSR_MARCHID_VALUE;
-          `CSR_MIMPID_ADDR: rd_o = CSR_MIMPID_VALUE;
-          `CSR_MHARTID_ADDR: rd_o = CSR_MHARTID;
-          `CSR_MISA_ADDR: rd_o = misa;
-          `CSR_MCYCLE_ADDR, `CSR_CYCLE_ADDR: rd_o = mcycle[`REG_BUS_D];
-          `CSR_MCYCLEH_ADDR, `CSR_CYCLEH_ADDR: rd_o = mcycle[63:32];
-          `CSR_MINSTRET_ADDR: rd_o = minstret[`REG_BUS_D];
-          `CSR_MINSTRETH_ADDR: rd_o = minstret[63:32];
-          `CSR_MSTATUS_ADDR: rd_o = mstatus;
-          `CSR_MIE_ADDR: rd_o = mie;
-          `CSR_MTVEC_ADDR: rd_o = mtvec;
-          `CSR_MSCRATCH_ADDR: rd_o = mscratch;
-          `CSR_MEPC_ADDR: rd_o = mepc_r;
-          `CSR_MCAUSE_ADDR: rd_o = mcause;
-          `CSR_MIP_ADDR: rd_o = mip;
+          `CSR_MVENDORID_A: rd_o = CSR_MVENDORID_VALUE;
+          `CSR_MARCHID_A: rd_o = CSR_MARCHID_VALUE;
+          `CSR_MIMPID_A: rd_o = CSR_MIMPID_VALUE;
+          `CSR_MHARTID_A: rd_o = CSR_MHARTID;
+          `CSR_MISA_A: rd_o = misa;
+          `CSR_MCYCLE_A, `CSR_CYCLE_A: rd_o = mcycle_r[`REG_BUS_D];
+          `CSR_MCYCLEH_A, `CSR_CYCLEH_A: rd_o = mcycle_r[63:32];
+          `CSR_MINSTRET_A: rd_o = minsret_r[`REG_BUS_D];
+          `CSR_MINSTRETH_A: rd_o = minsret_r[63:32];
+          `CSR_MSTATUS_A: rd_o = mstatus;
+          `CSR_MIE_A: rd_o = mie;
+          `CSR_MTVEC_A: rd_o = mtvec;
+          `CSR_MSCRATCH_A: rd_o = mscratch;
+          `CSR_MEPC_A: rd_o = mepc_r;
+          `CSR_MCAUSE_A: rd_o = mcause_r;
+          `CSR_MIP_A: rd_o = mip;
           default: rd_o = `ZERO_WORD;
         endcase
 
