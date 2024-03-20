@@ -24,18 +24,18 @@
 
 module ram(
     // data port
-	input wire				      clk_i,
-	input wire					  ce_i,
-	input wire[`DataAddrBus]	  addr_i,
-	input wire					  we_i,	
-	input wire[3:0]				  sel_i,
-	input wire[`DataBus]		  data_i,
+	input				      ck_i,
+	input					  ce_i,
+	input[`DataAddrBus]	  addr_i,
+	input					  we_i,	
+	input[3:0]				  sel_i,
+	input[`DataBus]		  data_i,
 	output wire rvalid_o,
 	output reg[`DataBus]		  data_o,
 	
 	// instrution port
-    input wire inst_ce_i,
-    input wire[`INS_BUS_A] pc_i,
+    input inst_ce_i,
+    input[`INS_BUS_A] pc_i,
     output reg[`INS_BUS_D] ins_o	
 );
     localparam reg[31:0] CHAR_OUT_A = 32'h00020000;
@@ -46,7 +46,7 @@ module ram(
     assign rvalid_o = ce_i & (~we_i);
 
     /*------------------ data port ----------------------*/
-	always @ (posedge clk_i) begin
+	always @ (posedge ck_i) begin
 		if ( (ce_i != `CHIP_DISABLE) && (we_i == `WRITE_ENABLE) )begin										
 			if (sel_i[3] == 1'b1) begin
 				mem[addr_i[`DataMemNumLog2+1:2]][31:24] <= data_i[31:24];

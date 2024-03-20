@@ -20,17 +20,17 @@ module bus #(
   parameter int DataWidth    = 32,
   parameter int AddressWidth = 32
 ) (
-  input wire clk_i,
-  input wire rst_ni,
+  input ck_i,
+  input rst_ni,
 
   // Hosts (masters)
-  input wire host_req_i    [NrHosts],
+  input host_req_i    [NrHosts],
   output reg host_gnt_o    [NrHosts],
 
-  input wire[AddressWidth-1:0] host_addr_i   [NrHosts],
-  input wire host_we_i     [NrHosts],
-  input wire[DataWidth/8-1:0] host_be_i     [NrHosts],
-  input wire[DataWidth-1:0] host_wdata_i  [NrHosts],
+  input[AddressWidth-1:0] host_addr_i   [NrHosts],
+  input host_we_i     [NrHosts],
+  input[DataWidth/8-1:0] host_be_i     [NrHosts],
+  input[DataWidth-1:0] host_wdata_i  [NrHosts],
   output reg host_rvalid_o [NrHosts],
   output reg[DataWidth-1:0] host_rdata_o  [NrHosts],
   output reg host_err_o    [NrHosts],
@@ -42,13 +42,13 @@ module bus #(
   output reg device_we_o     [NrDevices],
   output reg[DataWidth/8-1:0] device_be_o     [NrDevices],
   output reg[DataWidth-1:0] device_wdata_o  [NrDevices],
-  input wire device_rvalid_i [NrDevices],
-  input wire[DataWidth-1:0] device_rdata_i  [NrDevices],
-  input wire device_err_i    [NrDevices],
+  input device_rvalid_i [NrDevices],
+  input[DataWidth-1:0] device_rdata_i  [NrDevices],
+  input device_err_i    [NrDevices],
 
   // Device address map
-  input wire[AddressWidth-1:0] cfg_device_addr_base [NrDevices],
-  input wire[AddressWidth-1:0] cfg_device_addr_mask [NrDevices]
+  input[AddressWidth-1:0] cfg_device_addr_base [NrDevices],
+  input[AddressWidth-1:0] cfg_device_addr_mask [NrDevices]
 );
 
   localparam int unsigned NumBitsHostSel = NrHosts > 1 ? $clog2(NrHosts) : 1;
@@ -77,7 +77,7 @@ module bus #(
     end
   end
 
-  always @(*) begin          //posedge clk_i or negedge rst_ni  ,shawn modified it
+  always @ (*) begin          //posedge ck_i or negedge rst_ni  ,shawn modified it
      if (!rst_ni) begin
         host_sel_resp = '0;
         device_sel_resp = '0;

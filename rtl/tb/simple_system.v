@@ -24,12 +24,12 @@
 
 module simple_system(
 
-    input wire clk_i,
-    input wire n_rst_i,
+    input ck_i,
+    input rs_n_i,
 
-    input wire jtag_TCK,     // JTAG TCK
-    input wire jtag_TMS,     // JTAG TMS
-    input wire jtag_TDI,     // JTAG TDI
+    input jtag_TCK,     // JTAG TCK
+    input jtag_TMS,     // JTAG TMS
+    input jtag_TDI,     // JTAG TDI
     output wire jtag_TDO      // JTAG TDO    
 );
 
@@ -88,8 +88,8 @@ module simple_system(
         .DataWidth    ( 32        ),
         .AddressWidth ( 32        )
     ) u_bus (
-        .clk_i               (clk_i),
-        .rst_ni              (n_rst_i),
+        .ck_i               (ck_i),
+        .rst_ni              (rs_n_i),
 
         .host_req_i          (host_req     ),
         .host_gnt_o          (host_gnt     ),
@@ -117,7 +117,7 @@ module simple_system(
 
     // SRAM block for instruction and data storage
 	ram data_ram0(
-		.clk_i(clk_i),
+		.ck_i(ck_i),
         
 		.ce_i(device_req[`DEV_RAM]),
 		.addr_i(device_addr[`DEV_RAM]),
@@ -136,8 +136,8 @@ module simple_system(
     console #(
         .LogName("./log/console.log")
         ) console0 (
-        .clk_i     (clk_i),
-        .rst_ni    (n_rst_i),
+        .ck_i     (ck_i),
+        .rst_ni    (rs_n_i),
 
         .req_i     (device_req[`DEV_CONSOLE]),
         .we_i      (device_we[`DEV_CONSOLE]),
@@ -152,8 +152,8 @@ module simple_system(
         .DataWidth    (32),
         .AddressWidth (32)
         ) u_timer (
-        .clk_i          (clk_i),
-        .rst_ni         (n_rst_i),
+        .ck_i          (ck_i),
+        .rst_ni         (rs_n_i),
 
         .timer_req_i    (device_req[`DEV_TIMER]),
         .timer_we_i     (device_we[`DEV_TIMER]),
@@ -167,8 +167,8 @@ module simple_system(
         );
 
     core_top core_top0(
-		.clk_i(clk_i),
-		.n_rst_i(n_rst_i),
+		.ck_i(ck_i),
+		.rs_n_i(rs_n_i),
 	
 		.rom_ce_o(rom_ce),    
 		.rom_addr_o(inst_addr),

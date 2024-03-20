@@ -22,14 +22,14 @@ module console #(
   // simulation is running).
   parameter bit    FlushOnChar = 1
 ) (
-  input wire clk_i,
-  input wire rst_ni,
+  input ck_i,
+  input rst_ni,
 
-  input wire req_i,
-  input wire we_i,
-  input wire[3:0] be_i,
-  input wire[31:0] addr_i,
-  input wire[31:0] wd_i,
+  input req_i,
+  input we_i,
+  input[3:0] be_i,
+  input[31:0] addr_i,
+  input[31:0] wd_i,
   output reg rvalid_o,
   output reg[31:0] rd_o
 );
@@ -52,7 +52,7 @@ module console #(
 
   assign ctrl_addr = addr_i[9:2];
 
-  always @(posedge clk_i or negedge rst_ni) begin
+  always @ (posedge ck_i or negedge rst_ni) begin
     if (~rst_ni) begin
       rvalid_o <= 0;
       sim_finish <= 'b0;

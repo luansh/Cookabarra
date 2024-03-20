@@ -1,15 +1,15 @@
   `include "defines.v"
 
   module id(
-    input wire n_rst_i,
+    input rs_n_i,
 
     /* ------- signals from the if_id unit --------*/
-    input wire[`INS_BUS_A] pc_i,
-    input wire[`INS_BUS_D] ins_i,
-    input wire branch_slot_end_i,
+    input[`INS_BUS_A] pc_i,
+    input[`INS_BUS_D] ins_i,
+    input branch_slot_end_i,
 
-    input wire[`REG_BUS_D] next_pc_i,
-    input wire next_taken_i,
+    input[`REG_BUS_D] next_pc_i,
+    input next_taken_i,
 
   //控制GPR 读取，以获得源操作数
     output reg rs1_re_o,
@@ -17,28 +17,28 @@
     output reg[`REG_BUS_A] rs1_ra_o,
     output reg[`REG_BUS_A] rs2_ra_o,
   //GPR 响应上述读请求，返回的源操作数的值（组合逻辑，立即返回）
-    input wire[`REG_BUS_D] rs1_rd_i,
-    input wire[`REG_BUS_D] rs2_rd_i,
+    input[`REG_BUS_D] rs1_rd_i,
+    input[`REG_BUS_D] rs2_rd_i,
 
     /* ---------signals from exu -----------------*/
-    input wire branch_redirect_i,
+    input branch_redirect_i,
 
     // some neccessary signals forwarded from exe unit, to detect data dependance.
     // if the exe unis is executing load instruction, and the rd_w is one of the rs,
     // notify the ctrl unit to stall pipeline
   //当前时刻，EX阶段执行的指令微码
-    input wire[`AluOpBus] ex_uop_i,
+    input[`AluOpBus] ex_uop_i,
   //EX阶段是否可以得到的rd寄存器的的数值，可以时，反馈具体值以及rd地址
   //EX阶段得到rd最新值反馈至ID阶段，以进行rs的 Forward更新
     // the rd_w info fowarded from ex to determine the data dependance
-    input wire ex_rd_we_i,//是否更新rd（Load指令时，LSU 阶段才能获得rd的值，EX阶段不更新rd）
-    input wire[`REG_BUS_A] ex_rd_wa_i,
-    input wire[`REG_BUS_D] ex_rd_wd_i,
+    input ex_rd_we_i,//是否更新rd（Load指令时，LSU 阶段才能获得rd的值，EX阶段不更新rd）
+    input[`REG_BUS_A] ex_rd_wa_i,
+    input[`REG_BUS_D] ex_rd_wd_i,
   //当前时刻，LSU 阶段执行Load的结果
   //当we_i有效时，Load访存读完成，rd准备写回 GPR
-    input wire mem_rd_we_i,
-    input wire[`REG_BUS_A] mem_rd_wa_i,
-    input wire[`REG_BUS_D] mem_rd_wd_i,
+    input mem_rd_we_i,
+    input[`REG_BUS_A] mem_rd_wa_i,
+    input[`REG_BUS_D] mem_rd_wd_i,
 
 
     /* ------- signals to the ctrl  ---------------*/
@@ -110,7 +110,7 @@
     assign exception_o = {28'd0, excepttype_illegal_ins_r, excepttype_ebreak, excepttype_ecall, excepttype_mret};
 
     always @ (*) begin
-      if (n_rst_i == `RST_EN) begin
+      if (rs_n_i == `RST_EN) begin
             //reset to default
             ins_o = `NOP_INS;
             rs1_re_o = 1'b0;
@@ -188,7 +188,7 @@
             ins_valid_r = `INS_INVALID;
 
         case (opcode_w)
-          `INS_OPCODE_LUI:
+          `INS_OP_LUI:
           begin
           //由指令中解析 imm、rd地址，将imm 赋值给rd地址
           //由于 imm就绪，we有效，可立即写入（EX在下一周期执行写操作）
@@ -196,20 +196,20 @@
             {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_LOGIC, `UOP_LUI};
           end
-          `INS_OPCODE_AUIPC:
+          `INS_OP_AUIPC:
           begin
             imm_r = {ins_i[31:12], 12'd0};
             {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_LOGIC, `UOP_AUIPC};
           end
-          `INS_OPCODE_JAL:
+          `INS_OP_JAL:
           begin
           //跳转+-1M
             imm_r = {{12{ins_i[31]}}, ins_i[19:12], ins_i[20], ins_i[30:21], 1'b0};
             {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_BRANCH, `UOP_JAL};
           end
-          `INS_OPCODE_JALR:
+          `INS_OP_JALR:
           begin
             imm_r = {{20{ins_i[31]}}, ins_i[31:20]};
           //读取rs1 中的值，作为pc的基址
@@ -217,7 +217,7 @@
             {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             {ins_valid_r, alusel_o, uop_o} = {`INS_VALID, `EXE_TYPE_BRANCH, `UOP_JALR};
           end
-          `INS_OPCODE_BRANCH:
+          `INS_OP_BRANCH:
           begin
               // imm_r(12,10:5):[31:25], rs2_w:[24:20], rs1_w:[19:15], fun3:[14:12], imm_r(4:1,11):[11:7], opcode_w[6:0]
               // Branch if equal (beq), not equal (bne), less than (blt), less than unsigned (bltu), greater or equal (bge),
@@ -242,18 +242,18 @@
               end
             endcase
           end
-          `INS_OPCODE_LOAD:
+          `INS_OP_LOAD:
           begin
             imm_r = {{20{ins_i[31]}}, ins_i[31:20]};
             rs1_re_o = 1'b1;
             {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             {ins_valid_r, alusel_o} = {`INS_VALID, `EXE_TYPE_LOAD_STORE};
             case (fun3)
-              `INS_LB: uop_o = `UOP_LB;
-              `INS_LBU: uop_o = `UOP_LBU;
-              `INS_LH: uop_o = `UOP_LH;
-              `INS_LHU: uop_o = `UOP_LHU;
-              `INS_LW: uop_o = `UOP_LW;
+              `INS_FUN3_LB: uop_o = `UOP_LB;
+              `INS_FUN3_LBU: uop_o = `UOP_LBU;
+              `INS_FUN3_LH: uop_o = `UOP_LH;
+              `INS_FUN3_LHU: uop_o = `UOP_LHU;
+              `INS_FUN3_LW: uop_o = `UOP_LW;
               default:
               begin
                 $display("Invalid Fun3 In Load Type(pc=%h, ins=%h, fun3=%d)", pc_i, ins_i, fun3);
@@ -261,16 +261,16 @@
               end
             endcase
           end
-          `INS_OPCODE_STORE:
+          `INS_OP_STORE:
           begin
             imm_r = {{20{ins_i[31]}}, ins_i[31:25], ins_i[11:7]};
           //rs1/2/分别记录存储的地址以及数据值
             {rs1_re_o, rs2_re_o} = 2'b11;
             {ins_valid_r, alusel_o} = {`INS_VALID, `EXE_TYPE_LOAD_STORE};
             case (fun3)
-              `INS_SB: uop_o = `UOP_SB;
-              `INS_SH: uop_o = `UOP_SH;
-              `INS_SW: uop_o = `UOP_SW;
+              `INS_FUN3_SB: uop_o = `UOP_SB;
+              `INS_FUN3_SH: uop_o = `UOP_SH;
+              `INS_FUN3_SW: uop_o = `UOP_SW;
               default:
               begin
                 $display("Invalid Fun3 In Store Type(pc=%h, inst=%h, fun3=%d)", pc_i, ins_i, fun3);
@@ -278,26 +278,26 @@
               end
             endcase
           end
-          `INS_OPCODE_IMM:
+          `INS_OP_IMM:
           begin
             imm_r = {{20{ins_i[31]}}, ins_i[31:20]};
             rs1_re_o = 1'b1;
             {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             ins_valid_r = `INS_VALID;
             case (fun3)
-              `INS_ADDI: {alusel_o, uop_o} = {`EXE_TYPE_ARITHMETIC, `UOP_ADDI};
+              `INS_FUN3_ADDI: {alusel_o, uop_o} = {`EXE_TYPE_ARITHMETIC, `UOP_ADDI};
             //rs1 中的值小于立即数，rd=1
-              `INS_SLTI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_SLTI};
-              `INS_SLTIU: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_SLTIU};
-              `INS_ANDI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_ANDI};
-              `INS_ORI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_ORI};
-              `INS_XORI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_XORI};
-              `INS_SLLI:
+              `INS_FUN3_SLTI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_SLTI};
+              `INS_FUN3_SLTIU: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_SLTIU};
+              `INS_FUN3_ANDI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_ANDI};
+              `INS_FUN3_ORI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_ORI};
+              `INS_FUN3_XORI: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_XORI};
+              `INS_FUN3_SLLI:
               begin
                 imm_r = {27'b0, ins_i[24:20]};
                 {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_SLLI};
               end
-              `INS_SRLI_SRAI:
+              `INS_FUN3_SRLI_SRAI:
               begin
                 imm_r = {27'b0, ins_i[24:20]};
                 if (fun7[6:1] == 6'b000000) {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_SRLI};
@@ -315,25 +315,25 @@
               end
             endcase
           end
-          `INS_OPCODE_REG:
+          `INS_OP_REG:
           begin
             {rs1_re_o, rs2_re_o} = 2'b11;
             {rd_we_o, rd_wa_o} = {`WRITE_ENABLE, rd_w};
             ins_valid_r = `INS_VALID;
             if ((fun7 == 7'b0000000) || (fun7 == 7'b0100000))
               case (fun3)
-                  `INS_ADD_SUB:
+                  `INS_FUN3_ADD_SUB:
                     if (fun7 == 7'b0000000) {alusel_o, uop_o} = {`EXE_TYPE_ARITHMETIC, `UOP_ADD};
                     else {alusel_o, uop_o} = {`EXE_TYPE_ARITHMETIC, `UOP_SUB};
-                  `INS_AND: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_AND};
-                  `INS_OR: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_OR};
-                  `INS_XOR: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_XOR};
-                  `INS_SLL: {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_SLL};
-                  `INS_SRL_SRA:
+                  `INS_FUN3_AND: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_AND};
+                  `INS_FUN3_OR: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_OR};
+                  `INS_FUN3_XOR: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_XOR};
+                  `INS_FUN3_SLL: {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_SLL};
+                  `INS_FUN3_SRL_SRA:
                       if (fun7 == 7'b0000000) {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_SRL};
                       else {alusel_o, uop_o} = {`EXE_TYPE_SHIFT, `UOP_SRA};
-                  `INS_SLT: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_SLT};
-                  `INS_SLTU: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_SLTU};
+                  `INS_FUN3_SLT: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_SLT};
+                  `INS_FUN3_SLTU: {alusel_o, uop_o} = {`EXE_TYPE_LOGIC, `UOP_SLTU};
                   default:
                   begin
                     $display("Invalid Fun3 In R Type(pc=%h, inst=%h, fun3=%d)", pc_i, ins_i, fun3);
@@ -342,14 +342,14 @@
               endcase
             else if (fun7 == 7'b0000001)
               case (fun3)
-                `INS_MUL: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_MULT};
-                `INS_MULH: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_MULH};
-                `INS_MULHU: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_MULHU};
-                `INS_MULHSU: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_MULHSU};
-                `INS_DIV: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_DIV};
-                `INS_DIVU: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_DIVU};
-                `INS_REM: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_REM};
-                `INS_REMU: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_REMU};
+                `INS_FUN3_MUL: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_MULT};
+                `INS_FUN3_MULH: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_MULH};
+                `INS_FUN3_MULHU: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_MULHU};
+                `INS_FUN3_MULHSU: {alusel_o, uop_o} = {`EXE_TYPE_MUL, `UOP_MULHSU};
+                `INS_FUN3_DIV: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_DIV};
+                `INS_FUN3_DIVU: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_DIVU};
+                `INS_FUN3_REM: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_REM};
+                `INS_FUN3_REMU: {alusel_o, uop_o} = {`EXE_TYPE_DIV, `UOP_REMU};
                 default:
                 begin
                   $display("Invalid Fun3 In R Type(pc=%h, inst=%h, fun3=%d)", pc_i, ins_i, fun3);
@@ -364,7 +364,7 @@
           end
 
 /*-----------------------------------decode Type CSR instruction, started -------------------------------------------------------*/
-                `INS_OPCODE_CSR: begin
+                `INS_OP_CSR: begin
                     // csr[31:20], rs1_w:[19:15], fun3[14:12], opcode_w[6:0] = 7'b1110011
                     // csr[31:20], uimm[19:15], fun3[14:12], opcode_w[6:0] = 7'b1110011
                     csr_addr = {20'h0, ins_i[31:20]};
@@ -373,7 +373,7 @@
                     ins_valid_r = `INS_VALID;
 
                     case (fun3)
-                        `INS_CSRRW: begin
+                        `INS_FUN3_CSR_RW: begin
                             // csrrw(csr read and write): Read the specified CSR into a destination register
                             // and write a source operand value to the register
                             // if rd_w=x0, then the instruction shall not read the CSR
@@ -387,7 +387,7 @@
                             uop_o = `UOP_CSRRW;
                         end
 
-                        `INS_CSRRWI: begin
+                        `INS_FUN3_CSR_RWI: begin
                             // csrrw(csr read and write): Read the specified CSR into a destination register
                             // and write a source operand value to the register
                             // csrrwi rd_w,offset,uimm  :  x[rd_w] = CSRs[csr]; CSRs[csr] = zimm
@@ -400,7 +400,7 @@
                             uop_o = `UOP_CSRRWI;
                         end
 
-                        `INS_CSRRS: begin
+                        `INS_FUN3_CSR_RS: begin
                             // CSRRC(CSR read and set): Read the specified CSR into a destination register and
                             // set any 1 bit in the source operand in the register
                             // csrrs rd_w,offset,rs1_w  :   t = CSRs[csr]; CSRs[csr] = t | x[rs1_w]; x[rd_w] = t
@@ -413,7 +413,7 @@
                             uop_o = `UOP_CSRRS;
                         end
 
-                        `INS_CSRRSI: begin
+                        `INS_FUN3_CSR_RSI: begin
                             // CSRRC(CSR read and set): Read the specified CSR into a destination register and
                             // set any 1 bit in the source operand in the register
                             // csrrsi rd_w,offset,uimm  :  t = CSRs[csr]; CSRs[csr] = t | zimm; x[rd_w] = t
@@ -427,7 +427,7 @@
                             uop_o = `UOP_CSRRSI;
                         end
 
-                        `INS_CSRRC: begin
+                        `INS_FUN3_CSR_RC: begin
                             // CSRRC(CSR read and clear): Read the specified CSR into a destination register and
                             // clear any 1 bit in the source operand in the register
                             // csrrc rd_w,offset,rs1_w  :   t = CSRs[csr]; CSRs[csr] = t &∼x[rs1_w]; x[rd_w] = t
@@ -440,7 +440,7 @@
                             uop_o = `UOP_CSRRC;
                         end
 
-                        `INS_CSRRCI: begin
+                        `INS_FUN3_CSR_RCI: begin
                             // CSRRC(CSR read and clear): Read the specified CSR into a destination register and
                             // clear any 1 bit in the source operand in the register
                             // csrrci rd_w,offset,uimm  :  t = CSRs[csr]; CSRs[csr] = t &∼zimm; x[rd_w] = t
@@ -454,7 +454,7 @@
                         end
 
                         /*----------csr special instruction, ecall, ebreak, eret, mret, sret, wfi, sfence.wma -------------*/
-                        `INS_CSR_SPECIAL:
+                        `INS_FUN3_CSR_SPECIAL:
                         begin
                             if ((fun7 == 7'b0000000) &&  (rs2_w == 5'd0))
                             begin // INS_ECALL:
@@ -528,7 +528,7 @@
                                 // sfence.vma rs1_w,rs2_w  :   Fence(Store, AddressTranslation)
                             end
 */
-                        end //`INS_CSR_SPECIAL: begin
+                        end //`INS_FUN3_CSR_SPECIAL: begin
 
                         /*----------csr special instruction, ecall, ebreak, eret, mret, sret, wfi, sfence.wma -------------*/
 
@@ -537,15 +537,15 @@
                             $display("invalid fun7 in csr type, pc=%h, inst=%h, fun3=%d", pc_i, ins_i, fun3);
                         end
                     endcase  // case (fun3)
-                end //`INS_OPCODE_CSR: begin
+                end //`INS_OP_CSR: begin
 /*-----------------------------------decode Type CSR instruction, ended -------------------------------------------------------*/
 
 
 
 /*-----------------------------------decode Type Fence instruction, started -------------------------------------------------------*/
-          `INS_OPCODE_FENCE:
+          `INS_OP_FENCE:
             case (fun3)
-              `INS_FENCE: begin   //fun3 = 000
+              `INS_FUN3_FENCE: begin   //fun3 = 000
                     // Used to order device I/O and memory accesses as viewed by other RISC-V
                     // harts and external devices or coprocessors.
                     // Any combination of device input (I), device output (O), memory reads (R), and
@@ -558,7 +558,7 @@
 
                 end
 
-                `INS_FENCE_I: begin   //fun3 = 001
+                `INS_FUN3_FENCE_I: begin   //fun3 = 001
                     // Provides explicit synchronization between writes to instruction memory and
                     // instruction fetches on the same hart.
                     // fm:[32:27]=00000, pred:[26:25]=00, succ[24:20]=00000, rs1_w=00000, fun3=001, rd_w=00000, opcode_w=0001111
@@ -580,7 +580,7 @@
 /*==========================================================decoded end here ==========================================================*/
 
     always @ (*)
-      if (n_rst_i == `RST_EN) {rs1_data_o, rs1_load_depend} = {`ZERO_WORD, `NO_STOP};
+      if (rs_n_i == `RST_EN) {rs1_data_o, rs1_load_depend} = {`ZERO_WORD, `NO_STOP};
       else
       begin
         {rs1_data_o, rs1_load_depend} = {`ZERO_WORD, `NO_STOP};
@@ -603,7 +603,7 @@
       end
 
     always @ (*)
-      if (n_rst_i == `RST_EN) {rs2_load_depend, rs2_data_o} = {`NO_STOP, `ZERO_WORD};
+      if (rs_n_i == `RST_EN) {rs2_load_depend, rs2_data_o} = {`NO_STOP, `ZERO_WORD};
       else
       begin
         {rs2_load_depend, rs2_data_o} = {`NO_STOP, `ZERO_WORD};

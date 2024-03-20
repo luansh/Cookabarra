@@ -81,20 +81,20 @@ int main(int argc,  char ** argv)
         //cpu reset
         if(m_cpu_tickcount<2)
         {
-            ptTbTop->n_rst_i = 1;
+            ptTbTop->rs_n_i = 1;
         }
         else if( (m_cpu_tickcount>=2) && (m_cpu_tickcount<4))
         {
-            ptTbTop->n_rst_i = 0;   // reset the cpu
+            ptTbTop->rs_n_i = 0;   // reset the cpu
         }
         else
         {
-            if(ptTbTop->n_rst_i == 0)
+            if(ptTbTop->rs_n_i == 0)
                 printf("reset the cpu,done \n");
-            ptTbTop->n_rst_i = 1;
+            ptTbTop->rs_n_i = 1;
         }
 
-        ptTbTop->clk_i = 1;
+        ptTbTop->ck_i = 1;
         /*
         if(m_cpu_tickcount>20)
         {
@@ -108,7 +108,7 @@ int main(int argc,  char ** argv)
 	        m_trace->dump(m_cpu_tickcount*10);   //  Tick every 10 ns
 	    }
 
-        ptTbTop->clk_i = 0;	
+        ptTbTop->ck_i = 0;	
         ptTbTop->eval();		  
         if(m_trace)
         {

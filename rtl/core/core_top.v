@@ -1,13 +1,13 @@
   `include "defines.v"
 
   module core_top(
-    input wire clk_i,
-    input wire n_rst_i,
+    input ck_i,
+    input rs_n_i,
 
     // signal to rom, to read the instruction
     output wire rom_ce_o,
     output wire[`REG_BUS_D] rom_addr_o,
-    input wire[`REG_BUS_D] rom_data_i,
+    input[`REG_BUS_D] rom_data_i,
 
     // signal to ram, to read/write the data
     output wire ram_ce_o,
@@ -15,13 +15,13 @@
     output wire[`REG_BUS_D] ram_addr_o,
     output wire ram_we_o,
     output wire[`REG_BUS_D] ram_data_o,
-    input wire ram_data_rvalid,
-    input wire[`REG_BUS_D] ram_data_i,
+    input ram_data_rvalid,
+    input[`REG_BUS_D] ram_data_i,
 
     // interrupt signal
-      input wire irq_software_i,
-      input wire irq_timer_i,
-      input wire irq_external_i
+      input irq_software_i,
+      input irq_timer_i,
+      input irq_external_i
   );
 
     //------------ signal from ctrl unit  -----------
@@ -71,14 +71,14 @@
       //id --> reg
       wire id_rs1_re_o;
       wire id_rs2_re_o;
-      wire[`REG_BUS_A] id_rs1_raddr_o;
-      wire[`REG_BUS_A] id_rs2_raddr_o;
+      wire[`REG_BUS_A] id_rs1_ra_o;
+      wire[`REG_BUS_A] id_rs2_ra_o;
 
       //id --> ctrl
       wire id_stall_req_o;
 
-      //id --> id_ex
-      wire[`REG_BUS_D] id_inst_o;
+  //id -> id_ex
+    wire[`REG_BUS_D] id_inst_o;
     wire[`REG_BUS_D] id_imm_o;
     wire[`INS_BUS_A] id_next_pc_o;
       wire id_next_taken_o;
@@ -99,8 +99,8 @@
     wire[`REG_BUS_D] id_excepttype_o;
 
       //-------signals from id_ex -------
-    // id_ex --> ex
-      wire[`REG_BUS_D] ex_pc_i;
+  //ID -> EX
+    wire[`REG_BUS_D] id_ex_pc_w;
       wire[`REG_BUS_D] ex_inst_i;
     wire[`INS_BUS_A] ex_next_pc_i;
       wire ex_next_taken_i;
@@ -202,8 +202,8 @@
 
       //----------- signals sourced from mem_wb ----
     wire wb_rd_we_i;
-    wire[`REG_BUS_A] wb_rd_addr_i;
-    wire[`REG_BUS_D] wb_rd_wdata_i;
+    wire[`REG_BUS_A] wb_rd_wa_i;
+    wire[`REG_BUS_D] wb_rd_wd_i;
 
     wire wb_csr_we_i;
     wire[`REG_BUS_D] wb_csr_waddr_i;
@@ -218,8 +218,8 @@
 
 
     //------------ signals from reg file -------------------
-      wire[`REG_BUS_D] reg_rs1_rdata_o;
-      wire[`REG_BUS_D] reg_rs2_rdata_o;
+      wire[`REG_BUS_D] reg_rs1_rd_o;
+      wire[`REG_BUS_D] id_rs2_rd_o;
 
 
       //-------------------- signals from csr -----------------
@@ -244,8 +244,8 @@
 
       //ifu instantiate
     ifu ifu0(
-      .clk_i(clk_i),
-      .n_rst_i(n_rst_i),
+      .ck_i(ck_i),
+      .rs_n_i(rs_n_i),
 
       // from the control unit
       .stall_i(ctrl_stall_o),
@@ -275,8 +275,8 @@
 
 
     branch_prediction bp0(
-      .clk_i(clk_i),
-      .n_rst_i(n_rst_i),
+      .ck_i(ck_i),
+      .rs_n_i(rs_n_i),
 
       .branch_source_i(ex_pc_o),   // the pc caused the branch
       .branch_request_i(ex_branch_request_o),  // is this instruction a branch/jump ?
@@ -299,8 +299,8 @@
 
       //if_id instantiate
     if_id if_id0(
-      .clk_i(clk_i),
-      .n_rst_i(n_rst_i),
+      .ck_i(ck_i),
+      .rs_n_i(rs_n_i),
 
       //from ctrl unit
       .stall_i(ctrl_stall_o),
@@ -328,7 +328,7 @@
 
       //instantiate id
     id id0(
-      .n_rst_i(n_rst_i),
+      .rs_n_i(rs_n_i),
 
       //signal from the if_id
       .pc_i(id_pc_i),
@@ -340,12 +340,12 @@
       //signal to read regfile
       .rs1_re_o(id_rs1_re_o),
       .rs2_re_o(id_rs2_re_o),
-      .rs1_ra_o(id_rs1_raddr_o),
-      .rs2_ra_o(id_rs2_raddr_o),
+      .rs1_ra_o(id_rs1_ra_o),
+      .rs2_ra_o(id_rs2_ra_o),
 
           // signal from regfile
-      .rs1_rd_i(reg_rs1_rdata_o),
-      .rs2_rd_i(reg_rs2_rdata_o),
+      .rs1_rd_i(reg_rs1_rd_o),
+      .rs2_rd_i(id_rs2_rd_o),
 
         //bypass from the ex
       .branch_redirect_i(ex_branch_redirect_o),
@@ -385,12 +385,9 @@
           .exception_o(id_excepttype_o)
     );
 
-
-
-    //instantiate id_ex
-    id_ex id_ex0(
-      .clk_i(clk_i),
-      .n_rst_i(n_rst_i),
+    id_ex id_ex_ins(
+      .ck_i(ck_i),
+      .rs_n_i(rs_n_i),
 
       //signal from the ctrl unit
       .stall_i(ctrl_stall_o),
@@ -417,9 +414,8 @@
 
       .exception_i(id_excepttype_o),
 
-
       //signal to ex
-      .pc_o(ex_pc_i),
+      .pc_o(id_ex_pc_w),
       .ins_o(ex_inst_i),
           .next_pc_o(ex_next_pc_i),
           .next_taken_o(ex_next_taken_i),
@@ -440,17 +436,16 @@
       .exception_o(ex_excepttype_i)
     );
 
-
-    //EX模块
-    ex ex0(
-      .n_rst_i(n_rst_i),
+  //EX模块：组合逻辑
+    ex ex_ins(
+      .rs_n_i(rs_n_i),
 
       //from the id_ex
-      .pc_i(ex_pc_i),
+      .pc_i(id_ex_pc_w),
       .ins_i(ex_inst_i),
-          .next_pc_i(ex_next_pc_i),
+      .next_pc_i(ex_next_pc_i),
       .next_taken_i(ex_next_taken_i),
-          .branch_slot_end_i(ex_branch_slot_end_i),
+      .branch_slot_end_i(ex_branch_slot_end_i),
 
       .alusel_i(ex_alusel_i),
       .uop_i(ex_uop_i),
@@ -525,8 +520,8 @@
 
 
     div div0(
-      .clk_i(clk_i),
-      .n_rst_i(n_rst_i),
+      .ck_i(ck_i),
+      .rs_n_i(rs_n_i),
         // from the ex
       .div_signed_i(ex_div_signed_o),
       .dividend_i(ex_dividend_o),
@@ -539,8 +534,8 @@
     );
 
       ex_mem ex_mem0(
-      .clk_i(clk_i),
-      .n_rst_i(n_rst_i),
+      .ck_i(ck_i),
+      .rs_n_i(rs_n_i),
 
         //from ctrl unit
         .stall_i(ctrl_stall_o),
@@ -589,7 +584,7 @@
     );
 
     mem mem0(
-      .n_rst_i(n_rst_i),
+      .rs_n_i(rs_n_i),
 
       // signals from exu
           .exception_i(mem_excepttype_i),
@@ -644,8 +639,8 @@
     );
 
     mem_wb mem_wb0(
-      .clk_i(clk_i),
-      .n_rst_i(n_rst_i),
+      .ck_i(ck_i),
+      .rs_n_i(rs_n_i),
 
           //wires from ctrl unit
           .stall_i(ctrl_stall_o),
@@ -662,8 +657,8 @@
 
       // pass down to write back stage, update the csr and gpr
       .rd_we_o(wb_rd_we_i),
-      .rd_a_o(wb_rd_addr_i),
-      .rd_wd_o(wb_rd_wdata_i),
+      .rd_a_o(wb_rd_wa_i),
+      .rd_wd_o(wb_rd_wd_i),
 
       .csr_we_o(wb_csr_we_i),
       .csr_wa_o(wb_csr_waddr_i),
@@ -674,8 +669,8 @@
 
 
     ctrl ctrl0(
-      .clk_i(clk_i),
-      .n_rst_i(n_rst_i),
+      .ck_i(ck_i),
+      .rs_n_i(rs_n_i),
         //from mem
           .exception_i(mem_excepttype_o),
       .pc_i(mem_pc_o),
@@ -724,8 +719,8 @@
 
 
     csr_file csr0(
-      .clk_i(clk_i),
-      .n_rst_i(n_rst_i),
+      .ck_i(ck_i),
+      .rs_n_i(rs_n_i),
 
       .irq_software_i(irq_software_i),
       .irq_timer_i(irq_timer_i),
@@ -765,28 +760,26 @@
 
           .mip_external_o(csr_mip_external_o),
       .mip_timer_o(csr_mip_timer_o),
-          .mip_sw_o(csr_mip_sw_o),
+          .mip_software_o(csr_mip_sw_o),
 
           .mtvec_o(csr_mtvec_o),
       .epc_o(csr_epc_o)
     );
 
+  regfile regfile_ins(
+    .ck_i(ck_i),
+    .rs_n_i(rs_n_i),
 
-    regfile regfile_ins(
-      .clk_i(clk_i),
-      .n_rst_i (n_rst_i),
+    .rd_we_i(wb_rd_we_i),
+    .rd_wa_i(wb_rd_wa_i),
+    .rd_wd_i(wb_rd_wd_i),
 
-      .rd_we_i(wb_rd_we_i),
-      .rd_wa_i(wb_rd_addr_i),
-      .rd_wd_i(wb_rd_wdata_i),
+    .rs1_re_i(id_rs1_re_o),
+    .rs1_ra_i(id_rs1_ra_o),
+    .rs1_rd_o(reg_rs1_rd_o),
 
-      .rs1_re_i(id_rs1_re_o),
-      .rs1_ra_i(id_rs1_raddr_o),
-      .rs1_rd_o(reg_rs1_rdata_o),
-
-      .rs2_re_i(id_rs2_re_o),
-      .rs2_ra_i(id_rs2_raddr_o),
-      .rs2_rd_o(reg_rs2_rdata_o)
-    );
+    .rs2_re_i(id_rs2_re_o),
+    .rs2_ra_i(id_rs2_ra_o),
+    .rs2_rd_o(id_rs2_rd_o));
 
   endmodule

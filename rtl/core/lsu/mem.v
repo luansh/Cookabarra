@@ -11,19 +11,19 @@
 `include "defines.v"
 
   module mem(
-    input wire n_rst_i,
+    input rs_n_i,
   //From EX
-    input wire[`REG_BUS_D] exception_i,       // exception type
-    input wire[`REG_BUS_D] pc_i,       // the pc when exception happened
-    input wire[`REG_BUS_D] ins_i,            // the instruction caused the exception
+    input[`REG_BUS_D] exception_i,       // exception type
+    input[`REG_BUS_D] pc_i,       // the pc when exception happened
+    input[`REG_BUS_D] ins_i,            // the instruction caused the exception
 
-    input wire rd_we_i,
-    input wire[`REG_BUS_A] rd_wa_i,
-    input wire[`REG_BUS_D] rd_wd_i,
+    input rd_we_i,
+    input[`REG_BUS_A] rd_wa_i,
+    input[`REG_BUS_D] rd_wd_i,
 
-    input wire[`AluOpBus] uop_i,         //uop_code, to determine it is a load or a store
-    input wire[`REG_BUS_D] mem_a_i,
-    input wire[`REG_BUS_D] mem_wd_i,
+    input[`AluOpBus] uop_i,         //uop_code, to determine it is a load or a store
+    input[`REG_BUS_D] mem_a_i,
+    input[`REG_BUS_D] mem_wd_i,
 
     /*-- signals to access the external memory -----*/
     output reg[`REG_BUS_D] mem_a_o,
@@ -31,16 +31,16 @@
     output reg[3:0] mem_sel_o,          //the selector for bytes operation
     output reg[`REG_BUS_D] mem_data_o,
     output reg mem_ce_o,
-    input wire[`REG_BUS_D] mem_data_i,        //the read result from memroy
+    input[`REG_BUS_D] mem_data_i,        //the read result from memroy
 
-    input wire csr_we_i,
-    input wire[`REG_BUS_D] csr_wa_i,
-    input wire[`REG_BUS_D] csr_wd_i,
+    input csr_we_i,
+    input[`REG_BUS_D] csr_wa_i,
+    input[`REG_BUS_D] csr_wd_i,
 
     /*-- signals from write back for data dependance detection -----*/
-    input wire wb_csr_we_i,
-    input wire[`REG_BUS_D] wb_csr_waddr_i,
-    input wire[`REG_BUS_D] wb_csr_wdata_i,
+    input wb_csr_we_i,
+    input[`REG_BUS_D] wb_csr_waddr_i,
+    input[`REG_BUS_D] wb_csr_wdata_i,
 
     /*-- pass down to mem_wb stage -----*/
     output reg rd_we_o,
@@ -108,7 +108,7 @@
     assign stall_req_o = 0;
 
     always @ (*) begin
-        if (n_rst_i == `RST_EN) begin
+        if (rs_n_i == `RST_EN) begin
 			//operation on RAM
             mem_a_o = `ZERO_WORD;
             mem_we = `WRITE_DISABLE;

@@ -22,34 +22,33 @@
 `include "defines.v"
 
 module id_ex(
-
-    input wire clk_i,
-    input wire n_rst_i,
+    input ck_i,
+    input rs_n_i,
 
     /* ------- signals from the ctrl unit --------*/
-    input wire[5:0] stall_i,
-    input wire flush_i,
+    input[5:0] stall_i,
+    input flush_i,
 
     /* ------- signals from the decoder --------*/
-    input wire[`REG_BUS_D] pc_i,
-    input wire[`REG_BUS_D] ins_i,
-    input wire[`REG_BUS_D] next_pc_i,
-    input wire next_taken_i,
-    input wire branch_slot_end_i,
+    input[`REG_BUS_D] pc_i,
+    input[`REG_BUS_D] ins_i,
+    input[`REG_BUS_D] next_pc_i,
+    input next_taken_i,
+    input branch_slot_end_i,
 
-    input wire[`AluSelBus] alusel_i,
-    input wire[`AluOpBus] uop_i,
+    input[`AluSelBus] alusel_i,
+    input[`AluOpBus] uop_i,
 
-    input wire[`REG_BUS_D] rs1_d_i,
-    input wire[`REG_BUS_D] rs2_d_i,
+    input[`REG_BUS_D] rs1_d_i,
+    input[`REG_BUS_D] rs2_d_i,
     input reg[`REG_BUS_D] imm_i,
-    input wire rd_we_i,
-    input wire[`REG_BUS_A] rd_wa_i,
+    input rd_we_i,
+    input[`REG_BUS_A] rd_wa_i,
 
-    input wire csr_we_i,
-    input wire[`REG_BUS_D] csr_addr_i,
+    input csr_we_i,
+    input[`REG_BUS_D] csr_addr_i,
 
-    input wire[`REG_BUS_D] exception_i,
+    input[`REG_BUS_D] exception_i,
 
     /* ------- signals to exu --------*/
     output reg[`REG_BUS_D] pc_o,
@@ -74,8 +73,8 @@ module id_ex(
     output reg[31:0] exception_o
 );
 
-    always @ (posedge clk_i) begin
-        if (n_rst_i == `RST_EN) begin
+    always @ (posedge ck_i) begin
+        if (rs_n_i == `RST_EN) begin
             pc_o <= `ZERO_WORD;
             ins_o <= `NOP_INS;
             branch_slot_end_o <= 1'b0;
@@ -94,7 +93,7 @@ module id_ex(
             csr_addr_o <= `ZERO_WORD;
 
             exception_o <= `ZERO_WORD;
-        end else if (flush_i == 1'b1 ) begin
+        end else if (flush_i == 1'b1) begin
             pc_o <= `ZERO_WORD;
             ins_o <= `NOP_INS;
             branch_slot_end_o <= 1'b0;

@@ -23,23 +23,23 @@
 
 module mem_wb(
 
-    input wire clk_i,
-    input wire n_rst_i,
+    input ck_i,
+    input rs_n_i,
 
     /*-- signals from contrl module -----*/
-    input wire[5:0] stall_i,
-    input wire flush_i,
+    input[5:0] stall_i,
+    input flush_i,
 
     /*-- signals from mem -----*/
 	//GPR
-    input wire rd_we_i,
-    input wire[`REG_BUS_A] rd_wa_i,
-    input wire[`REG_BUS_D] rd_wd_i,
+    input rd_we_i,
+    input[`REG_BUS_A] rd_wa_i,
+    input[`REG_BUS_D] rd_wd_i,
 
     //CSR
-    input wire csr_we_i,
-    input wire[`REG_BUS_D] csr_wa_i,
-    input wire[`REG_BUS_D] csr_wd_i,
+    input csr_we_i,
+    input[`REG_BUS_D] csr_wa_i,
+    input[`REG_BUS_D] csr_wd_i,
 
     /*-- signals passed to mem_wb stage -----*/
 	//GPR
@@ -55,8 +55,8 @@ module mem_wb(
     output reg instret_incr_o
 );
 
-    always @ (posedge clk_i) begin
-        if (n_rst_i == `RST_EN) begin
+    always @ (posedge ck_i) begin
+        if (rs_n_i == `RST_EN) begin
 		    // GPR
             rd_we_o <= `WRITE_DISABLE;
             rd_a_o <= `NOP_REG_A;

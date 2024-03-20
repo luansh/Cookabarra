@@ -22,15 +22,15 @@ module timer #(
   // Bus address width
   parameter int unsigned AddressWidth = 32
 ) (
-  input wire clk_i,
-  input wire rst_ni,
+  input ck_i,
+  input rst_ni,
   // Bus interface
-  input wire timer_req_i,
+  input timer_req_i,
 
-  input wire [AddressWidth-1:0] timer_addr_i,
-  input wire timer_we_i,
-  input wire [DataWidth/8-1:0] timer_be_i,
-  input wire [DataWidth-1:0] timer_wdata_i,
+  input [AddressWidth-1:0] timer_addr_i,
+  input timer_we_i,
+  input [DataWidth/8-1:0] timer_be_i,
+  input [DataWidth-1:0] timer_wdata_i,
   output wire timer_rvalid_o,
   output wire [DataWidth-1:0] timer_rdata_o,
   output wire timer_err_o,
@@ -86,7 +86,7 @@ module timer #(
   assign mtimecmp_d = {(mtimecmph_we ? mtimecmph_wdata : mtimecmp_q[63:32]), (mtimecmp_we  ? mtimecmp_wdata  : mtimecmp_q[31:0])};
 
   // Generate registers
-  always @(posedge clk_i or negedge rst_ni) begin
+  always @ (posedge ck_i or negedge rst_ni) begin
     if (~rst_ni) begin
       mtime_q <= 'b0;
     end else begin
@@ -94,7 +94,7 @@ module timer #(
     end
   end
 
-  always @(posedge clk_i or negedge rst_ni) begin
+  always @ (posedge ck_i or negedge rst_ni) begin
     if (~rst_ni) begin
       mtimecmp_q <= 'b0;
     end else if (mtimecmp_we | mtimecmph_we) begin
@@ -105,7 +105,7 @@ module timer #(
   // interrupt remains set until mtimecmp is written
   assign interrupt_d  = ((mtime_q >= mtimecmp_q) | interrupt_q) & ~(mtimecmp_we | mtimecmph_we);
 
-  always @(posedge clk_i or negedge rst_ni) begin
+  always @ (posedge ck_i or negedge rst_ni) begin
     if (~rst_ni) begin
       interrupt_q <= 'b0;
     end else begin
@@ -133,7 +133,7 @@ module timer #(
   end
 
   // error_q and rdata_q are only valid when rvalid_q is high  //shawn modified to the same cycle
-  always @(*) begin    //posedge clk_i
+  always @ (*) begin    //posedge ck_i
     if (timer_req_i) begin
       rdata_q = rdata_d;
       error_q = error_d;
@@ -146,7 +146,7 @@ module timer #(
   assign timer_rdata_o = rdata_q;
 
   // Read data is always valid one cycle after a request   //shawn modified to the same cycle
-  always @( * ) begin    //posedge clk_i or negedge rst_ni
+  always @ ( * ) begin    //posedge ck_i or negedge rst_ni
     if (!rst_ni) begin
       rvalid_q = 1'b0;
     end else begin

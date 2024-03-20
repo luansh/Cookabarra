@@ -2,14 +2,14 @@
   `include "defines.v"
 
   module div(
-    input wire clk_i,
-    input wire n_rst_i,
+    input ck_i,
+    input rs_n_i,
   //From EX
-    input wire div_signed_i,
-    input wire[31:0] dividend_i,
-    input wire[31:0] divisor_i,
-    input wire annul_i, //AnNul:在除法运算过程中，异常或者中断发生，停止除法运算
-    input wire start_i,
+    input div_signed_i,
+    input[31:0] dividend_i,
+    input[31:0] divisor_i,
+    input annul_i, //AnNul:在除法运算过程中，异常或者中断发生，停止除法运算
+    input start_i,
   //To EX
     output reg ready_o,
     output reg[63:0] result_o); //低32b 为商，高32b为余数
@@ -24,8 +24,8 @@
   //如果被除数大于除数，div_var_w[32] 为 0
     assign div_var_w = {1'b0, dividend_r[63:32]} - {1'b0, divisor_r};
 
-    always @ (posedge clk_i)
-      if (n_rst_i == `RST_EN) begin
+    always @ (posedge ck_i)
+      if (rs_n_i == `RST_EN) begin
           state_r <= `DIV_FREE;
           ready_o <= `DIV_RESULT_NOT_READY;
           result_o <= {`ZERO_WORD, `ZERO_WORD};

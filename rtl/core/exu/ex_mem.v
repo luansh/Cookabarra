@@ -1,32 +1,32 @@
   `include "defines.v"
 
   module ex_mem(
-    input wire clk_i,
-    input wire n_rst_i,
+    input ck_i,
+    input rs_n_i,
 
   //From Ctrl
-    input wire[5:0] stall_i,
-    input wire flush_i,
+    input[5:0] stall_i,
+    input flush_i,
   //From EX
-    input wire[`REG_BUS_D] pc_i,
+    input[`REG_BUS_D] pc_i,
     input reg[`REG_BUS_D] ins_i,
 
-    input wire branch_tag_i,       //this instruction is a branch instr
-    input wire branch_slot_end_i,  //fetch unit started from the target inst
+    input branch_tag_i,       //this instruction is a branch instr
+    input branch_slot_end_i,  //fetch unit started from the target inst
 
-    input wire rd_we_i,
-    input wire[`REG_BUS_A] rd_wa_i,
-    input wire[`REG_BUS_D] rd_wd_i,
+    input rd_we_i,
+    input[`REG_BUS_A] rd_wa_i,
+    input[`REG_BUS_D] rd_wd_i,
 
-    input wire[`AluOpBus] uop_i,
-    input wire[`REG_BUS_D] mem_a_i,
-    input wire[`REG_BUS_D] mem_wd_i,
+    input[`AluOpBus] uop_i,
+    input[`REG_BUS_D] mem_a_i,
+    input[`REG_BUS_D] mem_wd_i,
 
-    input wire csr_we_i,
-    input wire[`REG_BUS_D] csr_wa_i,
-    input wire[`REG_BUS_D] csr_wd_i,
+    input csr_we_i,
+    input[`REG_BUS_D] csr_wa_i,
+    input[`REG_BUS_D] csr_wd_i,
 
-    input wire[`REG_BUS_D] exception_i,
+    input[`REG_BUS_D] exception_i,
   //To LSU
     output reg rd_we_o,
     output reg[`REG_BUS_A] rd_a_o,
@@ -47,8 +47,8 @@
     reg branch_tag;
     reg[`REG_BUS_D] branch_pc;
 
-    always @ (posedge clk_i) begin
-      if (n_rst_i == `RST_EN) begin
+    always @ (posedge ck_i) begin
+      if (rs_n_i == `RST_EN) begin
         {rd_a_o, rd_we_o, rd_wd_o} <= {`NOP_REG_A, `WRITE_DISABLE, `ZERO_WORD};
 			//CSR
         uop_o <= `UOP_NOP;

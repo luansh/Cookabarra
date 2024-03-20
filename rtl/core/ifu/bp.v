@@ -5,23 +5,23 @@
     parameter NUM_RAS_ENTRIES = 8,
     parameter NUM_BTB_ENTRIES = 64,
     parameter NUM_BHT_ENTRIES = 64) (
-    input wire clk_i,
-    input wire n_rst_i,
+    input ck_i,
+    input rs_n_i,
     // input signals from execution unit
-    input wire[`INS_BUS_A] branch_source_i,   // the pc caused the branch
-    input wire branch_request_i,
-    input wire branch_is_taken_i,
-    input wire branch_is_call_i,
-    input wire branch_is_ret_i,
-    input wire branch_is_jmp_i,
-    input wire[`INS_BUS_A] branch_target_i,   // the branch target pc
-    input wire branch_mispredict_i,
+    input[`INS_BUS_A] branch_source_i,   // the pc caused the branch
+    input branch_request_i,
+    input branch_is_taken_i,
+    input branch_is_call_i,
+    input branch_is_ret_i,
+    input branch_is_jmp_i,
+    input[`INS_BUS_A] branch_target_i,   // the branch target pc
+    input branch_mispredict_i,
 
     //input signals from fetch unit
-    input wire[`INS_BUS_A] pc_i,  // the current PC from fetch unit
+    input[`INS_BUS_A] pc_i,  // the current PC from fetch unit
 
     //input signals from ctrl
-    input wire stall_i, // to avoid one ret/call instruction to cause multiple ras push or pop operation
+    input stall_i, // to avoid one ret/call instruction to cause multiple ras push or pop operation
 
     // output signals to fetch unit
     output reg[`INS_BUS_A] next_pc_o,  // next pc predicted by this module
@@ -42,8 +42,8 @@
 
     integer bims;
     //BHT 为由BIM 构成的List
-    always @ (posedge clk_i or negedge  n_rst_i)
-      if (n_rst_i == `RST_EN)
+    always @ (posedge ck_i or negedge  rs_n_i)
+      if (rs_n_i == `RST_EN)
       for (bims = 0; bims < NUM_BHT_ENTRIES; bims = bims + 1)
       //2'b00:Strongly Not Taken
       //2'b01:Weakly Not Taken
@@ -150,8 +150,8 @@
     end
 
     integer update;
-    always @ (posedge clk_i or negedge n_rst_i)
-      if (n_rst_i == `RST_EN)
+    always @ (posedge ck_i or negedge rs_n_i)
+      if (rs_n_i == `RST_EN)
       for (update = 0; update < NUM_BTB_ENTRIES; update = update + 1)
       begin
         btb_is_valid_list_r[update] <= 1'b0;
@@ -211,8 +211,8 @@
       else if (branch_request_i & branch_is_ret_i) ras_proven_next_index_r = ras_proven_cur_index_r - 1;
     end
 
-    always @ (posedge clk_i)
-      ras_proven_cur_index_r <= (n_rst_i == `RST_EN) ? {RAS_ENTRIES_WIDTH{1'b0}} : ras_proven_next_index_r;
+    always @ (posedge ck_i)
+      ras_proven_cur_index_r <= (rs_n_i == `RST_EN) ? {RAS_ENTRIES_WIDTH{1'b0}} : ras_proven_next_index_r;
 
     //-----------------------------------------------------------------
     // the speculative Return Address Stack
@@ -249,8 +249,8 @@
     end
 
     integer i3;
-    always @ (posedge clk_i)
-      if (n_rst_i == `RST_EN)
+    always @ (posedge ck_i)
+      if (rs_n_i == `RST_EN)
       begin
         for (i3 = 0; i3 < NUM_RAS_ENTRIES; i3 = i3 + 1) ras_list_r[i3] <= 32'd0;
         ras_speculative_cur_index_r <= {RAS_ENTRIES_WIDTH{1'b0}};
@@ -278,8 +278,8 @@
     //-----------------------------------------------------------------
     bp_allocate_entry #(
       .DEPTH(NUM_BTB_ENTRIES)) u_lru(
-      .clk_i(clk_i),
-      .n_rst_i(n_rst_i),
+      .ck_i(ck_i),
+      .rs_n_i(rs_n_i),
       .alloc_i(btb_alloc_req),
       .alloc_entry_o(btb_alloc_entry_w));
     // Outputs
@@ -297,8 +297,8 @@
 //产生0-31循环数据
   module bp_allocate_entry #(
     parameter DEPTH = 32) (
-    input clk_i,
-    input n_rst_i,
+    input ck_i,
+    input rs_n_i,
     input alloc_i,
     output[$clog2(DEPTH)-1:0] alloc_entry_o);
 
@@ -306,8 +306,8 @@
 
     reg [A_W-1:0] lfsr_r;
 
-    always @ (posedge clk_i or negedge  n_rst_i)
-      if (n_rst_i == `RST_EN) lfsr_r <= {A_W{1'b0}};
+    always @ (posedge ck_i or negedge  rs_n_i)
+      if (rs_n_i == `RST_EN) lfsr_r <= {A_W{1'b0}};
       else if (alloc_i)
       if (lfsr_r == {A_W{1'b1}}) lfsr_r <= {A_W{1'b0}};
       else lfsr_r <= lfsr_r + 1;

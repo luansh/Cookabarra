@@ -1,29 +1,29 @@
 `include "defines.v"
 
   module ex(
-    input wire n_rst_i,
+    input rs_n_i,
   //From ID
-    input wire[`REG_BUS_D] pc_i,
-    input wire[`REG_BUS_D] ins_i,
+    input[`REG_BUS_D] pc_i,
+    input[`REG_BUS_D] ins_i,
 
-    input wire[`REG_BUS_D] next_pc_i,
-  	input wire next_taken_i,
-    input wire branch_slot_end_i,
+    input[`REG_BUS_D] next_pc_i,
+  	input next_taken_i,
+    input branch_slot_end_i,
 
-    input wire[`AluSelBus] alusel_i,
-    input wire[`AluOpBus] uop_i,
+    input[`AluSelBus] alusel_i,
+    input[`AluOpBus] uop_i,
 
-    input wire[`REG_BUS_D] rs1_d_i,
-    input wire[`REG_BUS_D] rs2_d_i,
-    input wire[`REG_BUS_D] imm_i,
+    input[`REG_BUS_D] rs1_d_i,
+    input[`REG_BUS_D] rs2_d_i,
+    input[`REG_BUS_D] imm_i,
 
-    input wire rd_we_i,
-    input wire[`REG_BUS_A] rd_wa_i,
+    input rd_we_i,
+    input[`REG_BUS_A] rd_wa_i,
 
-    input wire csr_we_i,       // write csr or not
-    input wire[`REG_BUS_D] csr_addr_i,     // the csr address, could be read or write
+    input csr_we_i,       // write csr or not
+    input[`REG_BUS_D] csr_addr_i,     // the csr address, could be read or write
 
-    input wire[31:0] exception_i,    // the execeptions detected in the decode stage, ecall, mret, invalid instructions
+    input[31:0] exception_i,    // the execeptions detected in the decode stage, ecall, mret, invalid instructions
 
     /* ------- signals with division unit --------*/
     output reg[`REG_BUS_D] dividend_o,
@@ -32,25 +32,25 @@
     // output reg div_annul_o,   // not used at the moment
     output reg div_signed_o,
 
-    input wire[`REG_BUS_DOUBLE] div_result_i,   // the result of the division,the low 32 bits are the quotient, the higher 32 bits are the remainder
-    input wire div_ready_i,    //the divison result is ready
+    input[`REG_BUS_DOUBLE] div_result_i,   // the result of the division,the low 32 bits are the quotient, the higher 32 bits are the remainder
+    input div_ready_i,    //the divison result is ready
 
     /* ------- signals to the ctrl unit --------*/
     output reg stall_req_o,     // need to stall the pipeline on the division operation, it needs 32 cycles
 
     /* ------- signals with csr unit --------*/
     output reg[`REG_BUS_D] csr_raddr_o,
-    input wire[`REG_BUS_D] csr_rdata_i,
+    input[`REG_BUS_D] csr_rdata_i,
 
     /* ------- bypass signals from lsu, for csr dependance detection --------*/
-    input wire mem_csr_we_i,
-    input wire[`REG_BUS_D] mem_csr_waddr_i,
-    input wire[`REG_BUS_D] mem_csr_wdata_i,
+    input mem_csr_we_i,
+    input[`REG_BUS_D] mem_csr_waddr_i,
+    input[`REG_BUS_D] mem_csr_wdata_i,
 
     /* ------- bypass signals from write back, for csr dependance detection --------*/
-    input wire wb_csr_we_i,
-    input wire[`REG_BUS_D] wb_csr_waddr_i,
-    input wire[`REG_BUS_D] wb_csr_wdata_i,
+    input wb_csr_we_i,
+    input[`REG_BUS_D] wb_csr_waddr_i,
+    input[`REG_BUS_D] wb_csr_wdata_i,
 
 
     /* ------- passed to next pipeline --------*/
@@ -170,7 +170,7 @@
     // (1) calcuate the memory address to acccess
     // (2) if it is a store instruction, the data to write was required as well
     always @ (*) begin
-        if (n_rst_i == `RST_EN) begin
+        if (rs_n_i == `RST_EN) begin
             mem_a_o = `ZERO_WORD;
             mem_wd_o = `ZERO_WORD;
         end else begin
@@ -238,7 +238,7 @@
 
     // calculate the data to write to the csr
     always @ (*) begin
-        if (n_rst_i == `RST_EN) begin
+        if (rs_n_i == `RST_EN) begin
             csr_wa_o = `ZERO_WORD;
             csr_wd_o = `ZERO_WORD;
         end else begin
@@ -283,7 +283,7 @@
 
     // jump and branch instructions
     always @ (*) begin
-      if (n_rst_i == `RST_EN)
+      if (rs_n_i == `RST_EN)
       begin
         jump_result_r = `ZERO_WORD;
 
@@ -398,7 +398,7 @@
 
   //Logic
     always @ (*)
-      if (n_rst_i == `RST_EN) logic_result_r = `ZERO_WORD;
+      if (rs_n_i == `RST_EN) logic_result_r = `ZERO_WORD;
       else
         case (uop_i)
           `UOP_LUI: logic_result_r = imm_i;
@@ -418,7 +418,7 @@
 
   //Shift
     always @ (*)
-      if (n_rst_i == `RST_EN) shift_result_r = `ZERO_WORD;
+      if (rs_n_i == `RST_EN) shift_result_r = `ZERO_WORD;
       else
         case (uop_i)
           `UOP_SLLI: shift_result_r = rs1_d_i << imm_i;
@@ -433,7 +433,7 @@
 
   //Arithmetic
     always @ (*)
-      if (n_rst_i == `RST_EN) arithmetic_result_r = `ZERO_WORD;
+      if (rs_n_i == `RST_EN) arithmetic_result_r = `ZERO_WORD;
       else
         case (uop_i)
           `UOP_ADDI: arithmetic_result_r = rs1_add_imm_w;
@@ -467,7 +467,7 @@
     end
 
     always @ (*)
-      if (n_rst_i == `RST_EN) mul_result_r = `ZERO_WORD;
+      if (rs_n_i == `RST_EN) mul_result_r = `ZERO_WORD;
       else
         case (uop_i)
           `UOP_MULT: mul_result_r = mul_result_w[31:0];
@@ -487,7 +487,7 @@
 
     // division and rem instructions
     always @ (*) begin
-        if (n_rst_i == `RST_EN) begin
+        if (rs_n_i == `RST_EN) begin
             stallreq_for_div = `NO_STOP;
             dividend_o = `ZERO_WORD;
             divisor_o = `ZERO_WORD;
