@@ -41,7 +41,7 @@
     /* ------- signals with csr unit --------*/
     output reg[`REG_BUS_D] csr_raddr_o,
     input[`REG_BUS_D] csr_rdata_i,
-
+  //LSU -> EX
     /* ------- bypass signals from lsu, for csr dependance detection --------*/
     input mem_csr_we_i,
     input[`REG_BUS_D] mem_csr_wa_i,
