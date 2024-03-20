@@ -50,9 +50,9 @@ Note: Seen a lot of nop instruction were inserted into the pipeline when there i
 -------------------------------------------------------------- Added 27-12-2021------------------------------------------------------------------------
 
 The coremarks was boosted by introducing the branch prediction to the implementation. with the following branch prediction parameters:
-    parameter NUM_RAS_ENTRIES  = 8,
-    parameter NUM_BTB_ENTRIES  = 64,
-    parameter NUM_BHT_ENTRIES  = 64
+    parameter RAS_ENTRIES  = 8,
+    parameter BTB_ENTRIES  = 64,
+    parameter BHT_ENTRIES  = 64
 Coremarks was increased from 2.42 to 2.90
 
 
