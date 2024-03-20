@@ -5,38 +5,21 @@
 // E-mail:  shawn110285@gmail.com
 // Description: pass the signals from lsu stage to write back stage
 --------------------------------------------------------------------------*/
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//-----------------------------------------------------------------
-
 `include "defines.v"
 
-module mem_wb(
-
+  module mem_wb(
     input ck_i,
     input rs_n_i,
 
     /*-- signals from contrl module -----*/
     input[5:0] stall_i,
     input flush_i,
-
+  //LSU -> WB
     /*-- signals from mem -----*/
-	//GPR
     input rd_we_i,
     input[`REG_BUS_A] rd_wa_i,
     input[`REG_BUS_D] rd_wd_i,
 
-    //CSR
     input csr_we_i,
     input[`REG_BUS_D] csr_wa_i,
     input[`REG_BUS_D] csr_wd_i,
@@ -55,51 +38,22 @@ module mem_wb(
     output reg instret_incr_o
 );
 
-    always @ (posedge ck_i) begin
-        if (rs_n_i == `RST_EN) begin
-		    // GPR
-            rd_we_o <= `WRITE_DISABLE;
-            rd_a_o <= `NOP_REG_A;
-            rd_wd_o <= `ZERO_WORD;
-
-			// CSR
-            csr_we_o <= `WRITE_DISABLE;
-            csr_wa_o <= `ZERO_WORD;
-            csr_wd_o <= `ZERO_WORD;
-
-            instret_incr_o  <= 1'b0;
-        end else if (flush_i == 1'b1 ) begin  //need to flush the pipeline
-            rd_we_o <= `WRITE_DISABLE;
-            rd_a_o <= `NOP_REG_A;
-            rd_wd_o <= `ZERO_WORD;
-
-            csr_we_o <= `WRITE_DISABLE;
-            csr_wa_o <= `ZERO_WORD;
-            csr_wd_o <= `ZERO_WORD;
-
-            instret_incr_o <= 1'b0;
-        end else if (stall_i[4] == `STOP && stall_i[5] == `NO_STOP) begin  //stall this stage
-            rd_we_o <= `WRITE_DISABLE;
-            rd_a_o <= `NOP_REG_A;
-            rd_wd_o <= `ZERO_WORD;
-
-            csr_we_o <= `WRITE_DISABLE;
-            csr_wa_o <= `ZERO_WORD;
-            csr_wd_o <= `ZERO_WORD;
-
-            instret_incr_o  <= 1'b0;
-        end else if (stall_i[4] == `NO_STOP) begin
-		    // write the GPR
-            rd_we_o <= rd_we_i;
-            rd_a_o <= rd_wa_i;
-            rd_wd_o <= rd_wd_i;
-
-			// write the CSR
-            csr_we_o <= csr_we_i;
-            csr_wa_o <= csr_wa_i;
-            csr_wd_o <= csr_wd_i;
+    always @ (posedge ck_i)
+      if (rs_n_i == `RST_EN) ||
+         ((flush_i == 1'b1) ||    //need to flush the pipeline
+         ((stall_i[4] == `STOP) && (stall_i[5] == `NO_STOP)))//stall this stage
+      begin
+        instret_incr_o <= 1'b0;
+      //CSR And GPR
+        {csr_we_o, csr_wa_o, csr_wd_o} <= {`WRITE_DISABLE, `ZERO_WORD, `ZERO_WORD};
+        {rd_we_o, rd_a_o, rd_wd_o} <= {`WRITE_DISABLE, `NOP_REG_A, `ZERO_WORD};
+      end
+      else if (stall_i[4] == `NO_STOP)
+      begin
             //update the retired instruction counter by adding one
-            instret_incr_o  <= 1'b1;
-        end  //if
-    end  //always
-endmodule
+        instret_incr_o  <= 1'b1;
+        {csr_we_o, csr_wa_o, csr_wd_o} <= {csr_we_i, csr_wa_i, csr_wd_i};
+        {rd_we_o, rd_a_o, rd_wd_o} <= {rd_we_i, rd_wa_i, rd_wd_i};
+      end
+
+  endmodule

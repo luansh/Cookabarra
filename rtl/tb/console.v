@@ -37,7 +37,7 @@ module console #(
   localparam reg[7:0] CHAR_OUT_A = 8'h0;
   localparam reg[7:0] SIM_CTRL_A = 8'h2;
 
-  reg [7:0] ctrl_addr;
+  reg [7:0] ctl_addr;
   reg [2:0] sim_finish = 3'b000;
 
   integer log_fd;
@@ -50,7 +50,7 @@ module console #(
     $fclose(log_fd);
   end
 
-  assign ctrl_addr = addr_i[9:2];
+  assign ctl_addr = addr_i[9:2];
 
   always @ (posedge ck_i or negedge rst_ni) begin
     if (~rst_ni) begin
@@ -61,7 +61,7 @@ module console #(
       rvalid_o <= req_i;
 
       if (req_i & we_i) begin
-        case (ctrl_addr)
+        case (ctl_addr)
 
           CHAR_OUT_A: begin
             if (be_i[0]) begin

@@ -1,8 +1,4 @@
 /*-------------------------------------------------------------------------
-// Module:  mem
-// File:    mem.v
-// Author:  shawn Liu
-// E-mail:  shawn110285@gmail.com
 // Description: LSU
 //              (1) handle the load and store instruction
 //              (2) process the exception
@@ -39,8 +35,8 @@
 
     /*-- signals from write back for data dependance detection -----*/
     input wb_csr_we_i,
-    input[`REG_BUS_D] wb_csr_waddr_i,
-    input[`REG_BUS_D] wb_csr_wdata_i,
+    input[`REG_BUS_D] wb_csr_wa_i,
+    input[`REG_BUS_D] wb_csr_wd_i,
 
     /*-- pass down to mem_wb stage -----*/
     output reg rd_we_o,
@@ -63,7 +59,7 @@
     reg mem_re;
 
     reg align_halfword_r;
-    reg align_word_r;
+    reg align_word_r = 1'b0;
 
     reg load_operation_r;
     reg store_operation_r;

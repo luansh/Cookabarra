@@ -25,22 +25,22 @@
   );
 
     //------------ signal from ctrl unit  -----------
-      wire ctrl_ie_type_o;
-      wire ctrl_set_epc_o;
-      wire[`REG_BUS_D] ctrl_epc_o;
+      wire ctl_ie_type_o;
+      wire ctl_set_epc_o;
+      wire[`REG_BUS_D] ctl_epc_o;
 
-      wire ctrl_set_mtval_o;
-      wire[`REG_BUS_D] ctrl_mtval_o;
+      wire ctl_set_mtval_o;
+      wire[`REG_BUS_D] ctl_mtval_o;
 
-      wire ctrl_set_cause_o;
-      wire[3:0] ctrl_trap_casue_o;
+      wire ctl_set_cause_o;
+      wire[3:0] ctl_trap_casue_o;
 
-      wire ctrl_mstatus_ie_clear_o;
-      wire ctrl_mstatus_ie_set_o;
+      wire ctl_mstatus_ie_clear_o;
+      wire ctl_mstatus_ie_set_o;
 
-    wire[5:0] ctrl_stall_o;
-    wire ctrl_flush_o;
-    wire[`REG_BUS_D] ctrl_new_pc_o;
+    wire[5:0] ctl_stall_o;
+    wire ctl_flush_o;
+    wire[`REG_BUS_D] ctl_new_pc_o;
 
 
       //------- signals from if  ----
@@ -84,7 +84,7 @@
       wire id_next_taken_o;
       wire id_branch_slot_end_o;
 
-    wire id_csr_we_o;
+    wire id_csr_we_o_w;
     wire[`REG_BUS_D] id_csr_addr_o;
 
     wire[`REG_BUS_D] id_rs1_data_o;
@@ -177,8 +177,8 @@
     wire[`REG_BUS_D] mem_mem_wdata_i;
 
     wire mem_csr_we_i;
-    wire[`REG_BUS_D] mem_csr_waddr_i;
-    wire[`REG_BUS_D] mem_csr_wdata_i;
+    wire[`REG_BUS_D] mem_csr_wa_i;
+    wire[`REG_BUS_D] mem_csr_wd_i;
 
       wire[`REG_BUS_D] mem_excepttype_i;
     wire[`REG_BUS_D] mem_pc_i;
@@ -206,8 +206,8 @@
     wire[`REG_BUS_D] wb_rd_wd_i;
 
     wire wb_csr_we_i;
-    wire[`REG_BUS_D] wb_csr_waddr_i;
-    wire[`REG_BUS_D] wb_csr_wdata_i;
+    wire[`REG_BUS_D] wb_csr_wa_i;
+    wire[`REG_BUS_D] wb_csr_wd_i;
 
       wire wb_instret_incr_i;
 
@@ -248,9 +248,9 @@
       .rs_n_i(rs_n_i),
 
       // from the control unit
-      .stall_i(ctrl_stall_o),
-      .flush_i(ctrl_flush_o),
-      .new_pc_i(ctrl_new_pc_o),
+      .stall_i(ctl_stall_o),
+      .flush_i(ctl_flush_o),
+      .new_pc_i(ctl_new_pc_o),
 
           // from bp
       .next_pc_i (bp_next_pc_o),
@@ -289,7 +289,7 @@
 
       //input signals from fetch unit
       .pc_i (if_pc_o),
-      .stall_i(ctrl_stall_o[0]),
+      .stall_i(ctl_stall_o[0]),
 
       // output signals to fetch unit
       .next_pc_o (bp_next_pc_o),    // next predicted pc
@@ -303,8 +303,8 @@
       .rs_n_i(rs_n_i),
 
       //from ctrl unit
-      .stall_i(ctrl_stall_o),
-      .flush_i(ctrl_flush_o),
+      .stall_i(ctl_stall_o),
+      .flush_i(ctl_flush_o),
 
       //from if
       .pc_i(if_pc_o),
@@ -371,7 +371,7 @@
 
       .imm_o(id_imm_o),
 
-      .csr_we_o(id_csr_we_o),
+      .csr_we_o(id_csr_we_o_w),
       .csr_addr_o(id_csr_addr_o),
 
       .rs1_data_o(id_rs1_data_o),
@@ -390,8 +390,8 @@
       .rs_n_i(rs_n_i),
 
       //signal from the ctrl unit
-      .stall_i(ctrl_stall_o),
-      .flush_i(ctrl_flush_o),
+      .stall_i(ctl_stall_o),
+      .flush_i(ctl_flush_o),
 
       //signal from id
       .pc_i(id_pc_o),
@@ -409,7 +409,7 @@
       .rd_we_i(id_rd_we_o),
       .rd_wa_i(id_rd_waddr_o),
 
-      .csr_we_i(id_csr_we_o),
+      .csr_we_i(id_csr_we_o_w),
           .csr_addr_i(id_csr_addr_o),
 
       .exception_i(id_excepttype_o),
@@ -478,13 +478,13 @@
 
       //forward the csr updating from mem stage
         .mem_csr_we_i(mem_csr_we_o),
-      .mem_csr_waddr_i(mem_csr_waddr_o),
-      .mem_csr_wdata_i(mem_csr_wdata_o),
+      .mem_csr_wa_i(mem_csr_waddr_o),
+      .mem_csr_wd_i(mem_csr_wdata_o),
 
       //forward the csr updating from write back stage
         .wb_csr_we_i(wb_csr_we_i),
-      .wb_csr_waddr_i(wb_csr_waddr_i),
-      .wb_csr_wdata_i(wb_csr_wdata_i),
+      .wb_csr_wa_i(wb_csr_wa_i),
+      .wb_csr_wd_i(wb_csr_wd_i),
 
 
       //pass down the signals to next pipeline stage
@@ -538,8 +538,8 @@
       .rs_n_i(rs_n_i),
 
         //from ctrl unit
-        .stall_i(ctrl_stall_o),
-        .flush_i(ctrl_flush_o),
+        .stall_i(ctl_stall_o),
+        .flush_i(ctl_flush_o),
 
       //from the exu
       .pc_i(ex_pc_o),
@@ -575,8 +575,8 @@
       .mem_wd_o(mem_mem_wdata_i),
 
       .csr_we_o(mem_csr_we_i),    //forward to ex meanwhile
-      .csr_wa_o(mem_csr_waddr_i),
-      .csr_wd_o(mem_csr_wdata_i),
+      .csr_wa_o(mem_csr_wa_i),
+      .csr_wd_o(mem_csr_wd_i),
 
       .exception_o(mem_excepttype_i),
       .pc_o(mem_pc_i),
@@ -610,13 +610,13 @@
 
         // CSR write signals
       .csr_we_i(mem_csr_we_i),
-      .csr_wa_i(mem_csr_waddr_i),
-      .csr_wd_i(mem_csr_wdata_i),
+      .csr_wa_i(mem_csr_wa_i),
+      .csr_wd_i(mem_csr_wd_i),
 
-          //回写阶段的指令是否要写CSR，用来检测数据相关
-          .wb_csr_we_i(wb_csr_we_i),
-      .wb_csr_waddr_i(wb_csr_waddr_i),
-          .wb_csr_wdata_i(wb_csr_wdata_i),
+      //回写阶段的指令是否要写CSR，用来检测数据相关
+      .wb_csr_we_i(wb_csr_we_i),
+      .wb_csr_wa_i(wb_csr_wa_i),
+      .wb_csr_wd_i(wb_csr_wd_i),
 
 
       //pass down to mem_wb stage
@@ -643,8 +643,8 @@
       .rs_n_i(rs_n_i),
 
           //wires from ctrl unit
-          .stall_i(ctrl_stall_o),
-      .flush_i(ctrl_flush_o),
+          .stall_i(ctl_stall_o),
+      .flush_i(ctl_flush_o),
 
       //from mem
       .rd_we_i(mem_rd_we_o),
@@ -661,8 +661,8 @@
       .rd_wd_o(wb_rd_wd_i),
 
       .csr_we_o(wb_csr_we_i),
-      .csr_wa_o(wb_csr_waddr_i),
-      .csr_wd_o(wb_csr_wdata_i),
+      .csr_wa_o(wb_csr_wa_i),
+      .csr_wd_o(wb_csr_wd_i),
 
       .instret_incr_o(wb_instret_incr_i)
     );
@@ -696,24 +696,24 @@
       .epc_i(csr_epc_o),
 
           // to csr
-          .ie_type_o(ctrl_ie_type_o),
-          .set_cause_o(ctrl_set_cause_o),
-          .trap_cause_o(ctrl_trap_casue_o),
+          .ie_type_o(ctl_ie_type_o),
+          .set_cause_o(ctl_set_cause_o),
+          .trap_cause_o(ctl_trap_casue_o),
 
-          .set_epc_o(ctrl_set_epc_o),
-          .epc_o(ctrl_epc_o),
+          .set_epc_o(ctl_set_epc_o),
+          .epc_o(ctl_epc_o),
 
-          .set_mtval_o(ctrl_set_mtval_o),
-          .mtval_o(ctrl_mtval_o),
+          .set_mtval_o(ctl_set_mtval_o),
+          .mtval_o(ctl_mtval_o),
 
 
-          .mstatus_ie_clear_o(ctrl_mstatus_ie_clear_o),
-          .mstatus_ie_set_o(ctrl_mstatus_ie_set_o),
+          .mstatus_ie_clear_o(ctl_mstatus_ie_clear_o),
+          .mstatus_ie_set_o(ctl_mstatus_ie_set_o),
 
           //output the control signals
-      .stall_o(ctrl_stall_o),
-      .flush_o(ctrl_flush_o),
-          .new_pc_o(ctrl_new_pc_o)
+      .stall_o(ctl_stall_o),
+      .flush_o(ctl_flush_o),
+          .new_pc_o(ctl_new_pc_o)
     );
 
 
@@ -732,24 +732,24 @@
 
           //write csr
       .we_i(wb_csr_we_i),
-      .wa_i(wb_csr_waddr_i),
-      .wd_i(wb_csr_wdata_i),
+      .wa_i(wb_csr_wa_i),
+      .wd_i(wb_csr_wd_i),
 
           .ins_ret_inc_i(wb_instret_incr_i),
 
           //from control
-          .ie_type_i(ctrl_ie_type_o),
-          .set_cause_i(ctrl_set_cause_o),
-          .trap_casue_i(ctrl_trap_casue_o),
+          .ie_type_i(ctl_ie_type_o),
+          .set_cause_i(ctl_set_cause_o),
+          .trap_casue_i(ctl_trap_casue_o),
 
-          .set_epc_i(ctrl_set_epc_o),
-          .epc_i(ctrl_epc_o),
+          .set_epc_i(ctl_set_epc_o),
+          .epc_i(ctl_epc_o),
 
-          .set_mtval_i(ctrl_set_mtval_o),
-          .mtval_i(ctrl_mtval_o),
+          .set_mtval_i(ctl_set_mtval_o),
+          .mtval_i(ctl_mtval_o),
 
-          .mstatus_ie_clear_i(ctrl_mstatus_ie_clear_o),
-          .mstatus_ie_set_i(ctrl_mstatus_ie_set_o),
+          .mstatus_ie_clear_i(ctl_mstatus_ie_clear_o),
+          .mstatus_ie_set_i(ctl_mstatus_ie_set_o),
 
       // to control
           .mstatus_ie_o(csr_mstatus_ie_o),

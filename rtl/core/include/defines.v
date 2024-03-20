@@ -16,8 +16,8 @@
   `define INS_VALID 1'b1
   `define INS_INVALID 1'b0
 
-`define STOP                    1'b1
-`define NO_STOP                  1'b0
+  `define NO_STOP 1'b0
+  `define STOP 1'b1
 
 `define Branch                  1'b1
 `define NotBranch               1'b0

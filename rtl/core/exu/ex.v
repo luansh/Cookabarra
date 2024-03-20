@@ -44,13 +44,13 @@
 
     /* ------- bypass signals from lsu, for csr dependance detection --------*/
     input mem_csr_we_i,
-    input[`REG_BUS_D] mem_csr_waddr_i,
-    input[`REG_BUS_D] mem_csr_wdata_i,
+    input[`REG_BUS_D] mem_csr_wa_i,
+    input[`REG_BUS_D] mem_csr_wd_i,
 
     /* ------- bypass signals from write back, for csr dependance detection --------*/
     input wb_csr_we_i,
-    input[`REG_BUS_D] wb_csr_waddr_i,
-    input[`REG_BUS_D] wb_csr_wdata_i,
+    input[`REG_BUS_D] wb_csr_wa_i,
+    input[`REG_BUS_D] wb_csr_wd_i,
 
 
     /* ------- passed to next pipeline --------*/
@@ -227,11 +227,11 @@
             csr_raddr_o = csr_addr_i;
             csr_result_r = csr_rdata_i;
             // check the data dependance, if mem stage is updating the csr, use the lastest value
-            if ( mem_csr_we_i == `WRITE_ENABLE && mem_csr_waddr_i == csr_addr_i) begin
-                csr_result_r = mem_csr_wdata_i;
+            if ( mem_csr_we_i == `WRITE_ENABLE && mem_csr_wa_i == csr_addr_i) begin
+                csr_result_r = mem_csr_wd_i;
             // check the data dependance, if wb stage is updating the csr, use the lastest value
-            end else if ( wb_csr_we_i == `WRITE_ENABLE && wb_csr_waddr_i == csr_addr_i) begin
-                csr_result_r = wb_csr_wdata_i;
+            end else if ( wb_csr_we_i == `WRITE_ENABLE && wb_csr_wa_i == csr_addr_i) begin
+                csr_result_r = wb_csr_wd_i;
             end
         end
     end
@@ -321,7 +321,7 @@
 /* A JAL instruction should push the return address onto a return-address stack (RAS) only when rd=x1/x5.*/
 //call伪指令有近跳转 (JAL)版本？
             if ((rd_wa_i == 5'd1) || (rd_wa_i == 5'd5)) branch_is_call_o = 1'b1;
-          //不是由call伪指令产生的普通JAL 指令
+          //普通JAL 指令（不是由call伪指令产生的调用指令，无需记录至 RAS）
             else branch_is_jmp_o = 1'b1;
           end
           `UOP_JALR: begin
@@ -352,7 +352,7 @@
               else branch_is_call_o = 1'b1; //03
             else
               if (rs1_w == 5'd1 || rs1_w == 5'd5) branch_is_ret_o = 1'b1; //02
-            //不是由call/ret产生的（普通的）JALR指令
+            //普通的JALR指令（不是由call/ret产生的）
               else branch_is_jmp_o = 1'b1;//01
           end
         //分支指令，其is_call/ret/jmp/标志均为 0
