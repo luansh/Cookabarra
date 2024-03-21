@@ -25,7 +25,7 @@
 
     // some neccessary signals forwarded from exe unit, to detect data dependance.
     // if the exe unis is executing load instruction, and the rd_w is one of the rs,
-    // notify the ctrl unit to stall pipeline
+    // notify the ctl unit to stall pipeline
   //当前时刻，EX阶段执行的指令微码
     input[`AluOpBus] ex_uop_i,
   //EX阶段是否可以得到的rd寄存器的的数值，可以时，反馈具体值以及rd地址
@@ -41,7 +41,7 @@
     input[`REG_BUS_D] mem_rd_wd_i,
 
 
-    /* ------- signals to the ctrl  ---------------*/
+    /* ------- signals to the ctl  ---------------*/
     output wire stall_req_o,
 
     /* ------- signals to the execution unit --------*/

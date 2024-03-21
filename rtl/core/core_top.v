@@ -24,7 +24,7 @@
       input irq_external_i
   );
 
-    //------------ signal from ctrl unit  -----------
+    //------------ signal from ctl unit  -----------
       wire ctl_ie_type_o;
       wire ctl_set_epc_o;
       wire[`REG_BUS_D] ctl_epc_o;
@@ -74,7 +74,7 @@
       wire[`REG_BUS_A] id_rs1_ra_o;
       wire[`REG_BUS_A] id_rs2_ra_o;
 
-      //id --> ctrl
+      //id --> ctl
       wire id_stall_req_o;
 
   //id -> id_ex
@@ -128,7 +128,7 @@
     wire ex_div_annul_o;
     wire ex_div_signed_o;
 
-      // ex --> ctrl
+      // ex --> ctl
       wire ex_stall_req_o;
 
       // ex --> csr
@@ -246,33 +246,26 @@
     ifu ifu0(
       .ck_i(ck_i),
       .rs_n_i(rs_n_i),
-
-      // from the control unit
+    //CTL -> IF
       .stall_i(ctl_stall_o),
       .flush_i(ctl_flush_o),
       .new_pc_i(ctl_new_pc_o),
-
-          // from bp
-      .next_pc_i (bp_next_pc_o),
+    //BP -> IF
+    //IF所取指令的地址，来自BP单元
+      .next_pc_i(bp_next_pc_o),
       .next_taken_i(bp_next_taken_o),
-
-      // from exe unit
+    //EX -> IF
       .branch_redirect_i(ex_branch_redirect_o),
       .branch_redirect_pc_i(ex_branch_redirect_pc_o),
-
           // to rom and to bp
       .pc_o(if_pc_o),
       .ce_o(rom_ce_o),     //connect to outside rom
-
-      // to ctrl
+    //IF -> CTL
       .stall_req_o(if_stall_req_o),
-
-      // to exe unit
-          .next_pc_o(if_next_pc_o),
+    //IF -> EX
+      .next_pc_o(if_next_pc_o),
       .next_taken_o(if_next_taken_o),
-      .branch_slot_end_o(if_branch_slot_end_o)
-    );
-
+      .branch_slot_end_o(if_branch_slot_end_o));
 
     branch_prediction bp0(
       .ck_i(ck_i),
@@ -290,10 +283,9 @@
       //input signals from fetch unit
       .pc_i (if_pc_o),
       .stall_i(ctl_stall_o[0]),
-
-      // output signals to fetch unit
-      .next_pc_o (bp_next_pc_o),    // next predicted pc
-      .next_taken_o (bp_next_taken_o)  // branch take or not, forward to execute via fetch module
+    //BP -> IF
+      .next_pc_o(bp_next_pc_o),    // next predicted pc
+      .next_taken_o(bp_next_taken_o)  // branch take or not, forward to execute via fetch module
     );
 
 
@@ -302,7 +294,7 @@
       .ck_i(ck_i),
       .rs_n_i(rs_n_i),
 
-      //from ctrl unit
+      //from ctl unit
       .stall_i(ctl_stall_o),
       .flush_i(ctl_flush_o),
 
@@ -359,7 +351,7 @@
       .mem_rd_wa_i(mem_rd_addr_o),
       .mem_rd_wd_i(mem_rd_wdata_o),
 
-          //signal to ctrl
+          //signal to ctl
       .stall_req_o(id_stall_req_o),
 
       //signals to id_ex
@@ -389,7 +381,7 @@
       .ck_i(ck_i),
       .rs_n_i(rs_n_i),
 
-      //signal from the ctrl unit
+      //signal from the ctl unit
       .stall_i(ctl_stall_o),
       .flush_i(ctl_flush_o),
 
@@ -537,7 +529,7 @@
       .ck_i(ck_i),
       .rs_n_i(rs_n_i),
 
-        //from ctrl unit
+        //from ctl unit
         .stall_i(ctl_stall_o),
         .flush_i(ctl_flush_o),
 
@@ -642,7 +634,7 @@
       .ck_i(ck_i),
       .rs_n_i(rs_n_i),
 
-          //wires from ctrl unit
+          //wires from ctl unit
           .stall_i(ctl_stall_o),
       .flush_i(ctl_flush_o),
 
@@ -668,7 +660,7 @@
     );
 
 
-    ctrl ctrl0(
+    ctl ctrl0(
       .ck_i(ck_i),
       .rs_n_i(rs_n_i),
         //from mem
@@ -676,10 +668,10 @@
       .pc_i(mem_pc_o),
       .ins_i(mem_inst_o),
           //from if, id, eu, mem
-          .stallreq_from_if_i(if_stall_req_o),
-      .stallreq_from_id_i(id_stall_req_o),
-      .stallreq_from_ex_i(ex_stall_req_o),
-      .stallreq_from_mem_i(mem_stall_req_o),
+          .stall_req_from_if_i(if_stall_req_o),
+      .stall_req_from_id_i(id_stall_req_o),
+      .stall_req_from_ex_i(ex_stall_req_o),
+      .stall_req_from_mem_i(mem_stall_req_o),
 
           //from csr
           .mstatus_ie_i(csr_mstatus_ie_o),

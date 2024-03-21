@@ -35,7 +35,7 @@
     input[`REG_BUS_DOUBLE] div_result_i,   // the result of the division,the low 32 bits are the quotient, the higher 32 bits are the remainder
     input div_ready_i,    //the divison result is ready
 
-    /* ------- signals to the ctrl unit --------*/
+    /* ------- signals to the ctl unit --------*/
     output reg stall_req_o,     // need to stall the pipeline on the division operation, it needs 32 cycles
 
     /* ------- signals with csr unit --------*/
@@ -86,7 +86,7 @@
 	// the accumulated exception if there are some
     output reg[31:0] exception_o);
 
-    reg stallreq_for_div;
+    reg stall_req_for_div;
 
     assign pc_o = pc_i;
     assign ins_o = ins_i;
@@ -483,18 +483,18 @@
 
     // stall the pipeline if needed
     always @ (*)
-      stall_req_o = stallreq_for_div;  //只有div指令才需要停止流水线
+      stall_req_o = stall_req_for_div;  //只有div指令才需要停止流水线
 
     // division and rem instructions
     always @ (*) begin
         if (rs_n_i == `RST_EN) begin
-            stallreq_for_div = `NO_STOP;
+            stall_req_for_div = `NO_STOP;
             dividend_o = `ZERO_WORD;
             divisor_o = `ZERO_WORD;
             div_start_o = `DIV_STOP;
             div_signed_o = 1'b0;
         end else begin
-            stallreq_for_div = `NO_STOP;
+            stall_req_for_div = `NO_STOP;
             dividend_o = `ZERO_WORD;
             divisor_o = `ZERO_WORD;
             div_start_o = `DIV_STOP;
@@ -507,13 +507,13 @@
                         divisor_o = rs2_d_i;
                         div_start_o = `DIV_START;
                         div_signed_o = 1'b1;       // signed division
-                        stallreq_for_div = `STOP;  // stop the pipeline
+                        stall_req_for_div = `STOP;  // stop the pipeline
                     end else begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
                         div_start_o = `DIV_STOP;
                         div_signed_o = 1'b1;
-                        stallreq_for_div = `NO_STOP;  // resume the pipeline
+                        stall_req_for_div = `NO_STOP;  // resume the pipeline
                         div_result_r = div_result_i[31:0]; // get the quotient
                     end
                 end
@@ -525,13 +525,13 @@
                         divisor_o = rs2_d_i;
                         div_start_o = `DIV_START;
                         div_signed_o = 1'b0;        // unsigned division
-                        stallreq_for_div = `STOP;
+                        stall_req_for_div = `STOP;
                     end else begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
                         div_start_o = `DIV_STOP;
                         div_signed_o = 1'b0;
-                        stallreq_for_div = `NO_STOP;
+                        stall_req_for_div = `NO_STOP;
                         div_result_r = div_result_i[31:0];
                     end
                 end
@@ -543,13 +543,13 @@
                         divisor_o = rs2_d_i;
                         div_start_o = `DIV_START;
                         div_signed_o = 1'b1;
-                        stallreq_for_div = `STOP;
+                        stall_req_for_div = `STOP;
                     end else begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
                         div_start_o = `DIV_STOP;
                         div_signed_o = 1'b1;
-                        stallreq_for_div = `NO_STOP;
+                        stall_req_for_div = `NO_STOP;
                         div_result_r = div_result_i[63:32]; // get the remainder
                     end
                 end
@@ -561,13 +561,13 @@
                         divisor_o = rs2_d_i;
                         div_start_o = `DIV_START;
                         div_signed_o = 1'b0;
-                        stallreq_for_div = `STOP;
+                        stall_req_for_div = `STOP;
                     end else begin
                         dividend_o = rs1_d_i;
                         divisor_o = rs2_d_i;
                         div_start_o = `DIV_STOP;
                         div_signed_o = 1'b0;
-                        stallreq_for_div = `NO_STOP;
+                        stall_req_for_div = `NO_STOP;
                         div_result_r = div_result_i[63:32];
                     end
                 end

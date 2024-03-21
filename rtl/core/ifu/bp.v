@@ -21,7 +21,7 @@
     //input signals from fetch unit
     input[`INS_BUS_A] pc_i,  // the current PC from fetch unit
 
-    //input signals from ctrl
+    //input signals from ctl
     input stall_i, // to avoid one ret/call instruction to cause multiple ras push or pop operation
 
     // output signals to fetch unit
@@ -154,15 +154,15 @@
     integer update;
     always @ (posedge ck_i or negedge rs_n_i)
       if (rs_n_i == `RST_EN)
-      for (update = 0; update < BTB_ENTRIES; update = update + 1)
-      begin
-        btb_is_valid_list_r[update] <= 1'b0;
-        btb_is_call_list_r[update] <= 1'b0;
-        btb_is_ret_list_r[update] <= 1'b0;
-        btb_is_jmp_list_r[update] <= 1'b0;
-        btb_source_pc_list_r[update] <= 32'd0;
-        btb_target_pc_list_r[update] <= 32'd0;
-      end
+        for (update = 0; update < BTB_ENTRIES; update = update + 1)
+        begin
+          btb_is_valid_list_r[update] <= 1'b0;
+          btb_is_call_list_r[update] <= 1'b0;
+          btb_is_ret_list_r[update] <= 1'b0;
+          btb_is_jmp_list_r[update] <= 1'b0;
+          btb_source_pc_list_r[update] <= 32'd0;
+          btb_target_pc_list_r[update] <= 32'd0;
+        end
       else
       if (branch_request_i && branch_is_taken_i)
         if (btb_hit_r)//更新命中 BTB的各字段值

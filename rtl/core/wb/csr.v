@@ -20,7 +20,7 @@
 
     input ins_ret_inc_i,   // 0 or 1 indicate increase the counter of instret
 
-    /* ---- ctrl update epc, mcause_r, mtval, global ie ----*/
+    /* ---- ctl update epc, mcause_r, mtval, global ie ----*/
     input ie_type_i,          // interrupt or exception
     input set_cause_i,
     input [3:0] trap_casue_i,

@@ -25,7 +25,7 @@ module id_ex(
     input ck_i,
     input rs_n_i,
 
-    /* ------- signals from the ctrl unit --------*/
+    /* ------- signals from the ctl unit --------*/
     input[5:0] stall_i,
     input flush_i,
 

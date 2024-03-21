@@ -20,7 +20,7 @@ INC_DIR :=$(RTL_ROOT_DIR)/core/include
 
 CORE_RTL_FILES := $(RTL_DIR)/ifu/ifu.v     $(RTL_DIR)/ifu/bp.v        $(RTL_DIR)/ifu/if_id.v     $(RTL_DIR)/dec/id.v        $(RTL_DIR)/dec/id_ex.v   \
 				  $(RTL_DIR)/exu/ex.v      $(RTL_DIR)/exu/div.v       $(RTL_DIR)/exu/ex_mem.v    $(RTL_DIR)/lsu/mem.v     \
-				  $(RTL_DIR)/lsu/mem_wb.v  $(RTL_DIR)/wb/gpr.v        $(RTL_DIR)/wb/csr.v	     $(RTL_DIR)/ctrl/ctrl.v   \
+				  $(RTL_DIR)/lsu/mem_wb.v  $(RTL_DIR)/wb/gpr.v        $(RTL_DIR)/wb/csr.v	     $(RTL_DIR)/ctl/ctl.v   \
 				  $(RTL_DIR)/core_top.v
 
 TB_RTL_FILES := $(TB_DIR)/ram.v $(TB_DIR)/simple_system.v $(TB_DIR)/timer.v $(TB_DIR)/console.v  $(TB_DIR)/bus.v
